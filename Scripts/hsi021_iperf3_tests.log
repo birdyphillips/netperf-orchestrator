@@ -1,0 +1,78 @@
+nohup: ignoring input
+2026-01-05 14:41:54,228 - ByteBlowerCLI - INFO - iPerf3 only mode - client: 96.37.176.26 - platform: auto
+2026-01-05 14:41:54,229 - IPerf3Logic - INFO - Starting 1 iPerf3 iterations
+2026-01-05 14:42:24,261 - IPerf3Logic - ERROR - SSH connection timeout after 30 seconds to 96.37.176.26
+2026-01-05 14:42:24,262 - IPerf3Logic - ERROR - SSH key setup failed, cannot proceed
+2026-01-05 14:42:24,262 - ByteBlowerCLI - ERROR - Workflow completed with errors
+2026-01-05 14:42:34,386 - ByteBlowerCLI - INFO - iPerf3 only mode - client: 96.37.176.26 - platform: auto
+2026-01-05 14:42:34,388 - IPerf3Logic - INFO - Starting 1 iPerf3 iterations
+2026-01-05 14:43:04,421 - IPerf3Logic - ERROR - SSH connection timeout after 30 seconds to 96.37.176.26
+2026-01-05 14:43:04,421 - IPerf3Logic - ERROR - SSH key setup failed, cannot proceed
+2026-01-05 14:43:04,421 - ByteBlowerCLI - ERROR - Workflow completed with errors
+2026-01-05 14:43:14,531 - ByteBlowerCLI - INFO - iPerf3 only mode - client: 96.37.176.26 - platform: auto
+2026-01-05 14:43:14,532 - IPerf3Logic - INFO - Starting 1 iPerf3 iterations
+2026-01-05 14:43:44,539 - IPerf3Logic - ERROR - SSH connection timeout after 30 seconds to 96.37.176.26
+2026-01-05 14:43:44,540 - IPerf3Logic - ERROR - SSH key setup failed, cannot proceed
+2026-01-05 14:43:44,540 - ByteBlowerCLI - ERROR - Workflow completed with errors
+2026-01-05 14:43:54,651 - ByteBlowerCLI - INFO - iPerf3 only mode - client: 96.37.176.26 - platform: auto
+2026-01-05 14:43:54,652 - IPerf3Logic - INFO - Starting 1 iPerf3 iterations
+2026-01-05 14:44:24,664 - IPerf3Logic - ERROR - SSH connection timeout after 30 seconds to 96.37.176.26
+2026-01-05 14:44:24,664 - IPerf3Logic - ERROR - SSH key setup failed, cannot proceed
+2026-01-05 14:44:24,664 - ByteBlowerCLI - ERROR - Workflow completed with errors
+2026-01-05 14:44:34,772 - ByteBlowerCLI - INFO - iPerf3 only mode - client: 96.37.176.26 - platform: auto
+2026-01-05 14:44:34,773 - IPerf3Logic - INFO - Starting 1 iPerf3 iterations
+2026-01-05 14:45:04,803 - IPerf3Logic - ERROR - SSH connection timeout after 30 seconds to 96.37.176.26
+2026-01-05 14:45:04,803 - IPerf3Logic - ERROR - SSH key setup failed, cannot proceed
+2026-01-05 14:45:04,803 - ByteBlowerCLI - ERROR - Workflow completed with errors
+2026-01-05 14:45:14,919 - ByteBlowerCLI - INFO - iPerf3 only mode - client: 96.37.176.26 - platform: auto
+2026-01-05 14:45:14,920 - IPerf3Logic - INFO - Starting 1 iPerf3 iterations
+2026-01-05 14:45:44,923 - IPerf3Logic - ERROR - SSH connection timeout after 30 seconds to 96.37.176.26
+2026-01-05 14:45:44,924 - IPerf3Logic - ERROR - SSH key setup failed, cannot proceed
+2026-01-05 14:45:44,924 - ByteBlowerCLI - ERROR - Workflow completed with errors
+================================================================================
+HSI021 iPerf3 BASELINE TEST SUITE
+Running RTT_0 (Zero Latency) Tests Only
+================================================================================
+Client IP: 96.37.176.26
+Total baseline tests: 6
+Estimated time: 1.0 minutes (excluding test execution time)
+================================================================================
+[BASELINE TEST 1/6]
+Executing: python3 lld_test.py -iperf3 --clientIP 96.37.176.26 --scenario US_Classic_Only -test-group-name HSI021
+✗ Command failed with exit code 1
+--------------------------------------------------------------------------------
+✗ Baseline test 1 failed. Continuing to next test...
+Waiting 10 seconds before next baseline test...
+[BASELINE TEST 2/6]
+Executing: python3 lld_test.py -iperf3 --clientIP 96.37.176.26 --scenario DS_Classic_Only -test-group-name HSI021
+✗ Command failed with exit code 1
+--------------------------------------------------------------------------------
+✗ Baseline test 2 failed. Continuing to next test...
+Waiting 10 seconds before next baseline test...
+[BASELINE TEST 3/6]
+Executing: python3 lld_test.py -iperf3 --clientIP 96.37.176.26 --scenario US_Combined -test-group-name HSI021
+✗ Command failed with exit code 1
+--------------------------------------------------------------------------------
+✗ Baseline test 3 failed. Continuing to next test...
+Waiting 10 seconds before next baseline test...
+[BASELINE TEST 4/6]
+Executing: python3 lld_test.py -iperf3 --clientIP 96.37.176.26 --scenario DS_Combined -test-group-name HSI021
+✗ Command failed with exit code 1
+--------------------------------------------------------------------------------
+✗ Baseline test 4 failed. Continuing to next test...
+Waiting 10 seconds before next baseline test...
+[BASELINE TEST 5/6]
+Executing: python3 lld_test.py -iperf3 --clientIP 96.37.176.26 --scenario US_LL_Only -test-group-name HSI021
+✗ Command failed with exit code 1
+--------------------------------------------------------------------------------
+✗ Baseline test 5 failed. Continuing to next test...
+Waiting 10 seconds before next baseline test...
+[BASELINE TEST 6/6]
+Executing: python3 lld_test.py -iperf3 --clientIP 96.37.176.26 --scenario DS_LL_Only -test-group-name HSI021
+✗ Command failed with exit code 1
+--------------------------------------------------------------------------------
+✗ Baseline test 6 failed. Continuing to next test...
+================================================================================
+HSI021 iPerf3 BASELINE TEST SUITE COMPLETE
+Results: 0/6 tests successful
+================================================================================

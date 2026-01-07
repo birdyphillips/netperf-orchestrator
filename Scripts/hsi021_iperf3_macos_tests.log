@@ -1,0 +1,54 @@
+nohup: ignoring input
+2025-12-31 14:05:12,700 - ByteBlowerCLI - ERROR - Workflow failed: name 'args' is not defined
+2025-12-31 14:05:22,813 - ByteBlowerCLI - ERROR - Workflow failed: name 'args' is not defined
+2025-12-31 14:05:32,923 - ByteBlowerCLI - ERROR - Workflow failed: name 'args' is not defined
+2025-12-31 14:05:43,036 - ByteBlowerCLI - ERROR - Workflow failed: name 'args' is not defined
+2025-12-31 14:05:53,148 - ByteBlowerCLI - ERROR - Workflow failed: name 'args' is not defined
+2025-12-31 14:06:03,260 - ByteBlowerCLI - ERROR - Workflow failed: name 'args' is not defined
+================================================================================
+HSI021 macOS iPerf3 TEST SUITE
+Using iperf3-darwin with Apple QUIC and L4S
+================================================================================
+macOS Client IP: 96.37.176.11
+Total tests: 6
+Estimated time: 1.0 minutes (excluding test execution time)
+================================================================================
+[macOS TEST 1/6]
+Executing: python3 lld_test.py -iperf3-darwin --clientIP 96.37.176.11 --scenario US_Classic_Only -test-group-name HSI021
+✗ Command failed with exit code 1
+--------------------------------------------------------------------------------
+✗ macOS test 1 failed. Continuing to next test...
+Waiting 10 seconds before next test...
+[macOS TEST 2/6]
+Executing: python3 lld_test.py -iperf3-darwin --clientIP 96.37.176.11 --scenario DS_Classic_Only -test-group-name HSI021
+✗ Command failed with exit code 1
+--------------------------------------------------------------------------------
+✗ macOS test 2 failed. Continuing to next test...
+Waiting 10 seconds before next test...
+[macOS TEST 3/6]
+Executing: python3 lld_test.py -iperf3-darwin --clientIP 96.37.176.11 --scenario US_Combined -test-group-name HSI021
+✗ Command failed with exit code 1
+--------------------------------------------------------------------------------
+✗ macOS test 3 failed. Continuing to next test...
+Waiting 10 seconds before next test...
+[macOS TEST 4/6]
+Executing: python3 lld_test.py -iperf3-darwin --clientIP 96.37.176.11 --scenario DS_Combined -test-group-name HSI021
+✗ Command failed with exit code 1
+--------------------------------------------------------------------------------
+✗ macOS test 4 failed. Continuing to next test...
+Waiting 10 seconds before next test...
+[macOS TEST 5/6]
+Executing: python3 lld_test.py -iperf3-darwin --clientIP 96.37.176.11 --scenario US_LL_Only -test-group-name HSI021
+✗ Command failed with exit code 1
+--------------------------------------------------------------------------------
+✗ macOS test 5 failed. Continuing to next test...
+Waiting 10 seconds before next test...
+[macOS TEST 6/6]
+Executing: python3 lld_test.py -iperf3-darwin --clientIP 96.37.176.11 --scenario DS_LL_Only -test-group-name HSI021
+✗ Command failed with exit code 1
+--------------------------------------------------------------------------------
+✗ macOS test 6 failed. Continuing to next test...
+================================================================================
+HSI021 macOS iPerf3 TEST SUITE COMPLETE
+Results: 0/6 tests successful
+================================================================================

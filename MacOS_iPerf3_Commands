@@ -1,0 +1,86 @@
+# NOTE: Client device IP addresses change when connected to different modems
+
+# SERVER COMMANDS
+iperf3-darwin -s -p 5201 &
+iperf3-darwin -s -p 5207 &
+iperf3-darwin -s -p 5209 &
+iperf3-darwin -s -p 5211 &
+
+US_Combined
+iperf3-darwin -c 71.85.92.83 --apple-quic -t 30 -P 4 -p 5201 -J > US_quic_4streams_Combined.json &
+iperf3-darwin -c 71.85.92.83 --apple-quic -t 30 -P 1 -p 5207 --apple-l4s -J > US_l4s_quic_Combined.json &
+iperf3-darwin -c 71.85.92.83 -u -b 0.8192M -t 30 -p 5209 -J > US_udp_classic_Combined.json &
+iperf3-darwin -c 71.85.92.83 -u -b 0.8192M --dscp 45 -t 30 -p 5211 -J > US_udp_ll_Combined.json &
+wait
+
+US_Classic_Only
+iperf3-darwin -c 71.85.92.83 --apple-quic -t 30 -P 4 -p 5201 -J > US_quic_4streams_Classic_Only.json &
+iperf3-darwin -c 71.85.92.83 -u -b 0.8192M -t 30 -p 5209 -J > US_udp_Classic_Only.json &
+wait
+
+US_LL_Only
+iperf3-darwin -c 71.85.92.83 --apple-quic -t 30 -P 1 -p 5207 --apple-l4s -J > US_l4s_quic_LL_Only.json &
+iperf3-darwin -c 71.85.92.83 -u -b 0.8192M --dscp 45 -t 30 -p 5211 -J > US_udp_LL_Only.json &
+wait
+
+DS_Combined
+iperf3-darwin -c 96.37.176.11 --apple-quic -t 30 -P 4 -p 5201 -J > DS_quic_4streams_Combined.json &
+iperf3-darwin -c 96.37.176.11 --apple-quic -t 30 -P 1 -p 5207 --apple-l4s -J > DS_l4s_quic_Combined.json &
+iperf3-darwin -c 96.37.176.11 -u -b 0.8192M -t 30 -p 5209 -J > DS_udp_classic_Combined.json &
+iperf3-darwin -c 96.37.176.11 -u -b 0.8192M --dscp 45 -t 30 -p 5211 -J > DS_udp_ll_Combined.json &
+wait
+
+DS_Classic_Only
+iperf3-darwin -c 96.37.176.11 --apple-quic -t 30 -P 4 -p 5201 -J > DS_quic_4streams_Classic_Only.json &
+iperf3-darwin -c 96.37.176.11 -u -b 0.8192M -t 30 -p 5209 -J > DS_udp_Classic_Only.json &
+wait
+
+DS_LL_Only
+iperf3-darwin -c 96.37.176.11 --apple-quic -t 30 -P 1 -p 5207 --apple-l4s -J > DS_l4s_quic_LL_Only.json &
+iperf3-darwin -c 96.37.176.11 -u -b 0.8192M --dscp 45 -t 30 -p 5211 -J > DS_udp_LL_Only.json &
+wait
+
+# TXT OUTPUT WITH INTERVAL REPORTING
+
+US_Combined
+iperf3-darwin -c 71.85.92.83 --apple-quic -t 30 -P 4 -p 5201 -i 1 > US_quic_4streams_Combined_I.txt &
+iperf3-darwin -c 71.85.92.83 --apple-quic -t 30 -P 1 -p 5207 --apple-l4s -i 1 > US_l4s_quic_Combined_I.txt &
+iperf3-darwin -c 71.85.92.83 -u -b 0.8192M -t 30 -p 5209 -i 1 > US_udp_classic_Combined_I.txt &
+iperf3-darwin -c 71.85.92.83 -u -b 0.8192M --dscp 45 -t 30 -p 5211 -i 1 > US_udp_ll_Combined_I.txt &
+wait
+
+US_Classic_Only
+iperf3-darwin -c 71.85.92.83 --apple-quic -t 30 -P 4 -p 5201 -i 1 > US_quic_4streams_Classic_Only_I.txt &
+iperf3-darwin -c 71.85.92.83 -u -b 0.8192M -t 30 -p 5209 -i 1 > US_udp_Classic_Only_I.txt &
+wait
+
+US_LL_Only
+iperf3-darwin -c 71.85.92.83 --apple-quic -t 30 -P 1 -p 5207 --apple-l4s -i 1 > US_l4s_quic_LL_Only_I.txt &
+iperf3-darwin -c 71.85.92.83 -u -b 0.8192M --dscp 45 -t 30 -p 5211 -i 1 > US_udp_LL_Only_I.txt &
+wait
+
+DS_Combined
+iperf3-darwin -c 96.37.176.11 --apple-quic -t 30 -P 4 -p 5201 -i 1 > DS_quic_4streams_Combined_I.txt &
+iperf3-darwin -c 96.37.176.11 --apple-quic -t 30 -P 1 -p 5207 --apple-l4s -i 1 > DS_l4s_quic_Combined_I.txt &
+iperf3-darwin -c 96.37.176.11 -u -b 0.8192M -t 30 -p 5209 -i 1 > DS_udp_classic_Combined_I.txt &
+iperf3-darwin -c 96.37.176.11 -u -b 0.8192M --dscp 45 -t 30 -p 5211 -i 1 > DS_udp_ll_Combined_I.txt &
+wait
+
+DS_Classic_Only
+iperf3-darwin -c 96.37.176.11 --apple-quic -t 30 -P 4 -p 5201 -i 1 > DS_quic_4streams_Classic_Only_I.txt &
+iperf3-darwin -c 96.37.176.11 -u -b 0.8192M -t 30 -p 5209 -i 1 > DS_udp_Classic_Only_I.txt &
+wait
+
+DS_LL_Only
+iperf3-darwin -c 96.37.176.11 --apple-quic -t 30 -P 1 -p 5207 --apple-l4s -i 1 > DS_l4s_quic_LL_Only_I.txt &
+iperf3-darwin -c 96.37.176.11 -u -b 0.8192M --dscp 45 -t 30 -p 5211 -i 1 > DS_udp_LL_Only_I.txt &
+wait
+
+# SERVER COMMANDS
+iperf3-darwin -s -p 5201 &
+iperf3-darwin -s -p 5207 &
+iperf3-darwin -s -p 5209 &
+iperf3-darwin -s -p 5211 &
+
+scp -r mac_studio_server@71.85.92.83:/Users/mac_studio_server/DS_HSI029 "C:\Users\p3135123\OneDrive - Charter Communications\Access_Engineering_Project\vCMTS_Results\vCMTS_HSI029\HSI029_iPerf3_MacOS"
+scp -r lld_mac_client@96.37.176.11:/Users/lld_mac_client/DS_HSI029 "C:\Users\p3135123\OneDrive - Charter Communications\Access_Engineering_Project\vCMTS_Results\vCMTS_HSI029\HSI029_iPerf3_MacOS"

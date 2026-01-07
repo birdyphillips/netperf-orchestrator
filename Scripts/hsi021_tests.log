@@ -1,0 +1,802 @@
+nohup: ignoring input
+2026-01-05 13:36:08,990 - ByteBlowerCLI - INFO - ByteBlower only mode - file: HSI021_P20_vcmts_cm74375fd62c28.bbp
+2026-01-05 13:36:08,990 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 13:36:08,991 - ByteBlowerLogic - INFO - Running ByteBlower scenario: US_Classic_Only from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 13:37:27,992 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_0_US_Classic_Only_20260105_133608/
+2026-01-05 13:37:27,992 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 13:37:27,992 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_0_US_Classic_Only_20260105_133608/
+  - US_Classic_Only - 20260105_133611_R2_1.html (4,289,639 bytes) - R2 HTML Report with L4S Column
+  - US_Classic_Only - 20260105_133611_1.json (1,665,875 bytes) - JSON Data
+  - US_Classic_Only - 20260105_133611_1.csv (482,420 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 13:37:43,110 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 13:37:43,242 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:37:44,740 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:37:44,741 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 13:37:44,741 - ByteBlowerLogic - INFO - Running ByteBlower scenario: US_Classic_Only from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 13:39:04,106 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_10_US_Classic_Only_RTT_10ms_20260105_133743/
+2026-01-05 13:39:04,106 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 13:39:04,106 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 13:39:04,743 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 13:39:05,304 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:39:05,305 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_10_US_Classic_Only_RTT_10ms_20260105_133743/
+  - US_Classic_Only - 20260105_133747_R2_1.html (4,297,691 bytes) - R2 HTML Report with L4S Column
+  - US_Classic_Only - 20260105_133747_1.json (1,664,882 bytes) - JSON Data
+  - US_Classic_Only - 20260105_133747_1.csv (480,963 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 13:39:20,415 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 13:39:21,243 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:39:22,740 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:39:22,741 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 13:39:22,741 - ByteBlowerLogic - INFO - Running ByteBlower scenario: US_Classic_Only from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 13:40:41,866 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_20_US_Classic_Only_RTT_20ms_20260105_133920/
+2026-01-05 13:40:41,866 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 13:40:41,866 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 13:40:42,743 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 13:40:43,302 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:40:43,302 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_20_US_Classic_Only_RTT_20ms_20260105_133920/
+  - US_Classic_Only - 20260105_133925_R2_1.html (4,298,016 bytes) - R2 HTML Report with L4S Column
+  - US_Classic_Only - 20260105_133925_1.json (1,663,330 bytes) - JSON Data
+  - US_Classic_Only - 20260105_133925_1.csv (480,031 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 13:40:58,422 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 13:40:59,242 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:41:00,739 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:41:00,740 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 13:41:00,740 - ByteBlowerLogic - INFO - Running ByteBlower scenario: US_Classic_Only from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 13:42:21,078 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_30_US_Classic_Only_RTT_30ms_20260105_134058/
+2026-01-05 13:42:21,078 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 13:42:21,078 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 13:42:21,243 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 13:42:22,306 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:42:22,307 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_30_US_Classic_Only_RTT_30ms_20260105_134058/
+  - US_Classic_Only - 20260105_134103_R2_1.html (4,303,402 bytes) - R2 HTML Report with L4S Column
+  - US_Classic_Only - 20260105_134103_1.json (1,678,632 bytes) - JSON Data
+  - US_Classic_Only - 20260105_134103_1.csv (483,493 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 13:42:37,421 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 13:42:38,243 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:42:39,741 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:42:39,741 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 13:42:39,741 - ByteBlowerLogic - INFO - Running ByteBlower scenario: US_Classic_Only from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 13:44:00,494 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_40_US_Classic_Only_RTT_40ms_20260105_134237/
+2026-01-05 13:44:00,494 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 13:44:00,494 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 13:44:01,244 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 13:44:02,305 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:44:02,306 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_40_US_Classic_Only_RTT_40ms_20260105_134237/
+  - US_Classic_Only - 20260105_134242_R2_1.html (4,303,742 bytes) - R2 HTML Report with L4S Column
+  - US_Classic_Only - 20260105_134242_1.json (1,690,986 bytes) - JSON Data
+  - US_Classic_Only - 20260105_134242_1.csv (486,190 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 13:44:17,416 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 13:44:17,743 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:44:19,241 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:44:19,241 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 13:44:19,241 - ByteBlowerLogic - INFO - Running ByteBlower scenario: US_Classic_Only from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 13:45:39,192 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_50_US_Classic_Only_RTT_50ms_20260105_134417/
+2026-01-05 13:45:39,192 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 13:45:39,192 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 13:45:39,244 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 13:45:40,305 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:45:40,305 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_50_US_Classic_Only_RTT_50ms_20260105_134417/
+  - US_Classic_Only - 20260105_134421_R2_1.html (4,310,882 bytes) - R2 HTML Report with L4S Column
+  - US_Classic_Only - 20260105_134421_1.json (1,699,918 bytes) - JSON Data
+  - US_Classic_Only - 20260105_134421_1.csv (490,373 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 13:45:55,412 - ByteBlowerCLI - INFO - ByteBlower only mode - file: HSI021_P20_vcmts_cm74375fd62c28.bbp
+2026-01-05 13:45:55,412 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 13:45:55,412 - ByteBlowerLogic - INFO - Running ByteBlower scenario: DS_Classic_Only from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 13:47:13,422 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_0_DS_Classic_Only_20260105_134555/
+2026-01-05 13:47:13,422 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 13:47:13,422 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_0_DS_Classic_Only_20260105_134555/
+  - DS_Classic_Only - 20260105_134557_R2_1.html (4,159,877 bytes) - R2 HTML Report with L4S Column
+  - DS_Classic_Only - 20260105_134557_1.json (1,244,058 bytes) - JSON Data
+  - DS_Classic_Only - 20260105_134557_1.csv (367,173 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 13:47:28,534 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 13:47:29,244 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:47:30,741 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:47:30,742 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 13:47:30,742 - ByteBlowerLogic - INFO - Running ByteBlower scenario: DS_Classic_Only from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 13:48:49,151 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_10_DS_Classic_Only_RTT_10ms_20260105_134728/
+2026-01-05 13:48:49,151 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 13:48:49,151 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 13:48:49,244 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 13:48:50,307 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:48:50,307 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_10_DS_Classic_Only_RTT_10ms_20260105_134728/
+  - DS_Classic_Only - 20260105_134733_R2_1.html (4,163,492 bytes) - R2 HTML Report with L4S Column
+  - DS_Classic_Only - 20260105_134733_1.json (1,256,109 bytes) - JSON Data
+  - DS_Classic_Only - 20260105_134733_1.csv (370,755 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 13:49:05,417 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 13:49:06,244 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:49:07,742 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:49:07,742 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 13:49:07,742 - ByteBlowerLogic - INFO - Running ByteBlower scenario: DS_Classic_Only from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 13:50:26,241 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_20_DS_Classic_Only_RTT_20ms_20260105_134905/
+2026-01-05 13:50:26,241 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 13:50:26,241 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 13:50:27,244 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 13:50:28,301 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:50:28,302 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_20_DS_Classic_Only_RTT_20ms_20260105_134905/
+  - DS_Classic_Only - 20260105_134910_R2_1.html (4,156,946 bytes) - R2 HTML Report with L4S Column
+  - DS_Classic_Only - 20260105_134910_1.json (1,245,286 bytes) - JSON Data
+  - DS_Classic_Only - 20260105_134910_1.csv (368,438 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 13:50:43,412 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 13:50:43,744 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:50:45,242 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:50:45,242 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 13:50:45,243 - ByteBlowerLogic - INFO - Running ByteBlower scenario: DS_Classic_Only from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 13:52:04,301 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_30_DS_Classic_Only_RTT_30ms_20260105_135043/
+2026-01-05 13:52:04,302 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 13:52:04,302 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 13:52:04,744 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 13:52:05,302 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:52:05,302 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_30_DS_Classic_Only_RTT_30ms_20260105_135043/
+  - DS_Classic_Only - 20260105_135047_R2_1.html (4,166,798 bytes) - R2 HTML Report with L4S Column
+  - DS_Classic_Only - 20260105_135047_1.json (1,270,278 bytes) - JSON Data
+  - DS_Classic_Only - 20260105_135047_1.csv (373,344 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 13:52:20,421 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 13:52:21,245 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:52:22,742 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:52:22,743 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 13:52:22,743 - ByteBlowerLogic - INFO - Running ByteBlower scenario: DS_Classic_Only from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 13:53:41,121 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_40_DS_Classic_Only_RTT_40ms_20260105_135220/
+2026-01-05 13:53:41,121 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 13:53:41,121 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 13:53:41,245 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 13:53:42,307 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:53:42,308 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_40_DS_Classic_Only_RTT_40ms_20260105_135220/
+  - DS_Classic_Only - 20260105_135225_R2_1.html (4,165,355 bytes) - R2 HTML Report with L4S Column
+  - DS_Classic_Only - 20260105_135225_1.json (1,264,998 bytes) - JSON Data
+  - DS_Classic_Only - 20260105_135225_1.csv (372,068 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 13:53:57,420 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 13:53:58,245 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:53:59,742 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:53:59,743 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 13:53:59,743 - ByteBlowerLogic - INFO - Running ByteBlower scenario: DS_Classic_Only from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 13:55:18,308 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_50_DS_Classic_Only_RTT_50ms_20260105_135357/
+2026-01-05 13:55:18,309 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 13:55:18,309 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 13:55:19,246 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 13:55:20,307 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:55:20,308 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_50_DS_Classic_Only_RTT_50ms_20260105_135357/
+  - DS_Classic_Only - 20260105_135402_R2_1.html (4,161,674 bytes) - R2 HTML Report with L4S Column
+  - DS_Classic_Only - 20260105_135402_1.json (1,265,428 bytes) - JSON Data
+  - DS_Classic_Only - 20260105_135402_1.csv (372,337 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 13:55:35,421 - ByteBlowerCLI - INFO - ByteBlower only mode - file: HSI021_P20_vcmts_cm74375fd62c28.bbp
+2026-01-05 13:55:35,421 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 13:55:35,421 - ByteBlowerLogic - INFO - Running ByteBlower scenario: US_Combined from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 13:56:56,169 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_0_US_Combined_20260105_135535/
+2026-01-05 13:56:56,169 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 13:56:56,169 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_0_US_Combined_20260105_135535/
+  - US_Combined - 20260105_135537_R2_1.html (4,514,536 bytes) - R2 HTML Report with L4S Column
+  - US_Combined - 20260105_135537_1.json (2,365,648 bytes) - JSON Data
+  - US_Combined - 20260105_135537_1.csv (717,399 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 13:57:11,279 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 13:57:11,745 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:57:13,243 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:57:13,243 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 13:57:13,243 - ByteBlowerLogic - INFO - Running ByteBlower scenario: US_Combined from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 13:58:33,304 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_10_US_Combined_RTT_10ms_20260105_135711/
+2026-01-05 13:58:33,304 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 13:58:33,304 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 13:58:34,245 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 13:58:35,306 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:58:35,307 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_10_US_Combined_RTT_10ms_20260105_135711/
+  - US_Combined - 20260105_135715_R2_1.html (4,520,002 bytes) - R2 HTML Report with L4S Column
+  - US_Combined - 20260105_135715_1.json (2,366,020 bytes) - JSON Data
+  - US_Combined - 20260105_135715_1.csv (717,793 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 13:58:50,416 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 13:58:50,745 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:58:52,243 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 13:58:52,243 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 13:58:52,243 - ByteBlowerLogic - INFO - Running ByteBlower scenario: US_Combined from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 14:00:12,483 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_20_US_Combined_RTT_20ms_20260105_135850/
+2026-01-05 14:00:12,483 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 14:00:12,483 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 14:00:13,246 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 14:00:14,308 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:00:14,309 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_20_US_Combined_RTT_20ms_20260105_135850/
+  - US_Combined - 20260105_135854_R2_1.html (4,522,490 bytes) - R2 HTML Report with L4S Column
+  - US_Combined - 20260105_135854_1.json (2,365,445 bytes) - JSON Data
+  - US_Combined - 20260105_135854_1.csv (717,364 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 14:00:29,427 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 14:00:29,746 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:00:31,243 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:00:31,244 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 14:00:31,244 - ByteBlowerLogic - INFO - Running ByteBlower scenario: US_Combined from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 14:01:53,506 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_30_US_Combined_RTT_30ms_20260105_140029/
+2026-01-05 14:01:53,506 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 14:01:53,506 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 14:01:54,247 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 14:01:55,308 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:01:55,308 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_30_US_Combined_RTT_30ms_20260105_140029/
+  - US_Combined - 20260105_140033_R2_1.html (4,511,742 bytes) - R2 HTML Report with L4S Column
+  - US_Combined - 20260105_140033_1.json (2,345,069 bytes) - JSON Data
+  - US_Combined - 20260105_140033_1.csv (712,202 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 14:02:10,424 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 14:02:10,746 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:02:12,244 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:02:12,244 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 14:02:12,244 - ByteBlowerLogic - INFO - Running ByteBlower scenario: US_Combined from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 14:03:34,057 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_40_US_Combined_RTT_40ms_20260105_140210/
+2026-01-05 14:03:34,057 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 14:03:34,057 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 14:03:34,246 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 14:03:35,309 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:03:35,309 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_40_US_Combined_RTT_40ms_20260105_140210/
+  - US_Combined - 20260105_140214_R2_1.html (4,516,502 bytes) - R2 HTML Report with L4S Column
+  - US_Combined - 20260105_140214_1.json (2,348,395 bytes) - JSON Data
+  - US_Combined - 20260105_140214_1.csv (714,895 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 14:03:50,423 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 14:03:51,246 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:03:52,744 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:03:52,744 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 14:03:52,744 - ByteBlowerLogic - INFO - Running ByteBlower scenario: US_Combined from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 14:05:15,036 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_50_US_Combined_RTT_50ms_20260105_140350/
+2026-01-05 14:05:15,036 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 14:05:15,036 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 14:05:15,246 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 14:05:16,304 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:05:16,304 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_50_US_Combined_RTT_50ms_20260105_140350/
+  - US_Combined - 20260105_140355_R2_1.html (4,527,817 bytes) - R2 HTML Report with L4S Column
+  - US_Combined - 20260105_140355_1.json (2,378,788 bytes) - JSON Data
+  - US_Combined - 20260105_140355_1.csv (719,037 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 14:05:31,427 - ByteBlowerCLI - INFO - ByteBlower only mode - file: HSI021_P20_vcmts_cm74375fd62c28.bbp
+2026-01-05 14:05:31,427 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 14:05:31,427 - ByteBlowerLogic - INFO - Running ByteBlower scenario: DS_Combined from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 14:06:50,299 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_0_DS_Combined_20260105_140531/
+2026-01-05 14:06:50,299 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 14:06:50,299 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_0_DS_Combined_20260105_140531/
+  - DS_Combined - 20260105_140533_R2_1.html (4,364,565 bytes) - R2 HTML Report with L4S Column
+  - DS_Combined - 20260105_140533_1.json (1,922,002 bytes) - JSON Data
+  - DS_Combined - 20260105_140533_1.csv (586,419 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 14:07:05,412 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 14:07:05,747 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:07:07,244 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:07:07,245 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 14:07:07,245 - ByteBlowerLogic - INFO - Running ByteBlower scenario: DS_Combined from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 14:08:27,615 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_10_DS_Combined_RTT_10ms_20260105_140705/
+2026-01-05 14:08:27,615 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 14:08:27,615 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 14:08:28,247 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 14:08:29,309 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:08:29,309 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_10_DS_Combined_RTT_10ms_20260105_140705/
+  - DS_Combined - 20260105_140709_R2_1.html (4,370,424 bytes) - R2 HTML Report with L4S Column
+  - DS_Combined - 20260105_140709_1.json (1,923,540 bytes) - JSON Data
+  - DS_Combined - 20260105_140709_1.csv (588,096 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 14:08:44,422 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 14:08:44,747 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:08:46,244 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:08:46,245 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 14:08:46,245 - ByteBlowerLogic - INFO - Running ByteBlower scenario: DS_Combined from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 14:10:05,811 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_20_DS_Combined_RTT_20ms_20260105_140844/
+2026-01-05 14:10:05,811 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 14:10:05,811 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 14:10:06,247 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 14:10:07,308 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:10:07,309 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_20_DS_Combined_RTT_20ms_20260105_140844/
+  - DS_Combined - 20260105_140848_R2_1.html (4,373,137 bytes) - R2 HTML Report with L4S Column
+  - DS_Combined - 20260105_140848_1.json (1,924,093 bytes) - JSON Data
+  - DS_Combined - 20260105_140848_1.csv (589,030 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 14:10:22,428 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 14:10:23,247 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:10:24,745 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:10:24,745 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 14:10:24,746 - ByteBlowerLogic - INFO - Running ByteBlower scenario: DS_Combined from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 14:11:45,947 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_30_DS_Combined_RTT_30ms_20260105_141022/
+2026-01-05 14:11:45,947 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 14:11:45,947 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 14:11:46,748 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 14:11:47,310 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:11:47,310 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_30_DS_Combined_RTT_30ms_20260105_141022/
+  - DS_Combined - 20260105_141027_R2_1.html (4,378,689 bytes) - R2 HTML Report with L4S Column
+  - DS_Combined - 20260105_141027_1.json (1,947,121 bytes) - JSON Data
+  - DS_Combined - 20260105_141027_1.csv (592,793 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 14:12:02,422 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 14:12:03,248 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:12:04,745 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:12:04,746 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 14:12:04,746 - ByteBlowerLogic - INFO - Running ByteBlower scenario: DS_Combined from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 14:13:24,890 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_40_DS_Combined_RTT_40ms_20260105_141202/
+2026-01-05 14:13:24,890 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 14:13:24,890 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 14:13:25,248 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 14:13:26,309 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:13:26,309 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_40_DS_Combined_RTT_40ms_20260105_141202/
+  - DS_Combined - 20260105_141207_R2_1.html (4,377,455 bytes) - R2 HTML Report with L4S Column
+  - DS_Combined - 20260105_141207_1.json (1,943,672 bytes) - JSON Data
+  - DS_Combined - 20260105_141207_1.csv (592,646 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 14:13:41,418 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 14:13:42,247 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:13:43,745 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:13:43,746 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 14:13:43,746 - ByteBlowerLogic - INFO - Running ByteBlower scenario: DS_Combined from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 14:15:03,367 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_50_DS_Combined_RTT_50ms_20260105_141341/
+2026-01-05 14:15:03,368 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 14:15:03,368 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 14:15:03,748 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 14:15:04,309 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:15:04,310 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_50_DS_Combined_RTT_50ms_20260105_141341/
+  - DS_Combined - 20260105_141346_R2_1.html (4,376,639 bytes) - R2 HTML Report with L4S Column
+  - DS_Combined - 20260105_141346_1.json (1,947,150 bytes) - JSON Data
+  - DS_Combined - 20260105_141346_1.csv (592,706 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 14:15:19,431 - ByteBlowerCLI - INFO - ByteBlower only mode - file: HSI021_P20_vcmts_cm74375fd62c28.bbp
+2026-01-05 14:15:19,431 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 14:15:19,431 - ByteBlowerLogic - INFO - Running ByteBlower scenario: DS_LL_Only from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 14:16:35,959 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_0_DS_LL_Only_20260105_141519/
+2026-01-05 14:16:35,959 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 14:16:35,959 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_0_DS_LL_Only_20260105_141519/
+  - DS_LL_Only - 20260105_141521_R2_1.html (3,970,971 bytes) - R2 HTML Report with L4S Column
+  - DS_LL_Only - 20260105_141521_1.json (678,616 bytes) - JSON Data
+  - DS_LL_Only - 20260105_141521_1.csv (236,160 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 14:16:51,067 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 14:16:51,748 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:16:53,246 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:16:53,246 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 14:16:53,246 - ByteBlowerLogic - INFO - Running ByteBlower scenario: DS_LL_Only from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 14:18:09,946 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_10_DS_LL_Only_RTT_10ms_20260105_141651/
+2026-01-05 14:18:09,946 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 14:18:09,946 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 14:18:10,749 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 14:18:11,807 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:18:11,807 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_10_DS_LL_Only_RTT_10ms_20260105_141651/
+  - DS_LL_Only - 20260105_141655_R2_1.html (3,974,918 bytes) - R2 HTML Report with L4S Column
+  - DS_LL_Only - 20260105_141655_1.json (683,480 bytes) - JSON Data
+  - DS_LL_Only - 20260105_141655_1.csv (238,971 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 14:18:26,916 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 14:18:27,248 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:18:28,746 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:18:28,746 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 14:18:28,746 - ByteBlowerLogic - INFO - Running ByteBlower scenario: DS_LL_Only from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 14:19:45,569 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_20_DS_LL_Only_RTT_20ms_20260105_141826/
+2026-01-05 14:19:45,569 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 14:19:45,569 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 14:19:46,249 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 14:19:46,809 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:19:46,809 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_20_DS_LL_Only_RTT_20ms_20260105_141826/
+  - DS_LL_Only - 20260105_141831_R2_1.html (3,975,305 bytes) - R2 HTML Report with L4S Column
+  - DS_LL_Only - 20260105_141831_1.json (684,549 bytes) - JSON Data
+  - DS_LL_Only - 20260105_141831_1.csv (238,761 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 14:20:01,923 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 14:20:02,748 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:20:04,246 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:20:04,247 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 14:20:04,247 - ByteBlowerLogic - INFO - Running ByteBlower scenario: DS_LL_Only from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 14:21:21,014 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_30_DS_LL_Only_RTT_30ms_20260105_142001/
+2026-01-05 14:21:21,014 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 14:21:21,014 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 14:21:21,749 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 14:21:22,808 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:21:22,808 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_30_DS_LL_Only_RTT_30ms_20260105_142001/
+  - DS_LL_Only - 20260105_142006_R2_1.html (3,974,830 bytes) - R2 HTML Report with L4S Column
+  - DS_LL_Only - 20260105_142006_1.json (683,233 bytes) - JSON Data
+  - DS_LL_Only - 20260105_142006_1.csv (238,666 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 14:21:37,922 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 14:21:38,249 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:21:39,746 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:21:39,747 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 14:21:39,747 - ByteBlowerLogic - INFO - Running ByteBlower scenario: DS_LL_Only from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 14:22:56,641 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_40_DS_LL_Only_RTT_40ms_20260105_142137/
+2026-01-05 14:22:56,641 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 14:22:56,641 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 14:22:57,250 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 14:22:57,808 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:22:57,809 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_40_DS_LL_Only_RTT_40ms_20260105_142137/
+  - DS_LL_Only - 20260105_142142_R2_1.html (3,974,867 bytes) - R2 HTML Report with L4S Column
+  - DS_LL_Only - 20260105_142142_1.json (684,966 bytes) - JSON Data
+  - DS_LL_Only - 20260105_142142_1.csv (238,863 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 14:23:12,917 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 14:23:13,749 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:23:15,247 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:23:15,247 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 14:23:15,247 - ByteBlowerLogic - INFO - Running ByteBlower scenario: DS_LL_Only from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 14:24:32,139 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_50_DS_LL_Only_RTT_50ms_20260105_142312/
+2026-01-05 14:24:32,139 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 14:24:32,140 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 14:24:32,750 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 14:24:33,810 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:24:33,811 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_50_DS_LL_Only_RTT_50ms_20260105_142312/
+  - DS_LL_Only - 20260105_142317_R2_1.html (3,976,905 bytes) - R2 HTML Report with L4S Column
+  - DS_LL_Only - 20260105_142317_1.json (685,932 bytes) - JSON Data
+  - DS_LL_Only - 20260105_142317_1.csv (239,349 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 14:24:48,920 - ByteBlowerCLI - INFO - ByteBlower only mode - file: HSI021_P20_vcmts_cm74375fd62c28.bbp
+2026-01-05 14:24:48,921 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 14:24:48,921 - ByteBlowerLogic - INFO - Running ByteBlower scenario: US_LL_Only from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 14:26:04,587 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_0_US_LL_Only_20260105_142448/
+2026-01-05 14:26:04,587 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 14:26:04,587 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_0_US_LL_Only_20260105_142448/
+  - US_LL_Only - 20260105_142451_R2_1.html (3,981,752 bytes) - R2 HTML Report with L4S Column
+  - US_LL_Only - 20260105_142451_1.json (674,414 bytes) - JSON Data
+  - US_LL_Only - 20260105_142451_1.csv (245,202 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 14:26:19,696 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 14:26:20,249 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:26:21,746 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:26:21,747 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 14:26:21,747 - ByteBlowerLogic - INFO - Running ByteBlower scenario: US_LL_Only from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 14:27:38,601 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_10_US_LL_Only_RTT_10ms_20260105_142619/
+2026-01-05 14:27:38,601 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 14:27:38,601 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 14:27:39,250 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 14:27:40,311 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:27:40,311 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_10_US_LL_Only_RTT_10ms_20260105_142619/
+  - US_LL_Only - 20260105_142624_R2_1.html (3,986,085 bytes) - R2 HTML Report with L4S Column
+  - US_LL_Only - 20260105_142624_1.json (680,867 bytes) - JSON Data
+  - US_LL_Only - 20260105_142624_1.csv (247,990 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 14:27:55,423 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 14:27:55,749 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:27:57,247 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:27:57,248 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 14:27:57,248 - ByteBlowerLogic - INFO - Running ByteBlower scenario: US_LL_Only from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 14:29:13,211 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_20_US_LL_Only_RTT_20ms_20260105_142755/
+2026-01-05 14:29:13,211 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 14:29:13,211 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 14:29:13,251 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 14:29:14,308 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:29:14,309 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_20_US_LL_Only_RTT_20ms_20260105_142755/
+  - US_LL_Only - 20260105_142759_R2_1.html (3,985,245 bytes) - R2 HTML Report with L4S Column
+  - US_LL_Only - 20260105_142759_1.json (677,994 bytes) - JSON Data
+  - US_LL_Only - 20260105_142759_1.csv (246,856 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 14:29:29,421 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 14:29:30,249 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:29:31,748 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:29:31,748 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 14:29:31,748 - ByteBlowerLogic - INFO - Running ByteBlower scenario: US_LL_Only from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 14:30:48,553 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_30_US_LL_Only_RTT_30ms_20260105_142929/
+2026-01-05 14:30:48,553 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 14:30:48,553 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 14:30:49,250 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 14:30:50,311 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:30:50,312 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_30_US_LL_Only_RTT_30ms_20260105_142929/
+  - US_LL_Only - 20260105_142934_R2_1.html (3,986,296 bytes) - R2 HTML Report with L4S Column
+  - US_LL_Only - 20260105_142934_1.json (684,688 bytes) - JSON Data
+  - US_LL_Only - 20260105_142934_1.csv (248,860 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 14:31:05,421 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 14:31:05,750 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:31:07,248 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:31:07,248 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 14:31:07,248 - ByteBlowerLogic - INFO - Running ByteBlower scenario: US_LL_Only from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 14:32:24,514 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_40_US_LL_Only_RTT_40ms_20260105_143105/
+2026-01-05 14:32:24,514 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 14:32:24,514 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 14:32:24,751 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 14:32:25,308 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:32:25,308 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_40_US_LL_Only_RTT_40ms_20260105_143105/
+  - US_LL_Only - 20260105_143109_R2_1.html (3,985,044 bytes) - R2 HTML Report with L4S Column
+  - US_LL_Only - 20260105_143109_1.json (685,291 bytes) - JSON Data
+  - US_LL_Only - 20260105_143109_1.csv (249,089 bytes) - CSV Data
+=== End ByteBlower Reports ===
+2026-01-05 14:32:40,422 - PacketStormLogic - INFO - PacketStorm: login → start config → logout
+2026-01-05 14:32:41,248 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:32:42,748 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:32:42,749 - ByteBlowerLogic - INFO - Starting 1 ByteBlower iterations
+2026-01-05 14:32:42,749 - ByteBlowerLogic - INFO - Running ByteBlower scenario: US_LL_Only from HSI021_P20_vcmts_cm74375fd62c28.bbp (iteration 0)
+2026-01-05 14:33:58,652 - ByteBlowerLogic - INFO - ByteBlower completed successfully, output: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_50_US_LL_Only_RTT_50ms_20260105_143240/
+2026-01-05 14:33:58,652 - ByteBlowerLogic - INFO - ByteBlower completed: 1/1 iterations successful
+2026-01-05 14:33:58,652 - PacketStormLogic - INFO - PacketStorm: login → stop → logout
+2026-01-05 14:33:58,751 - PacketStormLogic - INFO - PacketStorm response: {"msg":"success, active emulation present","status":true}
+2026-01-05 14:33:59,309 - PacketStormLogic - INFO - PacketStorm response: {"status":true}
+2026-01-05 14:33:59,309 - ByteBlowerCLI - INFO - Workflow completed successfully
+
+=== ByteBlower Reports Generated ===
+Output Directory: /home/aphillips/Projects/Access_Architecture/LLD_TEST_CLT/Results/HSI021_RTT_50_US_LL_Only_RTT_50ms_20260105_143240/
+  - US_LL_Only - 20260105_143245_R2_1.html (3,986,355 bytes) - R2 HTML Report with L4S Column
+  - US_LL_Only - 20260105_143245_1.json (679,365 bytes) - JSON Data
+  - US_LL_Only - 20260105_143245_1.csv (247,344 bytes) - CSV Data
+=== End ByteBlower Reports ===
+Starting execution of 36 test commands...
+Total estimated time: 9.0 minutes (excluding test execution time)
+================================================================================
+[1/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario US_Classic_Only -test-group-name HSI021_RTT_0
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[2/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario US_Classic_Only -test-group-name HSI021_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[3/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario US_Classic_Only -test-group-name HSI021_RTT_20 -packetstorm --rtt vcmts20ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[4/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario US_Classic_Only -test-group-name HSI021_RTT_30 -packetstorm --rtt vcmts30ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[5/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario US_Classic_Only -test-group-name HSI021_RTT_40 -packetstorm --rtt vcmts40ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[6/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario US_Classic_Only -test-group-name HSI021_RTT_50 -packetstorm --rtt vcmts50ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[7/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario DS_Classic_Only -test-group-name HSI021_RTT_0
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[8/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario DS_Classic_Only -test-group-name HSI021_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[9/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario DS_Classic_Only -test-group-name HSI021_RTT_20 -packetstorm --rtt vcmts20ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[10/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario DS_Classic_Only -test-group-name HSI021_RTT_30 -packetstorm --rtt vcmts30ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[11/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario DS_Classic_Only -test-group-name HSI021_RTT_40 -packetstorm --rtt vcmts40ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[12/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario DS_Classic_Only -test-group-name HSI021_RTT_50 -packetstorm --rtt vcmts50ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[13/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario US_Combined -test-group-name HSI021_RTT_0
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[14/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario US_Combined -test-group-name HSI021_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[15/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario US_Combined -test-group-name HSI021_RTT_20 -packetstorm --rtt vcmts20ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[16/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario US_Combined -test-group-name HSI021_RTT_30 -packetstorm --rtt vcmts30ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[17/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario US_Combined -test-group-name HSI021_RTT_40 -packetstorm --rtt vcmts40ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[18/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario US_Combined -test-group-name HSI021_RTT_50 -packetstorm --rtt vcmts50ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[19/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario DS_Combined -test-group-name HSI021_RTT_0
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[20/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario DS_Combined -test-group-name HSI021_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[21/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario DS_Combined -test-group-name HSI021_RTT_20 -packetstorm --rtt vcmts20ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[22/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario DS_Combined -test-group-name HSI021_RTT_30 -packetstorm --rtt vcmts30ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[23/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario DS_Combined -test-group-name HSI021_RTT_40 -packetstorm --rtt vcmts40ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[24/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario DS_Combined -test-group-name HSI021_RTT_50 -packetstorm --rtt vcmts50ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[25/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario DS_LL_Only -test-group-name HSI021_RTT_0
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[26/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario DS_LL_Only -test-group-name HSI021_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[27/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario DS_LL_Only -test-group-name HSI021_RTT_20 -packetstorm --rtt vcmts20ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[28/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario DS_LL_Only -test-group-name HSI021_RTT_30 -packetstorm --rtt vcmts30ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[29/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario DS_LL_Only -test-group-name HSI021_RTT_40 -packetstorm --rtt vcmts40ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[30/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario DS_LL_Only -test-group-name HSI021_RTT_50 -packetstorm --rtt vcmts50ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[31/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario US_LL_Only -test-group-name HSI021_RTT_0
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[32/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario US_LL_Only -test-group-name HSI021_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[33/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario US_LL_Only -test-group-name HSI021_RTT_20 -packetstorm --rtt vcmts20ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[34/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario US_LL_Only -test-group-name HSI021_RTT_30 -packetstorm --rtt vcmts30ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[35/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario US_LL_Only -test-group-name HSI021_RTT_40 -packetstorm --rtt vcmts40ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+Waiting 15 seconds before next command...
+[36/36]
+Executing: python3 lld_test.py -byteblower --bbp HSI021_P20_vcmts_cm74375fd62c28.bbp --scenario US_LL_Only -test-group-name HSI021_RTT_50 -packetstorm --rtt vcmts50ms.json -iteration 1
+✓ Command completed successfully
+--------------------------------------------------------------------------------
+All tests completed!
