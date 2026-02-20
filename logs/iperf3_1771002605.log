@@ -1,0 +1,19 @@
+\n=== iPerf3 Individual Execution ===\nReturn code: 0\nSTDOUT:\ntotal 40
+drwxr-xr-x    4 mac_studio_server  staff    128 Feb 13 10:10 .
+drwxr-x---+ 116 mac_studio_server  staff   3712 Feb 13 10:10 ..
+-rw-r--r--    1 mac_studio_server  staff   2272 Feb 13 10:10 DS_HSI021_Classic_Only_1UDP_CL.txt
+-rw-r--r--    1 mac_studio_server  staff  14385 Feb 13 10:10 DS_HSI021_Classic_Only_4QUIC_CL.txt
+\nSTDERR:\nWarning: Permanently added '71.85.92.83' (ED25519) to the list of known hosts.
+\n\n=== iPerf3 Individual Execution ===\nReturn code: 0\nSTDOUT:\ntotal 40
+drwxr-xr-x    4 mac_studio_server  staff    128 Feb 13 10:10 .
+drwxr-x---+ 116 mac_studio_server  staff   3712 Feb 13 10:10 ..
+-rw-r--r--    1 mac_studio_server  staff   2276 Feb 13 10:11 DS_HSI021_Classic_Only_1UDP_CL.txt
+-rw-r--r--    1 mac_studio_server  staff  14386 Feb 13 10:11 DS_HSI021_Classic_Only_4QUIC_CL.txt
+\nSTDERR:\nWarning: Permanently added '71.85.92.83' (ED25519) to the list of known hosts.
+\n\n=== iPerf3 Individual Execution ===\nReturn code: 0\nSTDOUT:\ntotal 40
+drwxr-xr-x    4 mac_studio_server  staff    128 Feb 13 10:10 .
+drwxr-x---+ 116 mac_studio_server  staff   3712 Feb 13 10:10 ..
+-rw-r--r--    1 mac_studio_server  staff   2276 Feb 13 10:12 DS_HSI021_Classic_Only_1UDP_CL.txt
+-rw-r--r--    1 mac_studio_server  staff  14386 Feb 13 10:12 DS_HSI021_Classic_Only_4QUIC_CL.txt
+\nSTDERR:\nWarning: Permanently added '71.85.92.83' (ED25519) to the list of known hosts.
+\n

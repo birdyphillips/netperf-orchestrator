@@ -1,0 +1,39 @@
+Connecting to host 96.37.176.11, port 9207
+[  1] local 71.85.92.83 port 62835 connected to 96.37.176.11 port 9207
+[ ID] Interval           Transfer     Bitrate        Cwnd          RTT
+[  1]   0.00-1.01   sec  22.1 MBytes   184 Mbits/sec   70.5 KBytes   8ms     
+[  1]   1.01-2.01   sec  4.00 MBytes  33.6 Mbits/sec   46.2 KBytes   8ms     
+[  1]   2.01-3.01   sec  4.62 MBytes  38.8 Mbits/sec   68.8 KBytes   9ms     
+[  1]   3.01-4.01   sec  6.62 MBytes  55.5 Mbits/sec   93.3 KBytes   8ms     
+[  1]   4.01-5.01   sec  9.00 MBytes  75.6 Mbits/sec    120 KBytes   8ms     
+[  1]   5.01-6.01   sec  11.4 MBytes  95.4 Mbits/sec    148 KBytes   7ms     
+[  1]   6.01-7.01   sec  14.2 MBytes   120 Mbits/sec    179 KBytes   8ms     
+[  1]   7.01-8.01   sec  15.9 MBytes   133 Mbits/sec    192 KBytes   9ms     
+[  1]   8.01-9.01   sec  17.4 MBytes   146 Mbits/sec    219 KBytes   9ms     
+[  1]   9.01-10.01  sec  19.4 MBytes   163 Mbits/sec    250 KBytes   9ms     
+[  1]  10.01-11.01  sec  18.5 MBytes   155 Mbits/sec    163 KBytes   8ms     
+[  1]  11.01-12.01  sec  13.1 MBytes   110 Mbits/sec    165 KBytes   9ms     
+[  1]  12.01-13.01  sec  15.4 MBytes   129 Mbits/sec    191 KBytes   9ms     
+[  1]  13.01-14.01  sec  17.2 MBytes   145 Mbits/sec    220 KBytes   8ms     
+[  1]  14.01-15.01  sec  19.5 MBytes   164 Mbits/sec    249 KBytes   9ms     
+[  1]  15.01-16.01  sec  21.5 MBytes   180 Mbits/sec    281 KBytes   9ms     
+[  1]  16.01-17.01  sec  23.2 MBytes   195 Mbits/sec    313 KBytes   10ms     
+[  1]  17.01-18.01  sec  19.8 MBytes   166 Mbits/sec    180 KBytes   11ms     
+[  1]  18.01-19.01  sec  16.0 MBytes   134 Mbits/sec    204 KBytes   8ms     
+[  1]  19.01-20.01  sec  17.6 MBytes   148 Mbits/sec    236 KBytes   9ms     
+[  1]  20.01-21.01  sec  20.4 MBytes   171 Mbits/sec    267 KBytes   9ms     
+[  1]  21.01-22.01  sec  22.9 MBytes   191 Mbits/sec    299 KBytes   11ms     
+[  1]  22.01-23.01  sec  24.8 MBytes   209 Mbits/sec    330 KBytes   10ms     
+[  1]  23.01-24.01  sec  24.6 MBytes   206 Mbits/sec    225 KBytes   9ms     
+[  1]  24.01-25.01  sec  18.1 MBytes   152 Mbits/sec    231 KBytes   9ms     
+[  1]  25.01-26.01  sec  20.0 MBytes   168 Mbits/sec    263 KBytes   9ms     
+[  1]  26.01-27.01  sec  22.2 MBytes   186 Mbits/sec    295 KBytes   10ms     
+[  1]  27.01-28.01  sec  24.1 MBytes   203 Mbits/sec    317 KBytes   10ms     
+[  1]  28.01-29.01  sec  25.9 MBytes   217 Mbits/sec    350 KBytes   10ms     
+[  1]  29.01-30.01  sec  24.8 MBytes   207 Mbits/sec    253 KBytes   11ms     
+- - - - - - - - - - - - - - - - - - - - - - - - -
+[ ID] Interval           Transfer     Bitrate         Jitter    Lost/Total Datagrams
+[  1]   0.00-30.01  sec   534 MBytes   149 Mbits/sec                  sender
+[  1]   0.00-30.02  sec   534 MBytes   149 Mbits/sec                  receiver
+
+iperf Done.

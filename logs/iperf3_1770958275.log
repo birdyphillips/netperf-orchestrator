@@ -1,0 +1,7 @@
+\n=== iPerf3 Individual Execution ===\nReturn code: 0\nSTDOUT:\ntotal 96
+drwxrwxr-x  2 lld lld  4096 Feb 12 21:51 .
+drwxr-x--- 32 lld lld 16384 Feb 12 21:51 ..
+-rw-rw-r--  1 lld lld 16412 Feb 12 21:51 US_HSI021_Classic_Only_1UDP_CL.json
+-rw-rw-r--  1 lld lld 53829 Feb 12 21:51 US_HSI021_Classic_Only_4TCP_CL.json
+\nSTDERR:\nWarning: Permanently added '96.37.176.7' (ED25519) to the list of known hosts.
+\n

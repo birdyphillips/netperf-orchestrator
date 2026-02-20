@@ -1,0 +1,25 @@
+\n=== iPerf3 Individual Execution ===\nReturn code: 0\nSTDOUT:\ntotal 168
+drwxr-xr-x    6 lld_mac_client  staff    192 Feb 13 08:58 .
+drwxr-x---+ 161 lld_mac_client  staff   5152 Feb 13 08:58 ..
+-rw-r--r--    1 lld_mac_client  staff  15090 Feb 13 08:59 US_HSI018_Combined_1QUIC_LL.json
+-rw-r--r--    1 lld_mac_client  staff  16173 Feb 13 08:59 US_HSI018_Combined_1UDP_CL.json
+-rw-r--r--    1 lld_mac_client  staff  16152 Feb 13 08:59 US_HSI018_Combined_1UDP_LL.json
+-rw-r--r--    1 lld_mac_client  staff  36516 Feb 13 08:59 US_HSI018_Combined_4QUIC_CL.json
+\nSTDERR:\nWarning: Permanently added '96.37.176.11' (ED25519) to the list of known hosts.
+\n\n=== iPerf3 Individual Execution ===\nReturn code: 0\nSTDOUT:\ntotal 168
+drwxr-xr-x    6 lld_mac_client  staff    192 Feb 13 08:58 .
+drwxr-x---+ 161 lld_mac_client  staff   5152 Feb 13 08:58 ..
+-rw-r--r--    1 lld_mac_client  staff  15140 Feb 13 08:59 US_HSI018_Combined_1QUIC_LL.json
+-rw-r--r--    1 lld_mac_client  staff  16196 Feb 13 08:59 US_HSI018_Combined_1UDP_CL.json
+-rw-r--r--    1 lld_mac_client  staff  16239 Feb 13 08:59 US_HSI018_Combined_1UDP_LL.json
+-rw-r--r--    1 lld_mac_client  staff  36476 Feb 13 08:59 US_HSI018_Combined_4QUIC_CL.json
+\nSTDERR:\nWarning: Permanently added '96.37.176.11' (ED25519) to the list of known hosts.
+\n\n=== iPerf3 Individual Execution ===\nReturn code: 0\nSTDOUT:\ntotal 168
+drwxr-xr-x    6 lld_mac_client  staff    192 Feb 13 08:58 .
+drwxr-x---+ 161 lld_mac_client  staff   5152 Feb 13 08:58 ..
+-rw-r--r--    1 lld_mac_client  staff  15138 Feb 13 09:00 US_HSI018_Combined_1QUIC_LL.json
+-rw-r--r--    1 lld_mac_client  staff  16165 Feb 13 09:00 US_HSI018_Combined_1UDP_CL.json
+-rw-r--r--    1 lld_mac_client  staff  16171 Feb 13 09:00 US_HSI018_Combined_1UDP_LL.json
+-rw-r--r--    1 lld_mac_client  staff  36500 Feb 13 09:00 US_HSI018_Combined_4QUIC_CL.json
+\nSTDERR:\nWarning: Permanently added '96.37.176.11' (ED25519) to the list of known hosts.
+\n

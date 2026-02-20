@@ -1,0 +1,951 @@
+
+=== ByteBlower Iteration 1 ===
+Command: /home/aphillips/Projects/ByteBlower/ByteBlower-CLT --project bb_flows/HSI016_P18_vcmts_cme0dbkd1613d18.bbp --output Results/HSI029_ByteBlower_20260218_222436/US_Combined/ -scenario US_Combined
+Return code: 0
+STDOUT:
+ByteBlower CLT 2.22.6 is running !
+API loaded, configuring excentis logger.
+Configuring excentis logger level to WARNING.
+Sending excentis logger to console.
+[EL Info]: 2026-02-18 22:26:01.647--ServerSession(853193464)--EclipseLink, version: Eclipse Persistence Services - 3.0.0.v202012081001
+handling event
+[EL Warning]: metadata: 2026-02-18 22:26:02.183--ServerSession(58950202)--The reference column name [snapshot_id] mapped on the element [field rxCounters] does not correspond to a valid id or basic field/column on the mapping reference. Will use referenced column name as provided.
+[EL Warning]: metadata: 2026-02-18 22:26:02.183--ServerSession(58950202)--The reference column name [snapshot_id] mapped on the element [field txCounters] does not correspond to a valid id or basic field/column on the mapping reference. Will use referenced column name as provided.
+[EL Warning]: metadata: 2026-02-18 22:26:02.184--ServerSession(58950202)--The reference column name [snapshot_id] mapped on the element [field retransCounters] does not correspond to a valid id or basic field/column on the mapping reference. Will use referenced column name as provided.
+[EL Info]: 2026-02-18 22:26:02.227--ServerSession(58950202)--EclipseLink, version: Eclipse Persistence Services - 3.0.0.v202012081001
+!SESSION 2026-02-18 22:26:00.102 -----------------------------------------------
+eclipse.buildId=2.22.6-16357
+java.version=11.0.13
+java.vendor=Eclipse Adoptium
+BootLoader constants: OS=linux, ARCH=x86_64, WS=gtk, NL=en_US
+Framework arguments:  --project bb_flows/HSI016_P18_vcmts_cme0dbkd1613d18.bbp --output Results/HSI029_ByteBlower_20260218_222436/US_Combined/ -scenario US_Combined
+Command-line arguments:  -os linux -ws gtk -arch x86_64 -consolelog --project bb_flows/HSI016_P18_vcmts_cme0dbkd1613d18.bbp --output Results/HSI029_ByteBlower_20260218_222436/US_Combined/ -scenario US_Combined
+
+!ENTRY com.excentis.products.byteblower.model.reader 1 0 2026-02-18 22:26:02.488
+!MESSAGE Building docking info: com.excentis.products.byteblower.model.reader.impl.ByteBlowerGuiPortConfigurationReaderImpl@436a281f on using id=0
+
+!ENTRY com.excentis.products.byteblower.model.reader 1 0 2026-02-18 22:26:02.489
+!MESSAGE Port id is 17
+
+!ENTRY com.excentis.products.byteblower.model.reader 1 0 2026-02-18 22:26:02.494
+!MESSAGE Building docking info: com.excentis.products.byteblower.model.reader.impl.ByteBlowerGuiPortConfigurationReaderImpl@746ecb94 on using id=1
+
+!ENTRY com.excentis.products.byteblower.model.reader 1 0 2026-02-18 22:26:02.495
+!MESSAGE Port id is -1
+all created
+Broadcast is false 
+Broadcast is false 
+Scenario is being started!
+ByteBlower-CLT: Test finished
+73123 [Worker-2: Generating report] WARN  net.sf.jasperreports.engine.xml.JRTextFieldFactory  - The 'isStretchWithOverflow' attribute is deprecated. Use the 'textAdjust' attribute instead.
+75833 [Worker-2: Generating report] WARN  net.sf.jasperreports.engine.xml.JRTextFieldFactory  - The 'isStretchWithOverflow' attribute is deprecated. Use the 'textAdjust' attribute instead.
+File deleted successfully
+Rendering took: 0.124697636 
+File deleted successfully
+ByteBlower-CLT: Report generated: Results/HSI029_ByteBlower_20260218_222436/US_Combined/US_Combined - 20260218_222602_R1_1.html
+ByteBlower-CLT: Report generated: Results/HSI029_ByteBlower_20260218_222436/US_Combined/US_Combined - 20260218_222602_1.json
+ByteBlower-CLT: Report generated: Results/HSI029_ByteBlower_20260218_222436/US_Combined/US_Combined - 20260218_222602_1.csv
+ByteBlower-CLT: Report generated: /home/aphillips/Projects/LLD_TEST_CLT_Dev_linux_compatible/Results/HSI029_ByteBlower_20260218_222436/US_Combined/US_Combined - 20260218_222602_R3_1.html
+ByteBlower-CLT: Report generated: /home/aphillips/Projects/LLD_TEST_CLT_Dev_linux_compatible/Results/HSI029_ByteBlower_20260218_222436/US_Combined/US_Combined - 20260218_222602_R2_1.html
+ByteBlower-CLT: FINISHED
+
+STDERR:
+Feb 18, 2026 10:26:01 PM com.excentis.products.byteblower.communication.Activator start
+INFO: Loaded ByteBlower API for Java specification version 'null'
+Feb 18, 2026 10:26:01 PM com.excentis.products.byteblower.run.objects.RuntimeByteBlower <init>
+INFO: Running version 2.22.6 of the ByteBlower API
+Feb 18, 2026 10:26:01 PM com.excentis.products.byteblower.datalibs.DatabaseConfiguration createH2
+INFO: Enabling H2 Auto server
+Feb 18, 2026 10:26:01 PM com.excentis.products.byteblower.results.dataprovider.data.MetaDataPersistenceController getInstance
+INFO: creating Metadatabase
+Feb 18, 2026 10:26:01 PM com.excentis.products.byteblower.datalibs.DatabaseConfiguration createH2
+INFO: Enabling H2 Auto server
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Initialize scenario [InitializeScenario]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$1 onScenarioInitializeStarting
+INFO: action callback: scenario initialization starting!
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Create ports [CreatePorts]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Create servers [CreateServers]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Create server 10.241.0.66 [CreateServer]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$2 onServerCreated
+FINER: action callback: server '10.241.0.66' created (version 2.22.6)
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Estimate the time difference between local machine and server [ServerTimeSynchronization]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Create port 'PORT_18' [CreatePort]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$3 onPortCreated
+FINER: action callback: port 'PORT_18' created on interface 'trunk-1-18'
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Create port 'PORT_1_CMTS' [CreatePort]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$3 onPortCreated
+FINER: action callback: port 'PORT_1_CMTS' created on interface 'nontrunk-1'
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure ports [ConfigurePorts]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure port 'PORT_18' [ConfigurePort]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure layer 2 of 'PORT_18' [ConfigureLayer2]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$4 onLayer2Configured
+FINER: action callback: layer2 configured on port 'PORT_18' (config ethiimac=00-FF-BB-67-00-05)
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure layer 2.5 of 'PORT_18' [ConfigureLayer25]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure layer 3 of 'PORT_18' [ConfigureLayer3]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$8 onLayer3Configuring
+FINER: action callback: layer3 configurating on port 'PORT_18'
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Perform DHCP on 'PORT_18' [PerformDhcp]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure port 'PORT_1_CMTS' [ConfigurePort]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure layer 2 of 'PORT_1_CMTS' [ConfigureLayer2]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$4 onLayer2Configured
+FINER: action callback: layer2 configured on port 'PORT_1_CMTS' (config ethiimac=00-FF-BB-D8-00-01)
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure layer 2.5 of 'PORT_1_CMTS' [ConfigureLayer25]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure layer 3 of 'PORT_1_CMTS' [ConfigureLayer3]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$8 onLayer3Configuring
+FINER: action callback: layer3 configurating on port 'PORT_1_CMTS'
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$8 onLayer3Configured
+FINER: action callback: layer3 configured on port 'PORT_1_CMTS' (config ip=96.34.184.159)
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure port 'PORT_18' [ConfigurePort]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure layer 3 of 'PORT_18' [ConfigureLayer3]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Perform DHCP on 'PORT_18' [PerformDhcp]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$6 onDHCPPerformed
+FINER: action callback: dhcp on port 'PORT_18' resulted in IP address 96.37.176.8
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$8 onLayer3Configured
+FINER: action callback: layer3 configured on port 'PORT_18' (config ip=96.37.176.8)
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$8 onLayer3Configured
+FINER: action callback: layer3 configured on port 'PORT_18' (config ip=96.37.176.8)
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$8 onLayer3Configured
+FINER: action callback: layer3 configured on port 'PORT_18' (config ip=96.37.176.8)
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$9 onPortConfigured
+FINER: action callback: port 'PORT_18' configured
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure port 'PORT_1_CMTS' [ConfigurePort]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure layer 3 of 'PORT_1_CMTS' [ConfigureLayer3]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$9 onPortConfigured
+FINER: action callback: port 'PORT_1_CMTS' configured
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Create flows [CreateFlows]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Create flow 'US_TCP_FLOW-1' [CreateFlow]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$10 onFlowCreated
+FINER: action callback: flow 'US_TCP_FLOW-1' created
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Create flow 'US_UDP_FLOW-1' [CreateFlow]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$10 onFlowCreated
+FINER: action callback: flow 'US_UDP_FLOW-1' created
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Create flow 'US_UDP_FLOW_L4S' [CreateFlow]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$10 onFlowCreated
+FINER: action callback: flow 'US_UDP_FLOW_L4S' created
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Create flow 'US_TCP_FLOW_L4S' [CreateFlow]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$10 onFlowCreated
+FINER: action callback: flow 'US_TCP_FLOW_L4S' created
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure flows [ConfigureFlows]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure flow 'US_TCP_FLOW-1' [ConfigureFlow]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure end points for flow 'US_TCP_FLOW-1' [ConfigureFlowEndPoints]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure applications for flow 'US_TCP_FLOW-1' [ConfigureFlowApplications]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure applications for flow 'US_TCP_FLOW-1' (HTTP) [ConfigureFlowApplicationsHttp]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure traffic for flow 'US_TCP_FLOW-1' [ConfigureFlowTraffic]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure traffic for flow 'US_TCP_FLOW-1' (HTTP) [ConfigureFlowTrafficHttp]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Address resolution by port 'PORT_1_CMTS' for IP 96.37.176.8 [ResolveMacAddress]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$11 onFlowConfigured
+FINER: action callback: flow 'US_TCP_FLOW-1' configured
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure flow 'US_TCP_FLOW_L4S' [ConfigureFlow]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure end points for flow 'US_TCP_FLOW_L4S' [ConfigureFlowEndPoints]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure applications for flow 'US_TCP_FLOW_L4S' [ConfigureFlowApplications]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure applications for flow 'US_TCP_FLOW_L4S' (HTTP) [ConfigureFlowApplicationsHttp]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure traffic for flow 'US_TCP_FLOW_L4S' [ConfigureFlowTraffic]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure traffic for flow 'US_TCP_FLOW_L4S' (HTTP) [ConfigureFlowTrafficHttp]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Address resolution by port 'PORT_1_CMTS' for IP 96.37.176.8 [ResolveMacAddress]
+Feb 18, 2026 10:26:02 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$11 onFlowConfigured
+FINER: action callback: flow 'US_TCP_FLOW_L4S' configured
+Feb 18, 2026 10:26:03 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure flow 'US_UDP_FLOW-1' [ConfigureFlow]
+Feb 18, 2026 10:26:03 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure end points for flow 'US_UDP_FLOW-1' [ConfigureFlowEndPoints]
+Feb 18, 2026 10:26:03 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure applications for flow 'US_UDP_FLOW-1' [ConfigureFlowApplications]
+Feb 18, 2026 10:26:03 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure traffic for flow 'US_UDP_FLOW-1' [ConfigureFlowTraffic]
+Feb 18, 2026 10:26:03 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure traffic for flow 'US_UDP_FLOW-1' (frame blasting) [ConfigureFlowTrafficFb]
+Feb 18, 2026 10:26:03 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Create frames for flow 'US_UDP_FLOW-1' [CreateFrames]
+Feb 18, 2026 10:26:03 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Create frame 'FRAME_UDP_1_Classic' for flow 'US_UDP_FLOW-1' [CreateFrame]
+Feb 18, 2026 10:26:03 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Address resolution by port 'PORT_18' for IP 96.34.184.159 [ResolveMacAddress]
+Feb 18, 2026 10:26:03 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$11 onFlowConfigured
+FINER: action callback: flow 'US_UDP_FLOW-1' configured
+Feb 18, 2026 10:26:03 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure flow 'US_UDP_FLOW_L4S' [ConfigureFlow]
+Feb 18, 2026 10:26:03 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure end points for flow 'US_UDP_FLOW_L4S' [ConfigureFlowEndPoints]
+Feb 18, 2026 10:26:03 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure applications for flow 'US_UDP_FLOW_L4S' [ConfigureFlowApplications]
+Feb 18, 2026 10:26:03 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure traffic for flow 'US_UDP_FLOW_L4S' [ConfigureFlowTraffic]
+Feb 18, 2026 10:26:03 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Configure traffic for flow 'US_UDP_FLOW_L4S' (frame blasting) [ConfigureFlowTrafficFb]
+Feb 18, 2026 10:26:03 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Create frames for flow 'US_UDP_FLOW_L4S' [CreateFrames]
+Feb 18, 2026 10:26:03 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Create frame 'FRAME_UDP_2_L4S' for flow 'US_UDP_FLOW_L4S' [CreateFrame]
+Feb 18, 2026 10:26:03 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Address resolution by port 'PORT_18' for IP 96.34.184.159 [ResolveMacAddress]
+Feb 18, 2026 10:26:03 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$11 onFlowConfigured
+FINER: action callback: flow 'US_UDP_FLOW_L4S' configured
+Feb 18, 2026 10:26:03 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Improving flow filters [ImproveFilters]
+Feb 18, 2026 10:26:03 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Send scouting frames [SendScoutingFrames]
+Feb 18, 2026 10:26:04 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$1 onScenarioInitializeFinished
+INFO: action callback: scenario initialized!
+Feb 18, 2026 10:26:04 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$1 onScenarioInitializeFinished
+FINEST: debug: full scenario description:
+ByteBlower: {
+  ByteBlowerServer: {
+    Timestamp: 1771457258949958173
+    ByteBlowerServerServiceInfo: {
+      Connection.Host: 10.241.0.66
+      Connection.IPAddress: 10.241.0.66
+      Connection.PortNumber: 9002
+      MachineID: 1d820d084762b89c9ab95aae5e0def87
+      Management.IPAddress: 10.241.0.66
+      Series: 4100
+      ServiceID: 3df81cf3-347b-4eb2-8d3d-ccfec9064994
+      Type: ByteBlower
+      Version: 2.22.6
+    }
+    PhysicalInterface: {
+      LinkStatus: Online
+      Name: trunk-1
+      NumberOfInterfaces: 24
+      Type: trunk
+      ByteBlowerInterface: {
+        Name: trunk-1-1
+      }
+      ByteBlowerInterface: {
+        Name: trunk-1-2
+      }
+      ByteBlowerInterface: {
+        Name: trunk-1-3
+      }
+      ByteBlowerInterface: {
+        Name: trunk-1-4
+      }
+      ByteBlowerInterface: {
+        Name: trunk-1-5
+      }
+      ByteBlowerInterface: {
+        Name: trunk-1-6
+      }
+      ByteBlowerInterface: {
+        Name: trunk-1-7
+      }
+      ByteBlowerInterface: {
+        Name: trunk-1-8
+      }
+      ByteBlowerInterface: {
+        Name: trunk-1-9
+      }
+      ByteBlowerInterface: {
+        Name: trunk-1-10
+      }
+      ByteBlowerInterface: {
+        Name: trunk-1-11
+      }
+      ByteBlowerInterface: {
+        Name: trunk-1-12
+      }
+      ByteBlowerInterface: {
+        Name: trunk-1-13
+      }
+      ByteBlowerInterface: {
+        Name: trunk-1-14
+      }
+      ByteBlowerInterface: {
+        Name: trunk-1-15
+      }
+      ByteBlowerInterface: {
+        Name: trunk-1-16
+      }
+      ByteBlowerInterface: {
+        Name: trunk-1-17
+      }
+      ByteBlowerInterface: {
+        Name: trunk-1-18
+        ByteBlowerPort: {
+          MDL: 1514
+          Maximum MDL: 8188
+          Name: trunk-1-18
+          EthernetConfiguration: {
+            MAC: 00-FF-BB-67-00-05
+          }
+          IPv4Configuration: {
+            Gateway: 96.37.176.1
+            IP: 96.37.176.8
+            Netmask: 255.255.255.224
+            DHCPv4: {
+              BroadcastFlag.Enabled: 0
+              InitialDiscoverTimeout: 1.00s
+              InitialRequestTimeout: 1.00s
+              MaximumDiscoverRetries: 5
+              MaximumRequestRetries: 5
+              Release.Enabled: 1
+              RetransmissionPolicy: FixedTiming
+            }
+          }
+          HTTPServer: {
+            History.Sampling.BufferLength: 6
+            History.Sampling.IntervalDuration: 1000000000
+            LocalPort: 10968
+            NumberOfClients: 0
+            Status: Running
+            TCP.CongestionAvoidanceAlgorithm: sack-with-cubic
+            TCP.History.Sampling.BufferLength: 6
+            TCP.History.Sampling.IntervalDuration: 1000000000
+            TCP.MaximumSegmentSize: 65535
+            TCP.ReceiveWindow.InitialSize: 65535
+            TCP.ReceiveWindow.ScalingEnabled: 1
+            TCP.ReceiveWindow.ScalingValue: 7
+          }
+          HTTPServer: {
+            History.Sampling.BufferLength: 6
+            History.Sampling.IntervalDuration: 1000000000
+            LocalPort: 51650
+            NumberOfClients: 0
+            Status: Running
+            TCP.CongestionAvoidanceAlgorithm: sack-with-cubic
+            TCP.History.Sampling.BufferLength: 6
+            TCP.History.Sampling.IntervalDuration: 1000000000
+            TCP.MaximumSegmentSize: 65535
+            TCP.ReceiveWindow.InitialSize: 65535
+            TCP.ReceiveWindow.ScalingEnabled: 1
+            TCP.ReceiveWindow.ScalingValue: 7
+          }
+          Stream: {
+            InitialTimeToWait: 0.00ns
+            InterPacketGap: 10.00ms
+            NumberOfFrames: 6000
+            Frame: {
+              Contents: 0a000000010300ffbb6700050800450003f202780000fe118d936025b0086022b89f1000100003deebdd017863656e7469732042797465426c6f7765722044656661756c74205061796c6f61642e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+              EnableL3AutoChecksum: 1
+              EnableL3AutoLength: 1
+              EnableL4AutoChecksum: 1
+              EnableL4AutoLength: 1
+              FrameTagTx: {
+                Enabled: 1
+                Position: 8
+                Type: SequenceNumber
+                FrameTagMetrics: {
+                  Alignment: 1
+                  Length: 8
+                }
+                FrameTagFormat: {
+                  Format: SequenceNumber-0_CRC
+                  Type: SequenceNumber
+                }
+              }
+              FrameTagTx: {
+                Enabled: 1
+                Position: 16
+                Type: TimeStamp
+                FrameTagMetrics: {
+                  Alignment: 1
+                  Length: 8
+                }
+                FrameTagFormat: {
+                  Format: TimeStamp-10Nanoseconds
+                  Type: TimeStamp
+                }
+              }
+            }
+            StreamResultHistory: {
+              Refresh.Timestamp: 1771457258.95s
+              Sampling.BufferLength: 6
+              Sampling.IntervalDuration: 1.00s
+            }
+          }
+          Stream: {
+            InitialTimeToWait: 0.00ns
+            InterPacketGap: 10.00ms
+            NumberOfFrames: 6000
+            Frame: {
+              Contents: 0a000000010300ffbb670005080045b403f202780000b811d2df6025b0086022b89f1000100003deeadd027863656e7469732042797465426c6f7765722044656661756c74205061796c6f61642e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+              EnableL3AutoChecksum: 1
+              EnableL3AutoLength: 1
+              EnableL4AutoChecksum: 1
+              EnableL4AutoLength: 1
+              FrameTagTx: {
+                Enabled: 1
+                Position: 8
+                Type: SequenceNumber
+                FrameTagMetrics: {
+                  Alignment: 1
+                  Length: 8
+                }
+                FrameTagFormat: {
+                  Format: SequenceNumber-0_CRC
+                  Type: SequenceNumber
+                }
+              }
+              FrameTagTx: {
+                Enabled: 1
+                Position: 16
+                Type: TimeStamp
+                FrameTagMetrics: {
+                  Alignment: 1
+                  Length: 8
+                }
+                FrameTagFormat: {
+                  Format: TimeStamp-10Nanoseconds
+                  Type: TimeStamp
+                }
+              }
+            }
+            StreamResultHistory: {
+              Refresh.Timestamp: 1771457258.95s
+              Sampling.BufferLength: 6
+              Sampling.IntervalDuration: 1.00s
+            }
+          }
+        }
+      }
+      ByteBlowerInterface: {
+        Name: trunk-1-19
+      }
+      ByteBlowerInterface: {
+        Name: trunk-1-20
+      }
+      ByteBlowerInterface: {
+        Name: trunk-1-21
+      }
+      ByteBlowerInterface: {
+        Name: trunk-1-22
+      }
+      ByteBlowerInterface: {
+        Name: trunk-1-23
+      }
+      ByteBlowerInterface: {
+        Name: trunk-1-24
+      }
+    }
+    PhysicalInterface: {
+      LinkStatus: Online
+      Name: nontrunk-1
+      NumberOfInterfaces: 1
+      Type: nontrunk
+      ByteBlowerInterface: {
+        Name: nontrunk-1
+        ByteBlowerPort: {
+          MDL: 1514
+          Maximum MDL: 8192
+          Name: nontrunk-1
+          EthernetConfiguration: {
+            MAC: 00-FF-BB-D8-00-01
+          }
+          IPv4Configuration: {
+            Gateway: 96.34.184.158
+            IP: 96.34.184.159
+            Netmask: 255.255.255.0
+          }
+          HTTPClient: {
+            Capture.Enabled: 0
+            ClientId: BBhttpC3352462899
+            FlowLabel: 0
+            HasSession: 0
+            History.Sampling.BufferLength: 6
+            History.Sampling.IntervalDuration: 1000000000
+            Local.Port: 24095
+            Remote.Address: 96.37.176.8
+            Remote.Port: 10968
+            Request.Duration: 60.00s
+            Request.Method: GET
+            Request.Size: 0
+            Request.StartType: scheduled
+            Request.Status: Configuration
+            Request.URI: (empty)
+            ServerClientId: BBhttpS3982999952/BBhttpC3352462899
+            ServerId: BBhttpS3982999952
+            TCP.CongestionAvoidanceAlgorithm: sack-with-cubic
+            TCP.EnablePrague: 0
+            TCP.History.Sampling.BufferLength: 6
+            TCP.History.Sampling.IntervalDuration: 1000000000
+            TCP.MaximumSegmentSize: 65535
+            TCP.ReceiveWindow.InitialSize: 65535
+            TCP.ReceiveWindow.ScalingEnabled: 1
+            TCP.ReceiveWindow.ScalingValue: 7
+            TypeOfService: 0
+            HTTPRequestPage: {
+              InitialTimeToWait: 0.00ns
+            }
+          }
+          HTTPClient: {
+            Capture.Enabled: 0
+            ClientId: BBhttpC1376996611
+            FlowLabel: 0
+            HasSession: 0
+            History.Sampling.BufferLength: 6
+            History.Sampling.IntervalDuration: 1000000000
+            Local.Port: 3914
+            Remote.Address: 96.37.176.8
+            Remote.Port: 51650
+            Request.Duration: 60.00s
+            Request.Method: GET
+            Request.Size: 0
+            Request.StartType: scheduled
+            Request.Status: Configuration
+            Request.URI: (empty)
+            ServerClientId: BBhttpS1035799098/BBhttpC1376996611
+            ServerId: BBhttpS1035799098
+            TCP.CongestionAvoidanceAlgorithm: sack-with-cubic
+            TCP.EnablePrague: 1
+            TCP.History.Sampling.BufferLength: 6
+            TCP.History.Sampling.IntervalDuration: 1000000000
+            TCP.MaximumSegmentSize: 65535
+            TCP.ReceiveWindow.InitialSize: 65535
+            TCP.ReceiveWindow.ScalingEnabled: 1
+            TCP.ReceiveWindow.ScalingValue: 7
+            TypeOfService: 0
+            HTTPRequestPage: {
+              InitialTimeToWait: 0.00ns
+            }
+          }
+          LatencyDistribution: {
+            Filter: ip and ip src 96.37.176.8 and ip dst 96.34.184.159 and udp src port 4096 and udp dst port 4096 and udp[8:1]=0x01 and len=1024
+          }
+          LatencyBasic: {
+            Filter: ip and ip src 96.37.176.8 and ip dst 96.34.184.159 and udp src port 4096 and udp dst port 4096 and udp[8:1]=0x01 and len=1024
+            FrameTagRx: {
+              Position: 16
+              Type: TimeStamp
+              FrameTagFormat: {
+                Format: TimeStamp-10Nanoseconds
+                Type: TimeStamp
+              }
+            }
+            LatencyBasicResultHistory: {
+              Refresh.Timestamp: 1771457258.95s
+              Sampling.BufferLength: 76
+              Sampling.IntervalDuration: 130.00ms
+            }
+          }
+          OutOfSequence: {
+            Filter: ip and ip src 96.37.176.8 and ip dst 96.34.184.159 and udp src port 4096 and udp dst port 4096 and udp[8:1]=0x01 and len=1024
+            FrameTagRx: {
+              Position: 8
+              Type: SequenceNumber
+              FrameTagFormat: {
+                Format: SequenceNumber-0_CRC
+                Type: SequenceNumber
+              }
+            }
+            OutOfSequenceBasicResultHistory: {
+              Refresh.Timestamp: 1771457258.95s
+              Sampling.BufferLength: 76
+              Sampling.Duration: 130.00ms
+            }
+          }
+          TriggerBasic: {
+            Filter: ip and ip src 96.37.176.8 and ip dst 96.34.184.159 and udp src port 4096 and udp dst port 4096 and udp[8:1]=0x01 and len=1024
+            TriggerBasicResultHistory: {
+              Refresh.Timestamp: 1771457258.95s
+              Sampling.BufferLength: 76
+              Sampling.IntervalDuration: 130.00ms
+            }
+          }
+          LatencyDistribution: {
+            Filter: ip and ip src 96.37.176.8 and ip dst 96.34.184.159 and udp src port 4096 and udp dst port 4096 and udp[8:1]=0x02 and len=1024
+          }
+          LatencyBasic: {
+            Filter: ip and ip src 96.37.176.8 and ip dst 96.34.184.159 and udp src port 4096 and udp dst port 4096 and udp[8:1]=0x02 and len=1024
+            FrameTagRx: {
+              Position: 16
+              Type: TimeStamp
+              FrameTagFormat: {
+                Format: TimeStamp-10Nanoseconds
+                Type: TimeStamp
+              }
+            }
+            LatencyBasicResultHistory: {
+              Refresh.Timestamp: 1771457258.95s
+              Sampling.BufferLength: 76
+              Sampling.IntervalDuration: 130.00ms
+            }
+          }
+          OutOfSequence: {
+            Filter: ip and ip src 96.37.176.8 and ip dst 96.34.184.159 and udp src port 4096 and udp dst port 4096 and udp[8:1]=0x02 and len=1024
+            FrameTagRx: {
+              Position: 8
+              Type: SequenceNumber
+              FrameTagFormat: {
+                Format: SequenceNumber-0_CRC
+                Type: SequenceNumber
+              }
+            }
+            OutOfSequenceBasicResultHistory: {
+              Refresh.Timestamp: 1771457258.95s
+              Sampling.BufferLength: 76
+              Sampling.Duration: 130.00ms
+            }
+          }
+          TriggerBasic: {
+            Filter: ip and ip src 96.37.176.8 and ip dst 96.34.184.159 and udp src port 4096 and udp dst port 4096 and udp[8:1]=0x02 and len=1024
+            TriggerBasicResultHistory: {
+              Refresh.Timestamp: 1771457258.95s
+              Sampling.BufferLength: 76
+              Sampling.IntervalDuration: 130.00ms
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+Feb 18, 2026 10:26:04 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Running scenario [RunScenario]
+Feb 18, 2026 10:26:04 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunStarting
+INFO: action callback: scenario run starting!
+Feb 18, 2026 10:26:04 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Start scenario [StartScenario]
+Feb 18, 2026 10:26:04 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Resetting  packet receivers [ResetFlowReceivers]
+Feb 18, 2026 10:26:04 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Start multicast listening [StartMulticastListening]
+Feb 18, 2026 10:26:04 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Start traffic [StartTraffic]
+Feb 18, 2026 10:26:04 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:04 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 1 Minutes, 5 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:05 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:05 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 1 Minutes, 4 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:06 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:06 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 1 Minutes, 3 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:07 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:07 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 1 Minutes, 2 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:08 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:08 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 1 Minutes. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:09 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:09 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 60 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:10 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:10 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 59 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:11 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:11 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 58 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:12 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:12 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 57 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:13 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:13 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 56 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:14 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:14 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 55 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:15 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:15 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 54 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:16 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:16 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 53 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:17 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:17 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 52 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:18 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:18 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 51 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:19 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:19 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 50 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:20 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:20 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 49 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:21 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:21 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 48 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:22 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:22 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 47 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:23 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:23 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 46 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:24 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:24 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 45 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:25 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:25 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 44 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:26 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:26 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 43 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:27 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:27 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 42 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:28 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:28 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 41 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:29 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:29 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 40 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:30 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:30 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 39 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:31 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:31 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 38 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:32 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:32 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 37 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:33 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:33 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 36 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:34 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:34 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 35 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:35 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:35 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 34 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:36 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:36 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 33 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:37 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:37 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 32 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:38 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:38 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 31 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:39 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:39 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 30 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:40 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:40 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 29 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:41 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:41 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 28 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:42 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:42 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 27 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:43 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:43 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 26 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:44 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:44 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 25 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:45 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:45 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 24 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:46 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:46 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 23 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:47 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:47 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 22 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:48 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:48 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 21 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:49 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:49 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 20 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:50 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:50 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 19 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:51 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:51 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 18 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:52 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:52 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 17 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:53 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:53 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 16 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:54 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:54 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 15 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:55 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:55 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 14 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:56 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:56 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 13 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:57 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:57 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 12 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:58 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:58 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 11 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:26:59 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:26:59 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 10 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:27:00 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:27:00 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 9 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:27:01 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:27:01 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 8 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:27:02 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:27:02 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 7 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:27:03 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:27:03 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 6 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:27:04 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:27:04 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 5 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:27:05 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:27:05 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 4 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:27:06 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:27:06 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 3 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:27:07 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:27:07 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for 2 Seconds. Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:27:08 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:27:08 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for . Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:27:09 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:27:09 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Continuing for . Estimated end at 10:27 PM [Wait]
+Feb 18, 2026 10:27:10 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:27:10 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Stopping Tx traffic [StopTxTraffic]
+Feb 18, 2026 10:27:10 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Stop scenario [StopScenario]
+Feb 18, 2026 10:27:10 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Stopping Tx traffic [StopTxTraffic]
+Feb 18, 2026 10:27:11 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Stop multicast listening [StopMulticastListening]
+Feb 18, 2026 10:27:11 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Stop traffic [StopTraffic]
+Feb 18, 2026 10:27:11 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunUpdate
+INFO: action callback: scenario run update!
+Feb 18, 2026 10:27:11 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$12 onScenarioRunFinished
+INFO: action callback: scenario run finished!
+Feb 18, 2026 10:27:11 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl
+FINEST: invoking action: Cleanup scenario [CleanupScenario]
+WARNING: An illegal reflective access operation has occurred
+WARNING: Illegal reflective access by net.sf.jasperreports.engine.util.ClassUtils (file:/home/aphillips/Projects/ByteBlower/configuration/org.eclipse.osgi/22/0/.cp/lib/jasperreports-6.16.0.jar) to constructor com.sun.org.apache.xerces.internal.util.XMLGrammarPoolImpl()
+WARNING: Please consider reporting this to the maintainers of net.sf.jasperreports.engine.util.ClassUtils
+WARNING: Use --illegal-access=warn to enable warnings of further illegal reflective access operations
+WARNING: All illegal access operations will be denied in a future release
+Feb 18, 2026 10:27:14 PM com.excentis.products.byteblower.report.generator.jasper.ExportReport invokeImpl
+INFO: Exporting to deprecatedjasperhtml
+Feb 18, 2026 10:27:15 PM com.excentis.products.byteblower.report.generator.jasper.ExportReport invokeImpl
+INFO: Exporting to dynamicHtml
+Feb 18, 2026 10:27:15 PM com.excentis.products.byteblower.report.generator.jasper.ExportReport export
+SEVERE: Unsupported report format: dynamicHtml
+Feb 18, 2026 10:27:16 PM com.excentis.products.byteblower.report.generator.jasper.ExportReport invokeImpl
+INFO: Exporting to html
+Feb 18, 2026 10:27:16 PM com.excentis.products.byteblower.report.generator.jasper.ExportReport export
+INFO: New reporting is used for HTML
+Feb 18, 2026 10:27:16 PM com.excentis.products.byteblower.report.ReportGenerator generateReport
+INFO: Jasper took 4.487867 
+
+Feb 18, 2026 10:27:17 PM com.excentis.products.byteblower.report.ReportGenerator generateReport
+INFO: Finished generating reports.
+
+Feb 18, 2026 10:27:17 PM com.excentis.products.byteblower.clt.ByteBlowerApplication start
+INFO: Returning with value 0
+

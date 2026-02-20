@@ -1,0 +1,168 @@
+SNMP Collection - 2026-02-13 17:43:43
+Target IP: 2605:1c00:50f2:203:1ca7:6eba:b7c8:4977 
+============================================================
+
+Flow Stats Table (Entry Qos Service Flow Octets)
+==================================================
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.1.2.621 = Counter64: 2970341
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.1.2.622 = Counter64: 278624
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.1.2.624 = Counter64: 39
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.1.2.8782 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.1.2.8783 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.1.2.8785 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.1.2.8786 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.2.2.621 = Counter64: 1565712122
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.2.2.622 = Counter64: 55192650
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.2.2.624 = Counter64: 31013
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.2.2.8782 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.2.2.8783 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.2.2.8785 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.2.2.8786 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.3.2.621 = Timeticks: (101026400) 11 days, 16:37:44.00
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.3.2.622 = Timeticks: (101026400) 11 days, 16:37:44.00
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.3.2.624 = Timeticks: (101026400) 11 days, 16:37:44.00
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.3.2.8782 = Timeticks: (101026400) 11 days, 16:37:44.00
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.3.2.8783 = Timeticks: (101026400) 11 days, 16:37:44.00
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.3.2.8785 = Timeticks: (101026400) 11 days, 16:37:44.00
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.3.2.8786 = Timeticks: (101026400) 11 days, 16:37:44.00
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.4.2.621 = Counter32: 6820
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.4.2.622 = Counter32: 6820
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.4.2.624 = Counter32: 6820
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.4.2.8782 = Counter32: 6820
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.4.2.8783 = Counter32: 6820
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.4.2.8785 = Counter32: 6820
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.4.2.8786 = Counter32: 6820
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.5.2.621 = Counter32: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.5.2.622 = Counter32: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.5.2.624 = Counter32: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.5.2.8782 = Counter32: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.5.2.8783 = Counter32: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.5.2.8785 = Counter32: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.5.2.8786 = Counter32: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.6.2.621 = Counter32: 860
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.6.2.622 = Counter32: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.6.2.624 = Counter32: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.6.2.8782 = Counter32: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.6.2.8783 = Counter32: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.6.2.8785 = Counter32: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.6.2.8786 = Counter32: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.7.2.621 = Counter32: 1050343
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.7.2.622 = Counter32: 9
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.7.2.624 = Counter32: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.7.2.8782 = Counter32: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.7.2.8783 = Counter32: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.7.2.8785 = Counter32: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.7.2.8786 = Counter32: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.8.2.621 = Counter64: 29319
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.8.2.622 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.8.2.624 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.8.2.8782 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.8.2.8783 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.8.2.8785 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.4.1.8.2.8786 = Counter64: 0
+
+
+Aggregate Service Flow Stats Table
+==================================================
+SNMPv2-SMI::enterprises.4491.2.1.21.1.27.1.1.2.623 = Counter64: 3249030
+SNMPv2-SMI::enterprises.4491.2.1.21.1.27.1.1.2.8784 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.27.1.2.2.623 = Counter64: 1620912712
+SNMPv2-SMI::enterprises.4491.2.1.21.1.27.1.2.2.8784 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.27.1.3.2.623 = Timeticks: (101026400) 11 days, 16:37:44.00
+SNMPv2-SMI::enterprises.4491.2.1.21.1.27.1.3.2.8784 = Timeticks: (101026400) 11 days, 16:37:44.00
+SNMPv2-SMI::enterprises.4491.2.1.21.1.27.1.4.2.623 = Counter32: 6820
+SNMPv2-SMI::enterprises.4491.2.1.21.1.27.1.4.2.8784 = Counter32: 6820
+
+
+Latency Stats Table
+==================================================
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.1.2.621 = Gauge32: 363475
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.1.2.622 = Gauge32: 9344
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.1.2.624 = Gauge32: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.2.2.621 = Counter64: 48620
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.2.2.622 = Counter64: 278624
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.2.2.624 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.3.2.621 = Counter64: 1924721
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.3.2.622 = Counter64: 278538
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.3.2.624 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.4.2.621 = Counter64: 8738
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.4.2.622 = Counter64: 17
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.4.2.624 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.5.2.621 = Counter64: 14583
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.5.2.622 = Counter64: 15
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.5.2.624 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.6.2.621 = Counter64: 33736
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.6.2.622 = Counter64: 25
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.6.2.624 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.7.2.621 = Counter64: 75356
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.7.2.622 = Counter64: 24
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.7.2.624 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.8.2.621 = Counter64: 122351
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.8.2.622 = Counter64: 5
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.8.2.624 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.9.2.621 = Counter64: 737401
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.9.2.622 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.9.2.624 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.10.2.621 = Counter64: 16815
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.10.2.622 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.10.2.624 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.11.2.621 = Counter64: 1644
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.11.2.622 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.11.2.624 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.12.2.621 = Counter64: 1666
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.12.2.622 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.12.2.624 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.13.2.621 = Counter64: 2566
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.13.2.622 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.13.2.624 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.14.2.621 = Counter64: 2574
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.14.2.622 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.14.2.624 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.15.2.621 = Counter64: 2625
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.15.2.622 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.15.2.624 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.16.2.621 = Counter64: 2591
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.16.2.622 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.16.2.624 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.17.2.621 = Counter64: 1508
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.17.2.622 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.17.2.624 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.18.2.621 = Counter64: 21390
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.18.2.622 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.29.2.1.18.2.624 = Counter64: 0
+
+
+Congestion Stats Table
+==================================================
+SNMPv2-SMI::enterprises.4491.2.1.21.1.30.1.1.2.622 = Counter64: 131
+SNMPv2-SMI::enterprises.4491.2.1.21.1.30.1.2.2.622 = Counter64: 0
+SNMPv2-SMI::enterprises.4491.2.1.21.1.30.1.3.2.622 = Counter64: 278623
+SNMPv2-SMI::enterprises.4491.2.1.21.1.30.1.4.2.622 = Counter64: 8216
+
+
+Cadant Map Stats Mib
+==================================================
+SNMPv2-MIB::snmpSetSerialNo.0 = INTEGER: 358510422
+SNMP-FRAMEWORK-MIB::snmpEngineID.0 = Hex-STRING: 80 00 11 3D 05 0C B9 37 64 3A B0 33 
+SNMP-FRAMEWORK-MIB::snmpEngineBoots.0 = INTEGER: 8877
+SNMP-FRAMEWORK-MIB::snmpEngineTime.0 = INTEGER: 1017085 seconds
+SNMP-FRAMEWORK-MIB::snmpEngineMaxMessageSize.0 = INTEGER: 1500
+SNMP-MPD-MIB::snmpUnknownSecurityModels.0 = Counter32: 0
+SNMP-MPD-MIB::snmpInvalidMsgs.0 = Counter32: 0
+SNMP-MPD-MIB::snmpUnknownPDUHandlers.0 = Counter32: 0
+SNMP-TARGET-MIB::snmpTargetSpinLock.0 = INTEGER: 358510422
+SNMP-TARGET-MIB::snmpTargetAddrTDomain.'@CMconfigTag_0_0' = OID: SNMPv2-SMI::mib-2.100.1.2
+
+
+Map Stats Pages Flows
+==================================================
+SNMPv2-MIB::snmpSetSerialNo.0 = INTEGER: 358510422
+SNMP-FRAMEWORK-MIB::snmpEngineID.0 = Hex-STRING: 80 00 11 3D 05 0C B9 37 64 3A B0 33 
+SNMP-FRAMEWORK-MIB::snmpEngineBoots.0 = INTEGER: 8877
+SNMP-FRAMEWORK-MIB::snmpEngineTime.0 = INTEGER: 1017085 seconds
+SNMP-FRAMEWORK-MIB::snmpEngineMaxMessageSize.0 = INTEGER: 1500
+SNMP-MPD-MIB::snmpUnknownSecurityModels.0 = Counter32: 0
+SNMP-MPD-MIB::snmpInvalidMsgs.0 = Counter32: 0
+SNMP-MPD-MIB::snmpUnknownPDUHandlers.0 = Counter32: 0
+SNMP-TARGET-MIB::snmpTargetSpinLock.0 = INTEGER: 358510422
+SNMP-TARGET-MIB::snmpTargetAddrTDomain.'@CMconfigTag_0_0' = OID: SNMPv2-SMI::mib-2.100.1.2

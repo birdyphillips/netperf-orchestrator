@@ -1,0 +1,19 @@
+\n=== iPerf3 Individual Execution ===\nReturn code: 0\nSTDOUT:\ntotal 40
+drwxr-xr-x    4 lld_mac_client  staff    128 Feb 13 09:56 .
+drwxr-x---+ 170 lld_mac_client  staff   5440 Feb 13 09:56 ..
+-rw-r--r--    1 lld_mac_client  staff   2274 Feb 13 09:56 US_HSI018_Classic_Only_1UDP_CL.txt
+-rw-r--r--    1 lld_mac_client  staff  14385 Feb 13 09:56 US_HSI018_Classic_Only_4QUIC_CL.txt
+\nSTDERR:\nWarning: Permanently added '96.37.176.11' (ED25519) to the list of known hosts.
+\n\n=== iPerf3 Individual Execution ===\nReturn code: 0\nSTDOUT:\ntotal 40
+drwxr-xr-x    4 lld_mac_client  staff    128 Feb 13 09:56 .
+drwxr-x---+ 170 lld_mac_client  staff   5440 Feb 13 09:56 ..
+-rw-r--r--    1 lld_mac_client  staff   2274 Feb 13 09:57 US_HSI018_Classic_Only_1UDP_CL.txt
+-rw-r--r--    1 lld_mac_client  staff  14384 Feb 13 09:57 US_HSI018_Classic_Only_4QUIC_CL.txt
+\nSTDERR:\nWarning: Permanently added '96.37.176.11' (ED25519) to the list of known hosts.
+\n\n=== iPerf3 Individual Execution ===\nReturn code: 0\nSTDOUT:\ntotal 40
+drwxr-xr-x    4 lld_mac_client  staff    128 Feb 13 09:56 .
+drwxr-x---+ 170 lld_mac_client  staff   5440 Feb 13 09:56 ..
+-rw-r--r--    1 lld_mac_client  staff   2271 Feb 13 09:58 US_HSI018_Classic_Only_1UDP_CL.txt
+-rw-r--r--    1 lld_mac_client  staff  14385 Feb 13 09:58 US_HSI018_Classic_Only_4QUIC_CL.txt
+\nSTDERR:\nWarning: Permanently added '96.37.176.11' (ED25519) to the list of known hosts.
+\n

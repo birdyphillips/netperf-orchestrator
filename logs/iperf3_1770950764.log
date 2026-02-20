@@ -1,0 +1,25 @@
+\n=== iPerf3 Individual Execution ===\nReturn code: 0\nSTDOUT:\ntotal 168
+drwxr-xr-x   6 mac_studio_server  staff    192 Feb 12 19:46 .
+drwxr-x---+ 88 mac_studio_server  staff   2816 Feb 12 19:46 ..
+-rw-r--r--   1 mac_studio_server  staff  15219 Feb 12 19:46 DS_HSI021_Combined_1QUIC_LL.json
+-rw-r--r--   1 mac_studio_server  staff  16223 Feb 12 19:46 DS_HSI021_Combined_1UDP_CL.json
+-rw-r--r--   1 mac_studio_server  staff  16180 Feb 12 19:46 DS_HSI021_Combined_1UDP_LL.json
+-rw-r--r--   1 mac_studio_server  staff  36763 Feb 12 19:46 DS_HSI021_Combined_4QUIC_CL.json
+\nSTDERR:\nWarning: Permanently added '71.85.92.83' (ED25519) to the list of known hosts.
+\n\n=== iPerf3 Individual Execution ===\nReturn code: 0\nSTDOUT:\ntotal 168
+drwxr-xr-x   6 mac_studio_server  staff    192 Feb 12 19:46 .
+drwxr-x---+ 88 mac_studio_server  staff   2816 Feb 12 19:46 ..
+-rw-r--r--   1 mac_studio_server  staff  15259 Feb 12 19:47 DS_HSI021_Combined_1QUIC_LL.json
+-rw-r--r--   1 mac_studio_server  staff  16272 Feb 12 19:47 DS_HSI021_Combined_1UDP_CL.json
+-rw-r--r--   1 mac_studio_server  staff  16184 Feb 12 19:47 DS_HSI021_Combined_1UDP_LL.json
+-rw-r--r--   1 mac_studio_server  staff  36679 Feb 12 19:47 DS_HSI021_Combined_4QUIC_CL.json
+\nSTDERR:\nWarning: Permanently added '71.85.92.83' (ED25519) to the list of known hosts.
+\n\n=== iPerf3 Individual Execution ===\nReturn code: 0\nSTDOUT:\ntotal 168
+drwxr-xr-x   6 mac_studio_server  staff    192 Feb 12 19:46 .
+drwxr-x---+ 88 mac_studio_server  staff   2816 Feb 12 19:46 ..
+-rw-r--r--   1 mac_studio_server  staff  15176 Feb 12 19:48 DS_HSI021_Combined_1QUIC_LL.json
+-rw-r--r--   1 mac_studio_server  staff  16278 Feb 12 19:48 DS_HSI021_Combined_1UDP_CL.json
+-rw-r--r--   1 mac_studio_server  staff  16217 Feb 12 19:48 DS_HSI021_Combined_1UDP_LL.json
+-rw-r--r--   1 mac_studio_server  staff  36709 Feb 12 19:48 DS_HSI021_Combined_4QUIC_CL.json
+\nSTDERR:\nWarning: Permanently added '71.85.92.83' (ED25519) to the list of known hosts.
+\n

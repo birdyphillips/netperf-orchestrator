@@ -1,0 +1,7 @@
+\n=== iPerf3 Individual Execution ===\nReturn code: 0\nSTDOUT:\ntotal 40
+drwxr-xr-x    4 mac_studio_server  staff    128 Feb 18 18:33 .
+drwxr-x---+ 127 mac_studio_server  staff   4064 Feb 18 18:33 ..
+-rw-r--r--    1 mac_studio_server  staff   2276 Feb 18 18:33 DS_HSI029_DS_Only_Classic_Only_1UDP_CL.txt
+-rw-r--r--    1 mac_studio_server  staff  14385 Feb 18 18:33 DS_HSI029_DS_Only_Classic_Only_4QUIC_CL.txt
+\nSTDERR:\nWarning: Permanently added '71.85.92.83' (ED25519) to the list of known hosts.
+\n
