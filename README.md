@@ -400,6 +400,10 @@ python3 run_hsi029_rtt_tests.py
 - **DS_Combined**: Downstream Classic + Low Latency combined
 - **US_LL_Only**: Upstream Low Latency service flow only
 - **DS_LL_Only**: Downstream Low Latency service flow only
+- **US_UDP_NC**: Upstream UDP non-conforming traffic
+- **DS_UDP_NC**: Downstream UDP non-conforming traffic
+- **US_TCP_NC**: Upstream TCP non-conforming traffic
+- **DS_TCP_NC**: Downstream TCP non-conforming traffic
 
 ## Files
 

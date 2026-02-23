@@ -82,5 +82,23 @@ iperf3-darwin -s -p 5207 &
 iperf3-darwin -s -p 5209 &
 iperf3-darwin -s -p 5211 &
 
+
+#non-conforming
+
+
+
+US_UDP_NC
+iperf3-darwin -c 71.85.92.83 --apple-quic -t 30 -P 1 -p 5207 --apple-l4s -i 1 > US_l4s_quic_LL_Only_NC.txt &
+iperf3-darwin -c 71.85.92.83 -u -b 530M --dscp 45 -t 30 -p 5211 -i 1 > US_udp_LL_Only_NC.txt &
+wait
+
+
+
+DS_UDP_NC
+iperf3-darwin -c 96.37.176.11 --apple-quic -t 30 -P 1 -p 5207 --apple-l4s -i 1 > DS_l4s_quic_LL_Only_NC.txt &
+iperf3-darwin -c 96.37.176.11 -u -b 530M --dscp 45 -t 30 -p 5211 -i 1 > DS_udp_LL_Only_NC.txt &
+wait
+
+
 scp -r mac_studio_server@71.85.92.83:/Users/mac_studio_server/DS_HSI029 "C:\Users\p3135123\OneDrive - Charter Communications\Access_Engineering_Project\vCMTS_Results\vCMTS_HSI029\HSI029_iPerf3_MacOS"
 scp -r lld_mac_client@96.37.176.11:/Users/lld_mac_client/DS_HSI029 "C:\Users\p3135123\OneDrive - Charter Communications\Access_Engineering_Project\vCMTS_Results\vCMTS_HSI029\HSI029_iPerf3_MacOS"
