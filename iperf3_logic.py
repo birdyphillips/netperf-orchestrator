@@ -104,6 +104,22 @@ class IPerf3Logic:
                     f"iperf3-darwin -c {self.client_ip} --apple-quic -t 30 -P 1 -p 9207 --apple-l4s {json_ext} > DS_{group_name}_LL_Only_1QUIC_LL.{file_ext} &",
                     f"iperf3-darwin -c {self.client_ip} -u -b 0.8192M --dscp 45 -t 30 -p 9211 {json_ext} > DS_{group_name}_LL_Only_1UDP_LL.{file_ext} &",
                     "wait"
+                ],
+                "US_UDP_NC": [
+                    f"iperf3-darwin -c {self.server_ip} -u -b 0.8192M -t 30 -p 9211 {json_ext} > US_{group_name}_UDP_NC.{file_ext} &",
+                    "wait"
+                ],
+                "DS_UDP_NC": [
+                    f"iperf3-darwin -c {self.client_ip} -u -b 0.8192M -t 30 -p 9211 {json_ext} > DS_{group_name}_UDP_NC.{file_ext} &",
+                    "wait"
+                ],
+                "US_TCP_NC": [
+                    f"iperf3-darwin -c {self.server_ip} --apple-quic -t 30 -P 1 -p 9207 --apple-l4s {json_ext} > US_{group_name}_TCP_NC.{file_ext} &",
+                    "wait"
+                ],
+                "DS_TCP_NC": [
+                    f"iperf3-darwin -c {self.client_ip} --apple-quic -t 30 -P 1 -p 9207 --apple-l4s {json_ext} > DS_{group_name}_TCP_NC.{file_ext} &",
+                    "wait"
                 ]
             }
             # macOS uses different server ports
@@ -143,6 +159,22 @@ class IPerf3Logic:
                 "DS_LL_Only": [
                     f"iperf3 -c {self.client_ip} -t 30 -p 9205 -P 1 -C prague {json_ext} > DS_{group_name}_LL_Only_1TCP_LL.{file_ext} &",
                     f"iperf3 -c {self.client_ip} -t 30 -u -b 0.82M -p 9206 -P 1 --dscp 45 {json_ext} > DS_{group_name}_LL_Only_1UDP_LL.{file_ext} &",
+                    "wait"
+                ],
+                "US_UDP_NC": [
+                    f"iperf3 -c {self.server_ip} -t 30 -u -b 0.82M -p 9206 -P 1 {json_ext} > US_{group_name}_UDP_NC.{file_ext} &",
+                    "wait"
+                ],
+                "DS_UDP_NC": [
+                    f"iperf3 -c {self.client_ip} -t 30 -u -b 0.82M -p 9206 -P 1 {json_ext} > DS_{group_name}_UDP_NC.{file_ext} &",
+                    "wait"
+                ],
+                "US_TCP_NC": [
+                    f"iperf3 -c {self.server_ip} -t 30 -p 9205 -P 1 -C prague {json_ext} > US_{group_name}_TCP_NC.{file_ext} &",
+                    "wait"
+                ],
+                "DS_TCP_NC": [
+                    f"iperf3 -c {self.client_ip} -t 30 -p 9205 -P 1 -C prague {json_ext} > DS_{group_name}_TCP_NC.{file_ext} &",
                     "wait"
                 ]
             }
