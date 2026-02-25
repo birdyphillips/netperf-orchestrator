@@ -13,6 +13,14 @@ logs/
 # Results
 Results/
 
+# Configuration (contains sensitive data)
+config.yaml
+
+# SSH Keys
+*.pem
+*.key
+.ssh/
+
 # IDE
 .vscode/
 .idea/
