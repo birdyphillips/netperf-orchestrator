@@ -21,6 +21,11 @@ config.yaml
 *.key
 .ssh/
 
+# Personal/Internal Documents
+LINKEDIN_TEMPLATE.md
+PROJECT_OVERVIEW.md
+SECURITY.md
+
 # IDE
 .vscode/
 .idea/
