@@ -1,5 +1,7 @@
 # NetPerf Orchestrator v1.3
 
+**GitHub**: https://github.com/birdyphillips/netperf-orchestrator
+
 Network Performance Testing Orchestration Tool - Integrates ByteBlower, PacketStorm, iPerf3, and SpeedTest for automated network testing.
 
 ## Version 1.3 Features
@@ -11,6 +13,12 @@ Network Performance Testing Orchestration Tool - Integrates ByteBlower, PacketSt
 - **Configuration file**: All hardcoded paths, IPs, and credentials externalized to `config.yaml` for easy environment portability
 
 ## Initial Setup
+
+### 0. Clone Repository
+```bash
+git clone https://github.com/birdyphillips/netperf-orchestrator.git
+cd netperf-orchestrator
+```
 
 ### 1. Create Configuration File
 ```bash
