@@ -1,16 +1,35 @@
 # NetPerf Orchestrator v1.3
 
+[![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![GitHub](https://img.shields.io/badge/GitHub-netperf--orchestrator-black.svg)](https://github.com/birdyphillips/netperf-orchestrator)
+
 **GitHub**: https://github.com/birdyphillips/netperf-orchestrator
 
-Network Performance Testing Orchestration Tool - Integrates ByteBlower, PacketStorm, iPerf3, and SpeedTest for automated network testing.
+CLI-based network performance testing orchestration tool integrating ByteBlower, PacketStorm, iPerf3, and SpeedTest for automated, comprehensive network testing with SNMP monitoring.
 
-## Version 1.3 Features
+## 🚀 Features
 
-- **Default 1 iteration**: Commands without `-iteration` parameter run only 1 iteration
-- **Smart folder structure**: Single iterations save directly to main folder, multiple iterations create iteration subfolders
-- **RTT naming**: Result folders include RTT information when PacketStorm is used (e.g., `SCN_RTT_10_US_Classic_Only_RTT_10ms_20251224_202431`)
-- **Automated test runner**: `run_scn_rtt_tests.py` executes all Service Class Name (SCN) RTT tests with 15-second intervals
-- **Configuration file**: All hardcoded paths, IPs, and credentials externalized to `config.yaml` for easy environment portability
+- **ByteBlower Integration** - Automated traffic generation with HTML/PDF/CSV/JSON/Excel reports
+- **iPerf3 Support** - Linux (TCP/Prague) and macOS (Apple QUIC/L4S) testing
+- **PacketStorm RTT** - Configurable round-trip time emulation (10-50ms)
+- **SpeedTest** - Multi-client Ookla speed testing (Linux, macOS, Windows)
+- **SNMP Monitoring** - Automatic before/after data collection with Excel consolidation
+- **Multi-Scenario** - 6 test scenarios (US/DS Classic/Combined/LL_Only)
+- **Automated Test Runner** - Execute all 36 SCN RTT test combinations
+- **Configuration File** - YAML-based config for easy environment portability
+- **Smart Folder Structure** - Organized results with RTT naming
+- **SSH Automation** - Automatic key deployment and remote execution
+
+## 📋 Table of Contents
+
+- [Quick Start](#-quick-start)
+- [Test Types](#-test-types)
+- [Usage Examples](#-usage-examples)
+- [Scenarios](#-scenarios)
+- [Configuration](#️-configuration)
+- [Architecture](#️-architecture)
+- [Version History](#-version-history)
 
 ## Initial Setup
 
@@ -296,7 +315,7 @@ python3 test_packetstorm_api.py stop
 - `-speedtest`: Enable SpeedTest mode
 - `--client`: SpeedTest clients to run on: linux, macos, nvidia (default: all three)
 
-## Supported Scenarios
+## 🎯 Supported Scenarios
 
 All tools support the same 6 test scenarios:
 
@@ -551,3 +570,84 @@ Results/SCN_Speedtest_20250115_160000/
 ## Dependencies
 
 Requires access to the lld_automation project at `/home/aphillips/Projects/lld_automation`
+
+
+## 🏗️ Architecture
+
+### Technology Stack
+- **Language:** Python 3.8+
+- **Testing:** ByteBlower CLI, iPerf3, Ookla SpeedTest
+- **Network:** PacketStorm RTT emulation, SNMP v2c
+- **Data:** YAML config, CSV/Excel reports
+
+### Components
+```
+netperf-orchestrator/
+├── netperf_orchestrator.py  # Main CLI tool
+├── netperf                  # Wrapper script
+├── byteblower_logic.py     # ByteBlower orchestration
+├── iperf3_logic.py         # iPerf3 execution
+├── packetstorm_logic.py    # RTT configuration
+├── speedtest_logic.py      # SpeedTest execution
+├── snmp_collector.py       # SNMP data collection
+├── config_loader.py        # Configuration management
+├── logger.py               # Logging system
+└── bb_flows/               # ByteBlower flow definitions
+```
+
+### Test Flow
+1. **Configuration** - Load settings from `config.yaml`
+2. **Execution** - Run test via CLI with parameters
+3. **SNMP Collection** - Automatic before/after capture
+4. **Results** - Organized folder structure with RTT naming
+5. **Reports** - HTML/PDF/CSV/JSON/Excel generation
+
+---
+
+## 🔧 Development
+
+### Prerequisites
+- Python 3.8+
+- ByteBlower CLI installed
+- iPerf3 installed on test clients/servers
+- PacketStorm access (optional)
+- SNMP v2c enabled on test devices
+
+### Installation
+```bash
+git clone git@github.com:birdyphillips/netperf-orchestrator.git
+cd netperf-orchestrator
+pip install -r requirements.txt
+cp config.yaml.example config.yaml
+# Edit config.yaml with your settings
+```
+
+---
+
+## 🤝 Contributing
+
+Contributions welcome! Please:
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+---
+
+## 📝 License
+
+MIT License - see LICENSE file for details
+
+---
+
+## 👤 Author
+
+**birdyphillips**
+- GitHub: [@birdyphillips](https://github.com/birdyphillips)
+- Repository: [netperf-orchestrator](https://github.com/birdyphillips/netperf-orchestrator)
+
+---
+
+## ⭐ Support
+
+If you find this project useful, please consider giving it a star on GitHub!
