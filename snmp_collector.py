@@ -5,6 +5,7 @@ import os
 import re
 import logging
 from datetime import datetime
+from config_loader import config
 
 # Suppress paramiko's verbose logging (including SSH banners)
 logging.getLogger("paramiko").setLevel(logging.WARNING)
@@ -127,20 +128,28 @@ def export_to_excel(test_name, phase, timestamp, output_dir):
     print(f"Excel file created: {excel_filename}")
     return excel_filename
 
-def ssh_snmp_collector(username, jumpserver, target_ip, output_file=None):
+def ssh_snmp_collector(username, jumpserver, target_ip, output_file=None, snmp_community=None, snmp_timeout=None, snmp_retries=None):
     """SSH into jump server and execute SNMP commands"""
     
+    # Use config values if not provided
+    if snmp_community is None:
+        snmp_community = config.snmp_community
+    if snmp_timeout is None:
+        snmp_timeout = config.snmp_timeout
+    if snmp_retries is None:
+        snmp_retries = config.snmp_retries
+    
     # Modem information command
-    modem_info_cmd = f"snmpwalk -v 2c -c open -t 5 -r 2 {target_ip} sysDescr"
+    modem_info_cmd = f"snmpwalk -v 2c -c {snmp_community} -t {snmp_timeout} -r {snmp_retries} {target_ip} sysDescr"
     
     # SNMP commands from your notes
     commands = [
-        f"snmpwalk -v 2c -c open -t 5 -r 2 {target_ip} 1.3.6.1.4.1.4491.2.1.21.1.4",
-        f"snmpwalk -v 2c -c open -t 5 -r 2 {target_ip} 1.3.6.1.4.1.4491.2.1.21.1.27", 
-        f"snmpwalk -v 2c -c open -t 5 -r 2 {target_ip} 1.3.6.1.4.1.4491.2.1.21.1.29.2",
-        f"snmpwalk -v 2c -c open -t 5 -r 2 {target_ip} 1.3.6.1.4.1.4491.2.1.21.1.30",
-        f"snmpbulkget -v 2c -c open -t 5 -r 2 {target_ip} .1.3.6.1.4.1.4998.1.1.15.10.2",
-        f"snmpbulkget -v 2c -c open -t 5 -r 2 {target_ip} .1.3.6.1.4.1.4998.1.1.15.10.8"
+        f"snmpwalk -v 2c -c {snmp_community} -t {snmp_timeout} -r {snmp_retries} {target_ip} 1.3.6.1.4.1.4491.2.1.21.1.4",
+        f"snmpwalk -v 2c -c {snmp_community} -t {snmp_timeout} -r {snmp_retries} {target_ip} 1.3.6.1.4.1.4491.2.1.21.1.27", 
+        f"snmpwalk -v 2c -c {snmp_community} -t {snmp_timeout} -r {snmp_retries} {target_ip} 1.3.6.1.4.1.4491.2.1.21.1.29.2",
+        f"snmpwalk -v 2c -c {snmp_community} -t {snmp_timeout} -r {snmp_retries} {target_ip} 1.3.6.1.4.1.4491.2.1.21.1.30",
+        f"snmpbulkget -v 2c -c {snmp_community} -t {snmp_timeout} -r {snmp_retries} {target_ip} .1.3.6.1.4.1.4998.1.1.15.10.2",
+        f"snmpbulkget -v 2c -c {snmp_community} -t {snmp_timeout} -r {snmp_retries} {target_ip} .1.3.6.1.4.1.4998.1.1.15.10.8"
     ]
     
     labels = [
@@ -158,7 +167,7 @@ def ssh_snmp_collector(username, jumpserver, target_ip, output_file=None):
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         
         # Try SSH key first
-        key_path = os.path.expanduser("~/.ssh/lld_key")
+        key_path = config.ssh_key_path
         connected = False
         connection_method = None
         
@@ -250,8 +259,8 @@ def ssh_snmp_collector(username, jumpserver, target_ip, output_file=None):
 
 def collect_snmp_data(target_ip, test_name, phase, output_dir):
     """Collect SNMP data for a specific test and phase"""
-    username = "aphillips"
-    jumpserver = "ctec-jump.ctec.charterlab.com"
+    username = config.snmp_username
+    jumpserver = config.snmp_jumpserver
     
     # Use provided output directory
     if not os.path.exists(output_dir):
@@ -284,11 +293,11 @@ if __name__ == "__main__":
     phase = sys.argv[3] if len(sys.argv) > 3 else "standalone"
     
     if len(sys.argv) > 2:
-        collect_snmp_data(target_ip, test_name, phase)
+        collect_snmp_data(target_ip, test_name, phase, "Results")
     else:
         # Original behavior for backward compatibility
-        username = "aphillips"
-        jumpserver = "ctec-jump.ctec.charterlab.com"
+        username = config.snmp_username
+        jumpserver = config.snmp_jumpserver
         
         results = ssh_snmp_collector(username, jumpserver, target_ip)
         

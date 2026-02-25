@@ -1,7 +1,0 @@
-\n=== iPerf3 Individual Execution ===\nReturn code: 0\nSTDOUT:\ntotal 40
-drwxr-xr-x    4 lld_mac_client  staff    128 Feb 13 10:32 .
-drwxr-x---+ 176 lld_mac_client  staff   5632 Feb 13 10:32 ..
--rw-r--r--    1 lld_mac_client  staff   2275 Feb 13 10:32 US_HSI016_test_Classic_Only_1UDP_CL.txt
--rw-r--r--    1 lld_mac_client  staff  14387 Feb 13 10:32 US_HSI016_test_Classic_Only_4QUIC_CL.txt
-\nSTDERR:\nWarning: Permanently added '96.37.176.11' (ED25519) to the list of known hosts.
-\n

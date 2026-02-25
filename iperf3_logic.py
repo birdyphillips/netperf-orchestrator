@@ -4,6 +4,7 @@ import time
 from datetime import datetime
 from logger import Logger
 from log_rotator import LogRotator
+from config_loader import config
 import platform
 
 # Import Windows SSH helper if on Windows
@@ -30,22 +31,22 @@ class IPerf3Logic:
         
         # SSH connection details - platform specific passwords and users
         if platform_override == 'macos':
-            self.ssh_user = "lld_mac_client"
-            self.ssh_password = "aqm@2022"  # macOS client password
+            self.ssh_user = config.iperf3_macos_client_username
+            self.ssh_password = config.iperf3_macos_client_password
         else:
-            self.ssh_user = "lld"
-            self.ssh_password = "aqm@2024"  # Linux client password
+            self.ssh_user = config.iperf3_linux_client_username
+            self.ssh_password = config.iperf3_linux_client_password
         
         # Server details - platform specific
         if platform_override == 'macos':
-            self.server_user = "mac_studio_server"
-            self.server_password = "aqm@2022"  # macOS server password
-            self.server_ip = "71.85.92.83"  # macOS server IP
+            self.server_user = config.iperf3_macos_server_username
+            self.server_password = config.iperf3_macos_server_password
+            self.server_ip = config.iperf3_macos_server_host
         else:
-            self.server_user = "lld"
-            self.server_password = "aqm@2024"  # Linux server password
-            self.server_ip = "71.85.92.86"  # Linux server IP
-        self.ssh_key_path = os.path.expanduser("~/.ssh/lld_key")
+            self.server_user = config.iperf3_linux_server_username
+            self.server_password = config.iperf3_linux_server_password
+            self.server_ip = config.iperf3_linux_server_host
+        self.ssh_key_path = config.ssh_key_path
         
         # Create output directory name
         platform_suffix = "_macOS" if platform_override == 'macos' else "_Linux"
@@ -117,7 +118,7 @@ class IPerf3Logic:
                 ]
             }
             # macOS uses different server ports
-            self.server_ports = [9201, 9207, 9209, 9211]
+            self.server_ports = config.iperf3_macos_ports
         else:
             # Linux commands using standard iperf3 with TCP and Prague
             self.scenario_commands = {
@@ -165,7 +166,7 @@ class IPerf3Logic:
                 ]
             }
             # Linux uses different server ports
-            self.server_ports = [9202, 9205, 9206, 9210]
+            self.server_ports = config.iperf3_linux_ports
     
     def _ssh_command(self, command):
         """Execute SSH command using key authentication with password fallback"""

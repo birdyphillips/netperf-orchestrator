@@ -4,6 +4,7 @@ import json
 from datetime import datetime
 from logger import Logger
 from log_rotator import LogRotator
+from config_loader import config
 
 class PacketStormLogic:
     def __init__(self, rtt_config):
@@ -14,9 +15,10 @@ class PacketStormLogic:
         self.log_rotator = LogRotator(self.log_file)
         
         # PacketStorm configuration
-        self.url = "http://10.241.0.118/xgui/rest"
-        self.username = "automation"
-        self.password = "automation"
+        self.url = config.packetstorm_url
+        self.username = config.packetstorm_username
+        self.password = config.packetstorm_password
+        self.timeout = config.packetstorm_timeout
         self.config = rtt_config.replace('.json', '')
     
     def login_request(self):
@@ -43,7 +45,7 @@ class PacketStormLogic:
         try:
             req = urllib.request.Request(self.url, data=data.encode('utf-8'))
             req.add_header('Content-Type', 'application/json')
-            response = urllib.request.urlopen(req, timeout=30)
+            response = urllib.request.urlopen(req, timeout=self.timeout)
             response_text = response.read().decode('utf-8')
             self.logger.info(f"PacketStorm response: {response_text}")
             

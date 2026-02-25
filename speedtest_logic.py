@@ -5,6 +5,7 @@ import os
 from datetime import datetime
 from logger import Logger
 from snmp_collector import collect_snmp_data
+from config_loader import config
 import glob
 
 import csv
@@ -22,23 +23,12 @@ class SpeedTestLogic:
         self.test_group_name = test_group_name or "Speedtest"
         self.output_prefix = self._generate_output_prefix()
         
-        self.client_configs = {
-            "linux": {
-                "host": "96.37.176.7",
-                "username": "lld",
-                "password": "aqm@2024"
-            },
-            "macos": {
-                "host": "96.37.176.11",
-                "username": "lld_mac_client",
-                "password": "aqm@2022"
-            },
-            "nvidia": {
-                "host": "96.37.176.14",
-                "username": "Administrator",
-                "password": "aqm@2022"
-            }
-        }
+        # Load client configurations from config file
+        self.client_configs = {}
+        for client_name in ['linux', 'macos', 'nvidia']:
+            client_cfg = config.speedtest_client_config(client_name)
+            if client_cfg:
+                self.client_configs[client_name] = client_cfg
     
     def _generate_output_prefix(self):
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

@@ -6,8 +6,41 @@ Command line tool that integrates ByteBlower CLI and PacketStorm for automated t
 
 - **Default 1 iteration**: Commands without `-iteration` parameter run only 1 iteration
 - **Smart folder structure**: Single iterations save directly to main folder, multiple iterations create iteration subfolders
-- **RTT naming**: Result folders include RTT information when PacketStorm is used (e.g., `HSI029_RTT_10_US_Classic_Only_RTT_10ms_20251224_202431`)
-- **Automated test runner**: `run_hsi029_rtt_tests.py` executes all HSI029 RTT tests with 15-second intervals
+- **RTT naming**: Result folders include RTT information when PacketStorm is used (e.g., `SCN_RTT_10_US_Classic_Only_RTT_10ms_20251224_202431`)
+- **Automated test runner**: `run_scn_rtt_tests.py` executes all Service Class Name (SCN) RTT tests with 15-second intervals
+- **Configuration file**: All hardcoded paths, IPs, and credentials externalized to `config.yaml` for easy environment portability
+
+## Initial Setup
+
+### 1. Create Configuration File
+```bash
+# Copy example configuration
+cp config.yaml.example config.yaml
+
+# Edit for your environment
+nano config.yaml
+```
+
+### 2. Configure Your Environment
+Edit `config.yaml` to match your environment:
+- ByteBlower CLI path
+- PacketStorm URL and credentials
+- iPerf3 client/server IPs and credentials
+- SpeedTest client IPs and credentials
+- SNMP jump server and credentials
+- SSH key paths
+
+### 3. Install Dependencies
+```bash
+# Install Python dependencies
+pip install pyyaml paramiko pandas openpyxl
+
+# Install system tools
+sudo apt install -y sshpass openssh-client
+```
+
+### 4. Detailed Setup Instructions
+For complete setup instructions including ByteBlower, iPerf3, SpeedTest, SSH keys, and SNMP configuration, see **[SETUP_GUIDE.md](SETUP_GUIDE.md)**.
 
 ## Quick Start
 
@@ -16,10 +49,10 @@ Use the `lld_test` wrapper script to ensure all dependencies are available:
 
 ```bash
 # Single iteration (default)
-./lld_test -byteblower --bbp P20_vcmts_cm74375fd62c28.bbp --scenario US_Classic_Only -test-group-name HSI029_RTT_0
+./lld_test -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
 
 # With RTT configuration
-./lld_test -byteblower --bbp P20_vcmts_cm74375fd62c28.bbp --scenario US_Classic_Only -test-group-name HSI029_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
+./lld_test -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
 ```
 
 ### Using Python Directly
@@ -27,12 +60,12 @@ Alternatively, run with the venv Python:
 
 ```bash
 source venv/bin/activate
-python3 lld_test.py -byteblower --bbp P20_vcmts_cm74375fd62c28.bbp --scenario US_Classic_Only -test-group-name HSI029_RTT_0
+python3 lld_test.py -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
 ```
 
-### Run All HSI029 RTT Tests
+### Run All Service Class Name (SCN) RTT Tests
 ```bash
-./lld_test -byteblower --bbp HSI021_P13_vcmts_cm606c63c5e250.bbp --scenario US_Classic_Only,DS_Classic_Only,US_Combined,DS_Combined,US_LL_Only,DS_LL_Only -test-group-name HSI021_RTT -packetstorm --rtt vcmts10ms.json,vcmts30ms.json,vcmts50ms.json -iteration 1
+./lld_test -byteblower --bbp Port_13_example.bbp --scenario US_Classic_Only,DS_Classic_Only,US_Combined,DS_Combined,US_LL_Only,DS_LL_Only -test-group-name TEST_SCN_RTT -packetstorm --rtt vcmts10ms.json,vcmts30ms.json,vcmts50ms.json -iteration 1
 ```
 
 ## Usage Examples
@@ -40,97 +73,97 @@ python3 lld_test.py -byteblower --bbp P20_vcmts_cm74375fd62c28.bbp --scenario US
 ### ByteBlower Only
 ```bash
 # Single iteration (saves to main folder)
-./lld_test -byteblower --bbp P20_vcmts_cm74375fd62c28.bbp --scenario US_Classic_Only -test-group-name HSI029_RTT_0
+./lld_test -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
 
 # Multiple iterations (creates iteration subfolders)
-./lld_test -byteblower --bbp P20_vcmts_cm74375fd62c28.bbp --scenario US_Classic_Only -test-group-name HSI029_RTT_0 -iteration 3
+./lld_test -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0 -iteration 3
 
 # All ByteBlower scenarios
-./lld_test -byteblower --bbp P20_vcmts_cm74375fd62c28.bbp --scenario US_Classic_Only -test-group-name HSI029_RTT_0
-./lld_test -byteblower --bbp P20_vcmts_cm74375fd62c28.bbp --scenario DS_Classic_Only -test-group-name HSI029_RTT_0
-./lld_test -byteblower --bbp P20_vcmts_cm74375fd62c28.bbp --scenario US_Combined -test-group-name HSI029_RTT_0
-./lld_test -byteblower --bbp P20_vcmts_cm74375fd62c28.bbp --scenario DS_Combined -test-group-name HSI029_RTT_0
-./lld_test -byteblower --bbp P20_vcmts_cm74375fd62c28.bbp --scenario US_LL_Only -test-group-name HSI029_RTT_0
-./lld_test -byteblower --bbp P20_vcmts_cm74375fd62c28.bbp --scenario DS_LL_Only -test-group-name HSI029_RTT_0
+./lld_test -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
+./lld_test -byteblower --bbp Port_20_example.bbp --scenario DS_Classic_Only -test-group-name TEST_SCN_RTT_0
+./lld_test -byteblower --bbp Port_20_example.bbp --scenario US_Combined -test-group-name TEST_SCN_RTT_0
+./lld_test -byteblower --bbp Port_20_example.bbp --scenario DS_Combined -test-group-name TEST_SCN_RTT_0
+./lld_test -byteblower --bbp Port_20_example.bbp --scenario US_LL_Only -test-group-name TEST_SCN_RTT_0
+./lld_test -byteblower --bbp Port_20_example.bbp --scenario DS_LL_Only -test-group-name TEST_SCN_RTT_0
 ```
 
 ### ByteBlower + PacketStorm
 ```bash
 # With RTT configuration
-./lld_test -byteblower --bbp HSI --scenario US_Classic_Only -test-group-name HSI029_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
+./lld_test -byteblower --bbp HSI --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
 
 # All RTT values
-./lld_test -byteblower --bbp P20_vcmts_cm74375fd62c28.bbp --scenario US_Classic_Only -test-group-name HSI029_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
-./lld_test -byteblower --bbp P20_vcmts_cm74375fd62c28.bbp --scenario US_Classic_Only -test-group-name HSI029_RTT_20 -packetstorm --rtt vcmts20ms.json -iteration 1
-./lld_test -byteblower --bbp P20_vcmts_cm74375fd62c28.bbp --scenario US_Classic_Only -test-group-name HSI029_RTT_30 -packetstorm --rtt vcmts30ms.json -iteration 1
-./lld_test -byteblower --bbp P20_vcmts_cm74375fd62c28.bbp --scenario US_Classic_Only -test-group-name HSI029_RTT_40 -packetstorm --rtt vcmts40ms.json -iteration 1
-./lld_test -byteblower --bbp P20_vcmts_cm74375fd62c28.bbp --scenario US_Classic_Only -test-group-name HSI029_RTT_50 -packetstorm --rtt vcmts50ms.json -iteration 1
+./lld_test -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
+./lld_test -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_20 -packetstorm --rtt vcmts20ms.json -iteration 1
+./lld_test -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_30 -packetstorm --rtt vcmts30ms.json -iteration 1
+./lld_test -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_40 -packetstorm --rtt vcmts40ms.json -iteration 1
+./lld_test -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt vcmts50ms.json -iteration 1
 ```
 
 ### iPerf3 Linux Client
 ```bash
 # TXT output (default)
-./lld_test -iperf3 --clientIP 96.37.176.19 --scenario US_Classic_Only -test-group-name HSI021
+./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN
 
 # JSON output
-./lld_test -iperf3 --clientIP 96.37.176.19 --scenario US_Classic_Only -test-group-name HSI029_RTT_0 --output json
+./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0 --output json
 
 # All iPerf3 scenarios (TXT)
-./lld_test -iperf3 --clientIP 96.37.176.19 --scenario US_Classic_Only -test-group-name HSI029_RTT_0
-./lld_test -iperf3 --clientIP 96.37.176.19 --scenario DS_Classic_Only -test-group-name HSI029_RTT_0
-./lld_test -iperf3 --clientIP 96.37.176.19 --scenario US_Combined -test-group-name HSI029_RTT_0
-./lld_test -iperf3 --clientIP 96.37.176.19 --scenario DS_Combined -test-group-name HSI029_RTT_0
-./lld_test -iperf3 --clientIP 96.37.176.19 --scenario US_LL_Only -test-group-name HSI029_RTT_0
-./lld_test -iperf3 --clientIP 96.37.176.19 --scenario DS_LL_Only -test-group-name HSI029_RTT_0
+./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
+./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario DS_Classic_Only -test-group-name TEST_SCN_RTT_0
+./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_Combined -test-group-name TEST_SCN_RTT_0
+./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario DS_Combined -test-group-name TEST_SCN_RTT_0
+./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_LL_Only -test-group-name TEST_SCN_RTT_0
+./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario DS_LL_Only -test-group-name TEST_SCN_RTT_0
 
 # All iPerf3 scenarios (JSON)
-./lld_test -iperf3 --clientIP 96.37.176.19 --scenario US_Classic_Only -test-group-name HSI029_RTT_0 --output json
-./lld_test -iperf3 --clientIP 96.37.176.19 --scenario DS_Classic_Only -test-group-name HSI029_RTT_0 --output json
-./lld_test -iperf3 --clientIP 96.37.176.19 --scenario US_Combined -test-group-name HSI029_RTT_0 --output json
-./lld_test -iperf3 --clientIP 96.37.176.19 --scenario DS_Combined -test-group-name HSI029_RTT_0 --output json
-./lld_test -iperf3 --clientIP 96.37.176.19 --scenario US_LL_Only -test-group-name HSI029_RTT_0 --output json
-./lld_test -iperf3 --clientIP 96.37.176.19 --scenario DS_LL_Only -test-group-name HSI029_RTT_0 --output json
+./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0 --output json
+./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario DS_Classic_Only -test-group-name TEST_SCN_RTT_0 --output json
+./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_Combined -test-group-name TEST_SCN_RTT_0 --output json
+./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario DS_Combined -test-group-name TEST_SCN_RTT_0 --output json
+./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_LL_Only -test-group-name TEST_SCN_RTT_0 --output json
+./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario DS_LL_Only -test-group-name TEST_SCN_RTT_0 --output json
 ```
 
 ### iPerf3 macOS Client (Apple QUIC/L4S)
 ```bash
 # JSON output (default for macOS)
-./lld_test -iperf3-darwin --clientIP 96.37.176.11 --scenario US_Classic_Only -test-group-name HSI021
+./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN
 
 # TXT output
-./lld_test -iperf3-darwin --clientIP 96.37.176.11 --scenario US_Classic_Only -test-group-name HSI021 --output txt
+./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN --output txt
 
 # All iPerf3-darwin scenarios (JSON)
-./lld_test -iperf3-darwin --clientIP 96.37.176.11 --scenario US_Classic_Only -test-group-name HSI021
-./lld_test -iperf3-darwin --clientIP 96.37.176.11 --scenario DS_Classic_Only -test-group-name HSI021
-./lld_test -iperf3-darwin --clientIP 96.37.176.11 --scenario US_Combined -test-group-name HSI021
-./lld_test -iperf3-darwin --clientIP 96.37.176.11 --scenario DS_Combined -test-group-name HSI021
-./lld_test -iperf3-darwin --clientIP 96.37.176.11 --scenario US_LL_Only -test-group-name HSI021
-./lld_test -iperf3-darwin --clientIP 96.37.176.11 --scenario DS_LL_Only -test-group-name HSI021
+./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN
+./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario DS_Classic_Only -test-group-name TEST_SCN
+./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Combined -test-group-name TEST_SCN
+./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario DS_Combined -test-group-name TEST_SCN
+./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_LL_Only -test-group-name TEST_SCN
+./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario DS_LL_Only -test-group-name TEST_SCN
 
 # All iPerf3-darwin scenarios (TXT)
-./lld_test -iperf3-darwin --clientIP 96.37.176.11 --scenario US_Classic_Only -test-group-name HSI021 --output txt
-./lld_test -iperf3-darwin --clientIP 96.37.176.11 --scenario DS_Classic_Only -test-group-name HSI021 --output txt
-./lld_test -iperf3-darwin --clientIP 96.37.176.11 --scenario US_Combined -test-group-name HSI021 --output txt
-./lld_test -iperf3-darwin --clientIP 96.37.176.11 --scenario DS_Combined -test-group-name HSI021 --output txt
-./lld_test -iperf3-darwin --clientIP 96.37.176.11 --scenario US_LL_Only -test-group-name HSI021 --output txt
-./lld_test -iperf3-darwin --clientIP 96.37.176.11 --scenario DS_LL_Only -test-group-name HSI021 --output txt
+./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN --output txt
+./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario DS_Classic_Only -test-group-name TEST_SCN --output txt
+./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Combined -test-group-name TEST_SCN --output txt
+./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario DS_Combined -test-group-name TEST_SCN --output txt
+./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_LL_Only -test-group-name TEST_SCN --output txt
+./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario DS_LL_Only -test-group-name TEST_SCN --output txt
 ```
 
 ### iPerf3 + PacketStorm
 ```bash
 # TXT output with RTT (default)
-./lld_test -iperf3 --clientIP 96.37.176.19 --scenario US_Classic_Only -test-group-name HSI029_RTT_50 -packetstorm --rtt vcmts40ms.json -iteration 1
+./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt vcmts40ms.json -iteration 1
 
 # JSON output with RTT
-./lld_test -iperf3 --clientIP 96.37.176.19 --scenario US_Classic_Only -test-group-name HSI029_RTT_50 -packetstorm --rtt vcmts40ms.json --output json -iteration 1
+./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt vcmts40ms.json --output json -iteration 1
 
 # All RTT values with iPerf3
-./lld_test -iperf3 --clientIP 96.37.176.19 --scenario US_Classic_Only -test-group-name HSI029_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
-./lld_test -iperf3 --clientIP 96.37.176.19 --scenario US_Classic_Only -test-group-name HSI029_RTT_20 -packetstorm --rtt vcmts20ms.json -iteration 1
-./lld_test -iperf3 --clientIP 96.37.176.19 --scenario US_Classic_Only -test-group-name HSI029_RTT_30 -packetstorm --rtt vcmts30ms.json -iteration 1
-./lld_test -iperf3 --clientIP 96.37.176.19 --scenario US_Classic_Only -test-group-name HSI029_RTT_40 -packetstorm --rtt vcmts40ms.json -iteration 1
-./lld_test -iperf3 --clientIP 96.37.176.19 --scenario US_Classic_Only -test-group-name HSI029_RTT_50 -packetstorm --rtt vcmts50ms.json -iteration 1
+./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
+./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_20 -packetstorm --rtt vcmts20ms.json -iteration 1
+./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_30 -packetstorm --rtt vcmts30ms.json -iteration 1
+./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_40 -packetstorm --rtt vcmts40ms.json -iteration 1
+./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt vcmts50ms.json -iteration 1
 ```
 
 ### PacketStorm Only
@@ -146,12 +179,12 @@ python3 lld_test.py -byteblower --bbp P20_vcmts_cm74375fd62c28.bbp --scenario US
 ### SpeedTest
 ```bash
 # Run on all clients (linux, macos, nvidia)
-./lld_test -speedtest -test-group-name HSI018_Ookla_Speedtest
+./lld_test -speedtest -test-group-name TEST_SCN_Ookla_Speedtest
 
 # Run on specific clients
-./lld_test -speedtest --client linux -test-group-name HSI018_Ookla_Speedtest
-./lld_test -speedtest --client linux,macos -test-group-name HSI018_Ookla_Speedtest
-./lld_test -speedtest --client nvidia -test-group-name HSI018_Ookla_Speedtest
+./lld_test -speedtest --client linux -test-group-name TEST_SCN_Ookla_Speedtest
+./lld_test -speedtest --client linux,macos -test-group-name TEST_SCN_Ookla_Speedtest
+./lld_test -speedtest --client nvidia -test-group-name TEST_SCN_Ookla_Speedtest
 ```
 
 ## Workflow
@@ -163,7 +196,7 @@ python3 lld_test.py -byteblower --bbp P20_vcmts_cm74375fd62c28.bbp --scenario US
 ## PacketStorm API Documentation
 
 ### Base Configuration
-- **URL**: `http://10.241.0.118/xgui/rest`
+- **URL**: `http://<PACKETSTORM_IP>/xgui/rest`
 - **Username**: `automation`
 - **Password**: `automation`
 - **Content-Type**: `application/json`
@@ -173,37 +206,37 @@ python3 lld_test.py -byteblower --bbp P20_vcmts_cm74375fd62c28.bbp --scenario US
 
 #### Login
 ```bash
-curl -X POST http://10.241.0.118/xgui/rest \
+curl -X POST http://<PACKETSTORM_IP>/xgui/rest \
   -H "Content-Type: application/json" \
-  -d '{"op": "login", "user": "automation", "args": {"password": "automation"}}'
+  -d '{"op": "login", "user": "<username>", "args": {"password": "<password>"}}'
 ```
 
 #### Start Configuration
 ```bash
-curl -X POST http://10.241.0.118/xgui/rest \
+curl -X POST http://<PACKETSTORM_IP>/xgui/rest \
   -H "Content-Type: application/json" \
-  -d '{"op": "start", "user": "automation", "args": {"config": "vcmts10ms.json"}}'
+  -d '{"op": "start", "user": "<username>", "args": {"config": "vcmts10ms.json"}}'
 ```
 
 #### Stop Configuration
 ```bash
-curl -X POST http://10.241.0.118/xgui/rest \
+curl -X POST http://<PACKETSTORM_IP>/xgui/rest \
   -H "Content-Type: application/json" \
-  -d '{"op": "stop", "user": "automation"}'
+  -d '{"op": "stop", "user": "<username>"}'
 ```
 
 #### Status Check
 ```bash
-curl -X POST http://10.241.0.118/xgui/rest \
+curl -X POST http://<PACKETSTORM_IP>/xgui/rest \
   -H "Content-Type: application/json" \
-  -d '{"op": "status", "user": "automation"}'
+  -d '{"op": "status", "user": "<username>"}'
 ```
 
 #### List Configurations
 ```bash
-curl -X POST http://10.241.0.118/xgui/rest \
+curl -X POST http://<PACKETSTORM_IP>/xgui/rest \
   -H "Content-Type: application/json" \
-  -d '{"op": "list", "user": "automation", "args": {"type": "configs"}}'
+  -d '{"op": "list", "user": "<username>", "args": {"type": "configs"}}'
 ```
 
 ### Testing
@@ -244,7 +277,7 @@ python3 test_packetstorm_api.py stop
 - `-byteblower`: Enable ByteBlower mode
 - `--bbp`: .bbp filename from bb_flows/ directory (required with -byteblower)
 - `--scenario`: Scenario name (required with -byteblower or -iperf3)
-- `-test-group-name`: Test group name prefix for results (e.g., HSI029_RTT_0)
+- `-test-group-name`: Test group name prefix for results (e.g., SCN_RTT_0)
 - `-packetstorm`: Enable PacketStorm mode
 - `--rtt`: PacketStorm configuration name (required with -packetstorm)
 - `-iperf3`: Enable iPerf3 Linux mode
@@ -275,7 +308,7 @@ The tool supports running iPerf3 tests on Linux clients with automatic SSH key s
 
 ### Prerequisites
 - Linux client with iPerf3 installed
-- SSH access to client (username: `lld`, password: `aqm@2024`)
+- SSH access to client (username: `lld`, password: `<password>`)
 - `sshpass` installed on control machine
 
 ### Supported Scenarios
@@ -300,8 +333,8 @@ The tool supports running iPerf3-darwin tests on macOS clients with Apple QUIC a
 ### Prerequisites
 - macOS client with iperf3-darwin installed
 - macOS server with iperf3-darwin installed
-- SSH access to client (username: `lld_mac_client`, password: `aqm@2022`)
-- SSH access to server (username: `mac_studio_server`, password: `aqm@2022`)
+- SSH access to client (username: `lld_mac_client`, password: `<password>`)
+- SSH access to server (username: `mac_studio_server`, password: `<password>`)
 - `sshpass` installed on control machine
 
 ### Supported Scenarios
@@ -331,7 +364,7 @@ The tool supports running iPerf3-darwin tests on macOS clients with Apple QUIC a
 ### Single Iteration (Default)
 Results saved directly to main folder:
 ```
-Results/HSI029_RTT_10_US_Classic_Only_RTT_10ms_20251224_202431/
+Results/SCN_RTT_10_US_Classic_Only_RTT_10ms_20251224_202431/
 ├── US_Classic_Only_RTT_10ms - 20251224_202431__1.csv
 ├── US_Classic_Only_RTT_10ms - 20251224_202431__1.html
 ├── US_Classic_Only_RTT_10ms - 20251224_202431__1.json
@@ -343,7 +376,7 @@ Results/HSI029_RTT_10_US_Classic_Only_RTT_10ms_20251224_202431/
 ### Multiple Iterations
 Results organized in iteration subfolders:
 ```
-Results/HSI029_RTT_10_US_Classic_Only_RTT_10ms_20251224_202431/
+Results/SCN_RTT_10_US_Classic_Only_RTT_10ms_20251224_202431/
 ├── iteration_1/
 │   ├── US_Classic_Only_RTT_10ms - 20251224_202431__1.csv
 │   └── ...
@@ -357,15 +390,15 @@ Results/HSI029_RTT_10_US_Classic_Only_RTT_10ms_20251224_202431/
 
 ## Automated Test Runner
 
-The `run_hsi029_rtt_tests.py` script executes all 36 HSI029 RTT test combinations:
+The `run_scn_rtt_tests.py` script executes all 36 Service Class Name (SCN) RTT test combinations:
 - 6 scenarios: US_Classic_Only, DS_Classic_Only, US_Combined, DS_Combined, DS_LL_Only, US_LL_Only
 - 6 RTT values per scenario: 0ms, 10ms, 20ms, 30ms, 40ms, 50ms
 - 15-second intervals between tests
 - Continues on individual test failures
 
 ```bash
-# Run all HSI029 RTT tests
-python3 run_hsi029_rtt_tests.py
+# Run all Service Class Name (SCN) RTT tests
+python3 run_scn_rtt_tests.py
 
 # Estimated runtime: 9 minutes (intervals only) + test execution time
 ```
@@ -387,11 +420,11 @@ python3 run_hsi029_rtt_tests.py
 - `icmts50ms.json` - 50ms RTT configuration
 
 ### ByteBlower Project Files
-- `P2_icmts_cm946a77c7f63e.bbp` - Port 2 iCMTS configuration
-- `P7_icmts_cm0cb9379c64b4.bbp` - Port 7 iCMTS configuration
-- `P15_icmts_cm802bf9faee17.bbp` - Port 15 iCMTS configuration
-- `P16_vcmts_cm2068949223b8.bbp` - Port 16 vCMTS configuration
-- `P20_vcmts_cm74375fd62c28.bbp` - Port 20 vCMTS configuration
+- `Port_2_example.bbp` - Port 2 iCMTS configuration
+- `Port_7_example.bbp` - Port 7 iCMTS configuration
+- `Port_15_example.bbp` - Port 15 iCMTS configuration
+- `Port_16_example.bbp` - Port 16 vCMTS configuration
+- `Port_20_example.bbp` - Port 20 vCMTS configuration
 
 #### Standard Scenarios Available in .bbp Files:
 - **US_Classic_Only**: Upstream Classic service flow only
@@ -407,22 +440,19 @@ python3 run_hsi029_rtt_tests.py
 
 ## Files
 
-- `lld_test.py`: Main CLI tool with ByteBlower, PacketStorm, iPerf3, and SpeedTest support
-- `run_hsi029_rtt_tests.py`: Automated HSI029 RTT test runner (36 tests)
-- `run_hsi021_iperf3_macos_tests.py`: Automated HSI021 macOS iPerf3 test runner (6 tests)
-- `byteblower_logic.py`: ByteBlower execution logic with RTT naming
+- `config.yaml`: Main configuration file (create from config.yaml.example)
+- `config.yaml.example`: Example configuration with all settings documented
+- `config_loader.py`: Configuration file loader module
+- `lld_test.py`: Main CLI tool
+- `byteblower_logic.py`: ByteBlower execution logic
 - `packetstorm_logic.py`: PacketStorm execution logic
-- `iperf3_logic.py`: iPerf3 Linux client execution logic
-- `speedtest_logic.py`: SpeedTest execution logic for multiple clients
-- `speedtest_client_runner.py`: Standalone SpeedTest client runner
+- `iperf3_logic.py`: iPerf3 execution logic
+- `speedtest_logic.py`: SpeedTest execution logic
+- `snmp_collector.py`: SNMP data collection module
 - `logger.py`: Logging utility
-- `log_rotator.py`: Log rotation utility (10MB limit)
-- `bb_flows/`: ByteBlower .bbp scenario files
-- `iPerf3_Linux_Commands`: iPerf3 command reference file
-- `MacOS_iPerf3_Commands`: macOS iperf3-darwin command reference file
-- `test_packetstorm_api.py`: PacketStorm API testing tool
-- `test_packetstorm.sh`: Bash script for PacketStorm API testing
-- `HSI029_RTT_Testing`: Test command reference file
+- `log_rotator.py`: Log rotation utility
+- `SETUP_GUIDE.md`: Setup and installation guide
+- `README.md`: This file
 
 ## SpeedTest Integration
 
@@ -443,32 +473,42 @@ The tool supports running Ookla SpeedTest on multiple client platforms with SNMP
 - Excel spreadsheet with all SNMP metrics
 
 ### Client Credentials
-- Linux: `lld@96.37.176.7` (password: `aqm@2024`)
-- macOS: `lld_mac_client@96.37.176.11` (password: `aqm@2022`)
-- NVIDIA: `Administrator@96.37.176.14` (password: `aqm@2022`)
+- Linux: `lld@<CLIENT_IP>` (password: `<password>`)
+- macOS: `lld_mac_client@<CLIENT_IP>` (password: `<password>`)
+- NVIDIA: `Administrator@<CLIENT_IP>` (password: `<password>`)
 
 ### Output Structure
 ```
-Results/HSI016_Speedtest_20250115_160000/
-├── SNMP_before_HSI016_Speedtest_linux_*.csv
-├── HSI016_Speedtest_linux_20250115_160000.txt
-├── SNMP_after_HSI016_Speedtest_linux_*.csv
-├── SNMP_before_HSI016_Speedtest_macos_*.csv
-├── HSI016_Speedtest_macos_20250115_160000.txt
-├── SNMP_after_HSI016_Speedtest_macos_*.csv
-├── SNMP_before_HSI016_Speedtest_nvidia_*.csv
-├── HSI016_Speedtest_nvidia_20250115_160000.txt
-├── SNMP_after_HSI016_Speedtest_nvidia_*.csv
-└── HSI016_Speedtest_Results.xlsx (consolidated SNMP data)
+Results/SCN_Speedtest_20250115_160000/
+├── SNMP_before_SCN_Speedtest_linux_*.csv
+├── SCN_Speedtest_linux_20250115_160000.txt
+├── SNMP_after_SCN_Speedtest_linux_*.csv
+├── SNMP_before_SCN_Speedtest_macos_*.csv
+├── SCN_Speedtest_macos_20250115_160000.txt
+├── SNMP_after_SCN_Speedtest_macos_*.csv
+├── SNMP_before_SCN_Speedtest_nvidia_*.csv
+├── SCN_Speedtest_nvidia_20250115_160000.txt
+├── SNMP_after_SCN_Speedtest_nvidia_*.csv
+└── SCN_Speedtest_Results.xlsx (consolidated SNMP data)
 ```
 
 ### Implementation
 - **Module**: `speedtest_logic.py` - Core SpeedTest execution with per-client SNMP integration
-- **SNMP Target**: `2605:1c00:50f2:203:a49d:6fa2:3d34:7329` (CMTS)
+- **SNMP Target**: `<MODEM_IPV6>` (CMTS)
 - **Execution Flow**: For each client: SNMP Before → SpeedTest (3 iterations) → SNMP After
 - **Excel Consolidation**: All SNMP CSV files merged into single Excel workbook with separate sheets per test
 
 ## Version History
+
+### v1.3 (2025-01-16)
+- **NEW**: Configuration file system (`config.yaml`) for environment portability
+- **NEW**: All hardcoded paths, IPs, and credentials externalized to config file
+- **NEW**: `config_loader.py` module for centralized configuration management
+- **NEW**: `config.yaml.example` with fully documented settings
+- **NEW**: `SETUP_GUIDE.md` with comprehensive setup instructions
+- **ENHANCED**: Easy migration between different test environments
+- **IMPROVED**: Security with file-based credential management
+- **UPDATED**: All modules (byteblower, packetstorm, iperf3, speedtest, snmp) use config file
 
 ### v1.2 (2025-01-15)
 - **CONSOLIDATED**: All documentation merged into single README.md
@@ -488,7 +528,7 @@ Results/HSI016_Speedtest_20250115_160000/
 - Changed default iterations from 3 to 1
 - Smart folder structure (no iteration subfolders for single iterations)
 - RTT information included in result folder names
-- Added automated test runner for HSI029 RTT tests
+- Added automated test runner for Service Class Name (SCN) RTT tests
 - Iteration folders now start from 1 instead of 0
 - Enhanced README with examples and folder structure diagrams
 - **NEW**: Linux iPerf3 integration with SSH key automation

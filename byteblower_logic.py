@@ -4,6 +4,7 @@ from datetime import datetime
 import time
 from logger import Logger
 from log_rotator import LogRotator
+from config_loader import config
 
 class ByteBlowerLogic:
     def __init__(self, bbp_file, scenario_name, bb_scenario_name, test_group_name=None, rtt_suffix="", report_formats="html pdf csv xls xlsx json docx"):
@@ -43,10 +44,11 @@ class ByteBlowerLogic:
         if os.path.exists(self.bbp_file):
             project_path = self.bbp_file
         else:
-            project_path = f"bb_flows/{self.bbp_file}"
+            bb_flows_dir = config.byteblower_bb_flows_dir
+            project_path = f"{bb_flows_dir}/{self.bbp_file}"
             
         cmd = [
-            "/home/aphillips/Projects/ByteBlower/ByteBlower-CLT",
+            config.byteblower_cli_path,
             "--project", project_path,
             "--output", output_dir,
             "-scenario", self.bb_scenario_name
