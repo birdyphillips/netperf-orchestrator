@@ -1,8 +1,8 @@
-# LLD Test CLI Tool v1.0
+# NetPerf Orchestrator v1.3
 
-Command line tool that integrates ByteBlower CLI and PacketStorm for automated testing.
+Network Performance Testing Orchestration Tool - Integrates ByteBlower, PacketStorm, iPerf3, and SpeedTest for automated network testing.
 
-## Version 1.0 Features
+## Version 1.3 Features
 
 - **Default 1 iteration**: Commands without `-iteration` parameter run only 1 iteration
 - **Smart folder structure**: Single iterations save directly to main folder, multiple iterations create iteration subfolders
@@ -45,14 +45,14 @@ For complete setup instructions including ByteBlower, iPerf3, SpeedTest, SSH key
 ## Quick Start
 
 ### Using the Wrapper Script (Recommended)
-Use the `lld_test` wrapper script to ensure all dependencies are available:
+Use the `netperf` wrapper script to ensure all dependencies are available:
 
 ```bash
 # Single iteration (default)
-./lld_test -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
+./netperf -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
 
 # With RTT configuration
-./lld_test -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
+./netperf -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
 ```
 
 ### Using Python Directly
@@ -60,12 +60,12 @@ Alternatively, run with the venv Python:
 
 ```bash
 source venv/bin/activate
-python3 lld_test.py -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
+python3 netperf_orchestrator.py -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
 ```
 
 ### Run All Service Class Name (SCN) RTT Tests
 ```bash
-./lld_test -byteblower --bbp Port_13_example.bbp --scenario US_Classic_Only,DS_Classic_Only,US_Combined,DS_Combined,US_LL_Only,DS_LL_Only -test-group-name TEST_SCN_RTT -packetstorm --rtt vcmts10ms.json,vcmts30ms.json,vcmts50ms.json -iteration 1
+./netperf -byteblower --bbp Port_13_example.bbp --scenario US_Classic_Only,DS_Classic_Only,US_Combined,DS_Combined,US_LL_Only,DS_LL_Only -test-group-name TEST_SCN_RTT -packetstorm --rtt vcmts10ms.json,vcmts30ms.json,vcmts50ms.json -iteration 1
 ```
 
 ## Usage Examples
@@ -73,118 +73,118 @@ python3 lld_test.py -byteblower --bbp Port_20_example.bbp --scenario US_Classic_
 ### ByteBlower Only
 ```bash
 # Single iteration (saves to main folder)
-./lld_test -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
+./netperf -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
 
 # Multiple iterations (creates iteration subfolders)
-./lld_test -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0 -iteration 3
+./netperf -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0 -iteration 3
 
 # All ByteBlower scenarios
-./lld_test -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
-./lld_test -byteblower --bbp Port_20_example.bbp --scenario DS_Classic_Only -test-group-name TEST_SCN_RTT_0
-./lld_test -byteblower --bbp Port_20_example.bbp --scenario US_Combined -test-group-name TEST_SCN_RTT_0
-./lld_test -byteblower --bbp Port_20_example.bbp --scenario DS_Combined -test-group-name TEST_SCN_RTT_0
-./lld_test -byteblower --bbp Port_20_example.bbp --scenario US_LL_Only -test-group-name TEST_SCN_RTT_0
-./lld_test -byteblower --bbp Port_20_example.bbp --scenario DS_LL_Only -test-group-name TEST_SCN_RTT_0
+./netperf -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
+./netperf -byteblower --bbp Port_20_example.bbp --scenario DS_Classic_Only -test-group-name TEST_SCN_RTT_0
+./netperf -byteblower --bbp Port_20_example.bbp --scenario US_Combined -test-group-name TEST_SCN_RTT_0
+./netperf -byteblower --bbp Port_20_example.bbp --scenario DS_Combined -test-group-name TEST_SCN_RTT_0
+./netperf -byteblower --bbp Port_20_example.bbp --scenario US_LL_Only -test-group-name TEST_SCN_RTT_0
+./netperf -byteblower --bbp Port_20_example.bbp --scenario DS_LL_Only -test-group-name TEST_SCN_RTT_0
 ```
 
 ### ByteBlower + PacketStorm
 ```bash
 # With RTT configuration
-./lld_test -byteblower --bbp HSI --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
+./netperf -byteblower --bbp HSI --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
 
 # All RTT values
-./lld_test -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
-./lld_test -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_20 -packetstorm --rtt vcmts20ms.json -iteration 1
-./lld_test -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_30 -packetstorm --rtt vcmts30ms.json -iteration 1
-./lld_test -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_40 -packetstorm --rtt vcmts40ms.json -iteration 1
-./lld_test -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt vcmts50ms.json -iteration 1
+./netperf -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
+./netperf -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_20 -packetstorm --rtt vcmts20ms.json -iteration 1
+./netperf -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_30 -packetstorm --rtt vcmts30ms.json -iteration 1
+./netperf -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_40 -packetstorm --rtt vcmts40ms.json -iteration 1
+./netperf -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt vcmts50ms.json -iteration 1
 ```
 
 ### iPerf3 Linux Client
 ```bash
 # TXT output (default)
-./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN
+./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN
 
 # JSON output
-./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0 --output json
+./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0 --output json
 
 # All iPerf3 scenarios (TXT)
-./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
-./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario DS_Classic_Only -test-group-name TEST_SCN_RTT_0
-./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_Combined -test-group-name TEST_SCN_RTT_0
-./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario DS_Combined -test-group-name TEST_SCN_RTT_0
-./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_LL_Only -test-group-name TEST_SCN_RTT_0
-./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario DS_LL_Only -test-group-name TEST_SCN_RTT_0
+./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
+./netperf -iperf3 --clientIP <CLIENT_IP> --scenario DS_Classic_Only -test-group-name TEST_SCN_RTT_0
+./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_Combined -test-group-name TEST_SCN_RTT_0
+./netperf -iperf3 --clientIP <CLIENT_IP> --scenario DS_Combined -test-group-name TEST_SCN_RTT_0
+./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_LL_Only -test-group-name TEST_SCN_RTT_0
+./netperf -iperf3 --clientIP <CLIENT_IP> --scenario DS_LL_Only -test-group-name TEST_SCN_RTT_0
 
 # All iPerf3 scenarios (JSON)
-./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0 --output json
-./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario DS_Classic_Only -test-group-name TEST_SCN_RTT_0 --output json
-./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_Combined -test-group-name TEST_SCN_RTT_0 --output json
-./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario DS_Combined -test-group-name TEST_SCN_RTT_0 --output json
-./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_LL_Only -test-group-name TEST_SCN_RTT_0 --output json
-./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario DS_LL_Only -test-group-name TEST_SCN_RTT_0 --output json
+./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0 --output json
+./netperf -iperf3 --clientIP <CLIENT_IP> --scenario DS_Classic_Only -test-group-name TEST_SCN_RTT_0 --output json
+./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_Combined -test-group-name TEST_SCN_RTT_0 --output json
+./netperf -iperf3 --clientIP <CLIENT_IP> --scenario DS_Combined -test-group-name TEST_SCN_RTT_0 --output json
+./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_LL_Only -test-group-name TEST_SCN_RTT_0 --output json
+./netperf -iperf3 --clientIP <CLIENT_IP> --scenario DS_LL_Only -test-group-name TEST_SCN_RTT_0 --output json
 ```
 
 ### iPerf3 macOS Client (Apple QUIC/L4S)
 ```bash
 # JSON output (default for macOS)
-./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN
+./netperf -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN
 
 # TXT output
-./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN --output txt
+./netperf -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN --output txt
 
 # All iPerf3-darwin scenarios (JSON)
-./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN
-./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario DS_Classic_Only -test-group-name TEST_SCN
-./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Combined -test-group-name TEST_SCN
-./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario DS_Combined -test-group-name TEST_SCN
-./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_LL_Only -test-group-name TEST_SCN
-./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario DS_LL_Only -test-group-name TEST_SCN
+./netperf -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN
+./netperf -iperf3-darwin --clientIP <CLIENT_IP> --scenario DS_Classic_Only -test-group-name TEST_SCN
+./netperf -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Combined -test-group-name TEST_SCN
+./netperf -iperf3-darwin --clientIP <CLIENT_IP> --scenario DS_Combined -test-group-name TEST_SCN
+./netperf -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_LL_Only -test-group-name TEST_SCN
+./netperf -iperf3-darwin --clientIP <CLIENT_IP> --scenario DS_LL_Only -test-group-name TEST_SCN
 
 # All iPerf3-darwin scenarios (TXT)
-./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN --output txt
-./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario DS_Classic_Only -test-group-name TEST_SCN --output txt
-./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Combined -test-group-name TEST_SCN --output txt
-./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario DS_Combined -test-group-name TEST_SCN --output txt
-./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_LL_Only -test-group-name TEST_SCN --output txt
-./lld_test -iperf3-darwin --clientIP <CLIENT_IP> --scenario DS_LL_Only -test-group-name TEST_SCN --output txt
+./netperf -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN --output txt
+./netperf -iperf3-darwin --clientIP <CLIENT_IP> --scenario DS_Classic_Only -test-group-name TEST_SCN --output txt
+./netperf -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Combined -test-group-name TEST_SCN --output txt
+./netperf -iperf3-darwin --clientIP <CLIENT_IP> --scenario DS_Combined -test-group-name TEST_SCN --output txt
+./netperf -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_LL_Only -test-group-name TEST_SCN --output txt
+./netperf -iperf3-darwin --clientIP <CLIENT_IP> --scenario DS_LL_Only -test-group-name TEST_SCN --output txt
 ```
 
 ### iPerf3 + PacketStorm
 ```bash
 # TXT output with RTT (default)
-./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt vcmts40ms.json -iteration 1
+./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt vcmts40ms.json -iteration 1
 
 # JSON output with RTT
-./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt vcmts40ms.json --output json -iteration 1
+./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt vcmts40ms.json --output json -iteration 1
 
 # All RTT values with iPerf3
-./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
-./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_20 -packetstorm --rtt vcmts20ms.json -iteration 1
-./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_30 -packetstorm --rtt vcmts30ms.json -iteration 1
-./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_40 -packetstorm --rtt vcmts40ms.json -iteration 1
-./lld_test -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt vcmts50ms.json -iteration 1
+./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
+./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_20 -packetstorm --rtt vcmts20ms.json -iteration 1
+./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_30 -packetstorm --rtt vcmts30ms.json -iteration 1
+./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_40 -packetstorm --rtt vcmts40ms.json -iteration 1
+./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt vcmts50ms.json -iteration 1
 ```
 
 ### PacketStorm Only
 ```bash
 # Start and stop RTT configuration
-./lld_test -packetstorm --rtt vcmts10ms.json
-./lld_test -packetstorm --rtt vcmts20ms.json
-./lld_test -packetstorm --rtt vcmts30ms.json
-./lld_test -packetstorm --rtt vcmts40ms.json
-./lld_test -packetstorm --rtt vcmts50ms.json
+./netperf -packetstorm --rtt vcmts10ms.json
+./netperf -packetstorm --rtt vcmts20ms.json
+./netperf -packetstorm --rtt vcmts30ms.json
+./netperf -packetstorm --rtt vcmts40ms.json
+./netperf -packetstorm --rtt vcmts50ms.json
 ```
 
 ### SpeedTest
 ```bash
 # Run on all clients (linux, macos, nvidia)
-./lld_test -speedtest -test-group-name TEST_SCN_Ookla_Speedtest
+./netperf -speedtest -test-group-name TEST_SCN_Ookla_Speedtest
 
 # Run on specific clients
-./lld_test -speedtest --client linux -test-group-name TEST_SCN_Ookla_Speedtest
-./lld_test -speedtest --client linux,macos -test-group-name TEST_SCN_Ookla_Speedtest
-./lld_test -speedtest --client nvidia -test-group-name TEST_SCN_Ookla_Speedtest
+./netperf -speedtest --client linux -test-group-name TEST_SCN_Ookla_Speedtest
+./netperf -speedtest --client linux,macos -test-group-name TEST_SCN_Ookla_Speedtest
+./netperf -speedtest --client nvidia -test-group-name TEST_SCN_Ookla_Speedtest
 ```
 
 ## Workflow
@@ -443,7 +443,8 @@ python3 run_scn_rtt_tests.py
 - `config.yaml`: Main configuration file (create from config.yaml.example)
 - `config.yaml.example`: Example configuration with all settings documented
 - `config_loader.py`: Configuration file loader module
-- `lld_test.py`: Main CLI tool
+- `netperf_orchestrator.py`: Main CLI tool
+- `netperf`: Wrapper script for easy execution
 - `byteblower_logic.py`: ByteBlower execution logic
 - `packetstorm_logic.py`: PacketStorm execution logic
 - `iperf3_logic.py`: iPerf3 execution logic
