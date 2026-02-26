@@ -6,7 +6,7 @@
 
 **GitHub**: https://github.com/birdyphillips/netperf-orchestrator
 
-CLI-based network performance testing orchestration tool integrating ByteBlower, PacketStorm, iPerf3, and SpeedTest for automated, comprehensive network testing with SNMP monitoring.
+CLI-based DOCSIS 3.1 and 4.0 network performance testing orchestration tool integrating ByteBlower, PacketStorm, iPerf3, and SpeedTest for automated, comprehensive network testing with SNMP monitoring.
 
 ## 🚀 Features
 
