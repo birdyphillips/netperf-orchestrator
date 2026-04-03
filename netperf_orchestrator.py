@@ -21,6 +21,7 @@ from iperf3_logic import IPerf3Logic
 from speedtest_logic import SpeedTestLogic
 from logger import Logger
 from snmp_collector import collect_snmp_data
+from latency_calculator import generate_latency_report, find_snmp_files
 
 class ByteBlowerCLI:
     def __init__(self):
@@ -167,6 +168,8 @@ class ByteBlowerCLI:
                     if not bb.run_scenario(i, iterations, test_output_dir):
                         success = False
                     self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", snmp_dir, "")
+                
+                self._run_latency_report(snmp_dir)
             elif iperf3_only or iperf3_darwin:
                 platform_override = 'macos' if iperf3_darwin else None
                 platform_suffix = "_macOS" if iperf3_darwin else "_Linux"
@@ -192,6 +195,7 @@ class ByteBlowerCLI:
                         success = False
                     self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", snmp_dir, "")
                 
+                self._run_latency_report(snmp_dir)
                 iperf3.stop_iperf3_servers()
             else:
                 ps = PacketStormLogic(rtt_file)
@@ -221,6 +225,7 @@ class ByteBlowerCLI:
                                 success = False
                             self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", snmp_dir, "")
                         
+                        self._run_latency_report(snmp_dir)
                         iperf3.stop_iperf3_servers()
                         success = success and ps.stop_config()
                 else:
@@ -238,6 +243,7 @@ class ByteBlowerCLI:
                                 success = False
                             self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", snmp_dir, "")
                         
+                        self._run_latency_report(snmp_dir)
                         success = success and ps.stop_config()
             
             # Collect SNMP files from scenario directory
@@ -256,6 +262,21 @@ class ByteBlowerCLI:
             self.logger.error(f"Single test failed: {e}")
             return False, []
     
+    def _run_latency_report(self, snmp_dir):
+        """Generate latency bin report from SNMP before/after files"""
+        try:
+            before_file, after_file = find_snmp_files(snmp_dir)
+            if before_file and after_file:
+                result = generate_latency_report(before_file, after_file)
+                if result:
+                    self.logger.info(f"✓ Latency report: {os.path.basename(result)}")
+                else:
+                    self.logger.warning("Latency report skipped (no latency data in SNMP)")
+            else:
+                self.logger.warning("Latency report skipped (SNMP files not found)")
+        except Exception as e:
+            self.logger.error(f"Latency report failed: {e}")
+
     def _consolidate_snmp_to_excel(self, snmp_files, parent_dir, test_group_name):
         """Consolidate all SNMP files into Excel with separate sheets"""
         try:

@@ -57,6 +57,9 @@ def parse_snmp_data(file_path):
     return data
 
 def export_to_excel(test_name, phase, timestamp, output_dir):
+    """DEPRECATED: Combined SNMP Excel export. Replaced by latency_calculator.py
+    which generates Latency_Bin_Report.xlsx with per-service-flow analysis.
+    Kept for backward compatibility — call directly if needed."""
     if not EXCEL_AVAILABLE:
         return None
     
@@ -273,12 +276,15 @@ def collect_snmp_data(target_ip, test_name, phase, output_dir):
     print(f"Collecting SNMP data - {phase} {test_name}")
     result = ssh_snmp_collector(username, jumpserver, target_ip, filename)
     
-    # Create Excel export after 'after' phase
-    if phase == "after":
-        try:
-            export_to_excel(test_name, phase, timestamp, output_dir)
-        except Exception as e:
-            print(f"Excel export failed: {e}")
+    # DEPRECATED: Combined SNMP Excel export — replaced by latency_calculator.py
+    # Latency bin reports are now generated via generate_latency_report() in the
+    # orchestrator after all iterations complete.
+    # To re-enable, uncomment the block below:
+    # if phase == "after":
+    #     try:
+    #         export_to_excel(test_name, phase, timestamp, output_dir)
+    #     except Exception as e:
+    #         print(f"Excel export failed: {e}")
     
     return result
 
