@@ -133,8 +133,9 @@ class IPerf3Logic:
                     "wait"
                 ],
                 "DS_STVA": [
-                    f"iperf3-darwin -c {self.client_ip} -p 5201 --dscp 32 -C cubic -t 30 {json_ext} > DS_{group_name}_STVA_1TCP_CL.{file_ext} &",
-                    f"iperf3-darwin -c {self.client_ip} -p 5202 -S 0x81 -t 30 {json_ext} > DS_{group_name}_STVA_1TCP_LL.{file_ext} &",
+                    f"iperf3-darwin -c {self.client_ip} -p 5201 --dscp 32 -C cubic -t 30 -J > DS_{group_name}_STVA_1TCP_CL.json &",
+                    f"iperf3-darwin -c {self.client_ip} -p 5202 -S 0x81 -t 30 -J > DS_{group_name}_STVA_1TCP_LL.json &",
+                    f"ping -i 0.1 -c 300 -Q 0x81 {self.client_ip} > DS_{group_name}_STVA_ping_latency.txt &",
                     "wait"
                 ]
             }
@@ -202,8 +203,9 @@ class IPerf3Logic:
                     "wait"
                 ],
                 "DS_STVA": [
-                    f"iperf3 -c {self.client_ip} -p 5201 --dscp 32 -C cubic -t 30 {json_ext} > DS_{group_name}_STVA_1TCP_CL.{file_ext} &",
-                    f"iperf3 -c {self.client_ip} -p 5202 -S 0x81 -t 30 {json_ext} > DS_{group_name}_STVA_1TCP_LL.{file_ext} &",
+                    f"iperf3 -c {self.client_ip} -p 5201 --dscp 32 -C cubic -t 30 -J > DS_{group_name}_STVA_1TCP_CL.json &",
+                    f"iperf3 -c {self.client_ip} -p 5202 -S 0x81 -t 30 -J > DS_{group_name}_STVA_1TCP_LL.json &",
+                    f"ping -i 0.1 -c 300 -Q 0x81 {self.client_ip} > DS_{group_name}_STVA_ping_latency.txt &",
                     "wait"
                 ]
             }

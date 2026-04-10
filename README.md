@@ -15,6 +15,7 @@ CLI-based DOCSIS 3.1 and 4.0 network performance testing orchestration tool inte
 - **PacketStorm RTT** - Configurable round-trip time emulation (10-50ms)
 - **SpeedTest** - Multi-client Ookla speed testing (Linux, macOS, Windows)
 - **SNMP Monitoring** - Automatic before/after data collection with Excel consolidation
+- **CMTS Kafka Telemetry** - Real-time downstream latency collection from Harmonic vCMTS via Kafka
 - **Multi-Scenario** - 6 test scenarios (US/DS Classic/Combined/LL_Only)
 - **Automated Test Runner** - Execute all 36 SCN RTT test combinations
 - **Configuration File** - YAML-based config for easy environment portability
@@ -60,7 +61,7 @@ Edit `config.yaml` to match your environment:
 ### 3. Install Dependencies
 ```bash
 # Install Python dependencies
-pip install pyyaml paramiko pandas openpyxl
+pip install pyyaml paramiko pandas openpyxl kafka-python zstandard
 
 # Install system tools
 sudo apt install -y sshpass openssh-client
@@ -476,7 +477,10 @@ python3 run_scn_rtt_tests.py
 - `packetstorm_logic.py`: PacketStorm execution logic
 - `iperf3_logic.py`: iPerf3 execution logic
 - `speedtest_logic.py`: SpeedTest execution logic
-- `snmp_collector.py`: SNMP data collection module
+- `snmp_collector.py`: SNMP data collection module (upstream latency via SNMP before/after)
+- `cmts_collector.py`: CMTS Kafka metrics collector (downstream latency via real-time Kafka stream)
+- `latency_calculator.py`: Latency bin report generator from SNMP data
+- `latency_bin_template.py`: Blank Excel template generator for latency bins
 - `logger.py`: Logging utility
 - `log_rotator.py`: Log rotation utility
 - `SETUP_GUIDE.md`: Setup and installation guide
@@ -527,6 +531,16 @@ Results/SCN_Speedtest_20250115_160000/
 - **Excel Consolidation**: All SNMP CSV files merged into single Excel workbook with separate sheets per test
 
 ## Version History
+
+### v1.4 (2026-06-07)
+- **NEW**: CMTS Kafka telemetry collector (`cmts_collector.py`) for real-time downstream latency
+- **NEW**: Automatic downstream `dp_flow_*` metric collection during tests via Harmonic vCMTS Kafka stream
+- **NEW**: CMTS latency report (`CMTS_Latency_Report_*.xlsx`) with P50/P99/P99.9, AQM drops, throughput
+- **NEW**: TimeSeries sheet in CMTS report for latency-over-time charting
+- **NEW**: `kafka` section in `config.yaml` for broker/topic configuration
+- **ENHANCED**: Orchestrator auto-starts/stops Kafka collection around test iterations
+- **ENHANCED**: Direction auto-detected from scenario name (US_* → upstream, DS_* → downstream)
+- **UPDATED**: Dependencies now include `kafka-python` and `zstandard` for Kafka/zstd support
 
 ### v1.3 (2025-01-16)
 - **NEW**: Configuration file system (`config.yaml`) for environment portability
@@ -589,7 +603,9 @@ netperf-orchestrator/
 ├── iperf3_logic.py         # iPerf3 execution
 ├── packetstorm_logic.py    # RTT configuration
 ├── speedtest_logic.py      # SpeedTest execution
-├── snmp_collector.py       # SNMP data collection
+├── snmp_collector.py       # SNMP data collection (upstream)
+├── cmts_collector.py       # CMTS Kafka metrics (downstream)
+├── latency_calculator.py   # Latency bin report from SNMP
 ├── config_loader.py        # Configuration management
 ├── logger.py               # Logging system
 └── bb_flows/               # ByteBlower flow definitions
@@ -598,9 +614,25 @@ netperf-orchestrator/
 ### Test Flow
 1. **Configuration** - Load settings from `config.yaml`
 2. **Execution** - Run test via CLI with parameters
-3. **SNMP Collection** - Automatic before/after capture
-4. **Results** - Organized folder structure with RTT naming
-5. **Reports** - HTML/PDF/CSV/JSON/Excel generation
+3. **SNMP Collection** - Automatic before/after capture (upstream latency bins)
+4. **CMTS Kafka Collection** - Real-time downstream `dp_flow_*` metrics during test
+5. **Results** - Organized folder structure with RTT naming
+6. **Reports** - HTML/PDF/CSV/JSON/Excel generation + CMTS latency report
+
+### Latency Data Sources
+
+| Direction | Source | Collector | Report |
+|-----------|--------|-----------|--------|
+| Upstream | SNMP (before/after) | `snmp_collector.py` | `Latency_Bin_Report_*.xlsx` |
+| Downstream | Kafka real-time stream | `cmts_collector.py` | `CMTS_Latency_Report_*.xlsx` |
+
+The CMTS Kafka collector captures Prometheus-format metrics from the Harmonic vCMTS telemetry stream every 30 seconds, including:
+- `dp_flow_QueueLatencyAvgUsec` / `dp_flow_QueueLatencyMaxUsec` — average and max queue latency
+- `dp_flow_QueueLatencyBinPktCount` — 16-bin latency histogram for P50/P99/P99.9 calculation
+- `dp_flow_AqmDroppedPackets` / `dp_flow_AqmMarkedCongestedPackets` — AQM congestion metrics
+- `dp_flow_SanctionedPackets` — sanctioned packet counts
+- `K_Samis1_DeltaPacketsPassed` / `K_Samis1_DeltaOctetsPassed` — throughput deltas
+- `snmp_docsQosServiceFlowPackets` / `snmp_docsQosServiceFlowOctets` — cumulative flow stats
 
 ---
 

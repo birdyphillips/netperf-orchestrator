@@ -111,6 +111,8 @@ sudo sed -i 's/mibs :/# mibs :/g' /etc/snmp/snmp.conf
 snmpwalk -v 2c -c open -t 5 -r 2 YOUR_MODEM_IP sysDescr
 ```
 
+
+
 ## Troubleshooting
 
 ### Config not found

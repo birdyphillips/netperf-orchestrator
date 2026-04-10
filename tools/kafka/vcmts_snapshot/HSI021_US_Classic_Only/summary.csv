@@ -1,0 +1,1 @@
+direction,sf_index,total_packets,total_octets,total_bits,throughput_bps,throughput_kbps,throughput_mbps,avg_latency_ms,p99_latency_ms,max_latency_usec,aqm_dropped_pkts,aqm_marked_congested_pkts,sanctioned_pkts,ksamis1_dropped_pkts

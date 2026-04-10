@@ -1,0 +1,9 @@
+cm_mac_addr,direction,sf_index,start_value,end_value,delta
+0c:b9:37:64:3a:b0,downstream,1,0.0,0.0,0
+0c:b9:37:64:3a:b0,downstream,4,3159.0,3159.0,0.0
+0c:b9:37:64:3a:b0,downstream,5,0.0,0.0,0
+0c:b9:37:64:3a:b0,downstream,6,0.0,0.0,0
+0c:b9:37:64:3a:b0,downstream,8,0.0,0.0,0
+0c:b9:37:64:3a:b0,upstream,0,0.0,0.0,0
+0c:b9:37:64:3a:b0,upstream,2,0.0,0.0,0
+0c:b9:37:64:3a:b0,upstream,7,0.0,0.0,0

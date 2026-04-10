@@ -1,0 +1,949 @@
+capture cable modem start <ddd.ddd.ddd.ddd> capture-options [ds|us|data|maps|mmm] output-file <File name > file-size-limit <unsignedInt> time-limit <unsignedInt>
+capture cable modem status
+capture cable modem stop
+capture interface <Interface name> start capture-options [ds|us|data|maps|mmm] file-size-limit <unsignedInt> time-limit <unsignedInt>
+capture interface <Interface name> stop
+capture interface status
+capture preconfigured us-nb-spectrum <VC:VS/PP - Upstream RF port> start
+capture preconfigured us-nb-spectrum <VC:VS/PP - Upstream RF port> stop
+capture preconfigured us-spectrum <VC:VS/PP - Upstream RF port> sac-index [5/4/3/2/1/0] start
+capture preconfigured us-spectrum <VC:VS/PP - Upstream RF port> sac-index [5/4/3/2/1/0] stop
+capture us-spectrum <Upstream port (VC:VS/PP)> stop
+capture us-spectrum <Upstream port (VC:VS/PP)> to <IP address> start
+capture us-wb-spectrum <VC:VS/PP> sample-rate-msps [409.6/204.8/102.4] fft-size [4096/2048/1024/512/256] frequency-mhz [281.6/230.4/179.2/128/76.8/25.6] fft-calculation [external/internal] force-changes to <IP address> start
+show all-commands
+show bgp reflector neighbors [af]
+show bgp reflector neighbors
+show bgp reflector routes [ipv6/ipv4]
+show bgp reflector routes
+show bgp speaker neighbors
+show bgp speaker routes [ipv6/ipv4]
+show bgp speaker routes
+show cable admission-control bandwidth-distribution ...
+show cable bundle ...
+show cable downstream
+show cable downstream leasequery-filter
+show cable ds-rf-port virtual-split
+show cable dsg tg
+show cable dsg tunnel
+show cable dsg tunnel
+show cable duplication history
+show cable dynamic-bonding-group [upstream] [upstream]
+show cable dynamic-bonding-group [upstream] summary
+show cable dynamic-bonding-group summary
+show cable filter
+show cable filter group <group id>
+show cable filter group <group id> index <rule id>
+show cable filter group <group id> index <rule id> verbose
+show cable filter group <group id> verbose
+show cable flap-list <VC:VS> [sort-time/sort-flaps]
+show cable flap-list <VC:VS>
+show cable flap-list [sort-time/sort-flaps] [sort-time/sort-flaps]
+show cable flap-list [sort-time/sort-flaps]
+show cable flap-list
+show cable flap-sum <VC:VS> [sort-time/sort-flaps]
+show cable flap-sum <VC:VS> [sort-time/sort-flaps] all
+show cable flap-sum <VC:VS>
+show cable flap-sum <VC:VS> all
+show cable flap-sum [sort-time/sort-flaps] [sort-time/sort-flaps]
+show cable flap-sum [sort-time/sort-flaps] [sort-time/sort-flaps] all
+show cable flap-sum [sort-time/sort-flaps]
+show cable flap-sum [sort-time/sort-flaps] all
+show cable flap-sum
+show cable flap-sum all
+show cable hop <mdVC:VS/PP.0> history
+show cable ism <mdVC:VS/PP.0> ofdm profiles
+show cable ism <mdVC:VS/PP.0> ofdm profiles verbose
+show cable ism <mdVC:VS/PP.0> ofdma profiles
+show cable ism <mdVC:VS/PP.0> ofdma profiles verbose
+show cable ism <mdVC:VS/PP.0> ofdma status last-run
+show cable ism <mdVC:VS/PP.0> ofdma status next-run
+show cable l2-vpn [mpls] <hhhh.hhhh.hhhh>
+show cable l2-vpn [mpls]
+show cable l2-vpn dot1ad-vc-map <hhhh.hhhh.hhhh>
+show cable l2-vpn dot1ad-vc-map
+show cable l2-vpn dot1ad-vc-map vpn <string>
+show cable l2-vpn dot1q-vc-map <hhhh.hhhh.hhhh>
+show cable l2-vpn dot1q-vc-map
+show cable l2-vpn dot1q-vc-map vpn <string>
+show cable l2-vpn mpls-vlan-mapping <hhhh.hhhh.hhhh>
+show cable l2-vpn mpls-vlan-mapping
+show cable latency <mdNN:SS/NN.D> history
+show cable latency <mdNN:SS/NN.D> history max-length <unsignedInt>
+show cable load-balance
+show cable load-balance distribution ...
+show cable load-balance exclude-list
+show cable load-balance group ...
+show cable mac-domain <mdVC:VS/PP.0> [mdd] <OfVC:VS/PP/C>
+show cable mac-domain <mdVC:VS/PP.0>
+show cable mac-domain <mdVC:VS/PP.0> dpd <OfVC:VS/PP/C>
+show cable mac-domain <mdVC:VS/PP.0> forwarding
+show cable mac-domain <mdVC:VS/PP.0> ocd <OfVC:VS/PP/C>
+show cable mac-domain <mdVC:VS/PP.0> sid-pools
+show cable mac-domain [sid-pools/forwarding] [mdd] <OfVC:VS/PP/C>
+show cable mac-domain [sid-pools/forwarding]
+show cable mac-domain [sid-pools/forwarding] dpd <OfVC:VS/PP/C>
+show cable mac-domain [sid-pools/forwarding] forwarding
+show cable mac-domain [sid-pools/forwarding] ocd <OfVC:VS/PP/C>
+show cable mac-domain [sid-pools/forwarding] sid-pools
+show cable mac-domain
+show cable mac-domain clock <mdNN:SS/NN.D>
+show cable mac-domain clock
+show cable map-advance <mdNN:SS/NN.D>
+show cable map-advance <mdNN:SS/NN.D> history
+show cable map-advance <mdNN:SS/NN.D> history max-length <unsignedInt>
+show cable map-advance
+show cable mod-prof-ofdma <401..499>
+show cable mod-prof-ofdma
+show cable modem <VC:VS> [vendor]
+show cable modem <VC:VS> [vendor] summary
+show cable modem <VC:VS>
+show cable modem <VC:VS> asf <Service Flow ID>
+show cable modem <VC:VS> asf
+show cable modem <VC:VS> battery-mode
+show cable modem <VC:VS> bonding
+show cable modem <VC:VS> bonding downstream
+show cable modem <VC:VS> bonding downstream detailed
+show cable modem <VC:VS> bonding downstream detailed total
+show cable modem <VC:VS> bonding downstream total
+show cable modem <VC:VS> bonding total
+show cable modem <VC:VS> bonding upstream
+show cable modem <VC:VS> bonding upstream detailed
+show cable modem <VC:VS> bonding upstream detailed total
+show cable modem <VC:VS> bonding upstream total
+show cable modem <VC:VS> calls
+show cable modem <VC:VS> classifiers
+show cable modem [CM|interface] cm-status [event-code|event-condition] [profile-id] [order-by] [total]
+show cable modem <VC:VS> connectivity
+show cable modem <VC:VS> counters
+show cable modem <VC:VS> counters total
+show cable modem <VC:VS> cpe
+show cable modem <VC:VS> cpe dhcp
+show cable modem <VC:VS> cpe dhcp verbose
+show cable modem <VC:VS> cpe ipv6
+show cable modem <VC:VS> cpe ipv6 dhcp
+show cable modem <VC:VS> cpe ipv6 dhcp verbose
+show cable modem <VC:VS> cpe offline
+show cable modem <VC:VS> dhcp
+show cable modem <VC:VS> dhcp verbose
+show cable modem <VC:VS> docsis device-class
+show cable modem <VC:VS> docsis device-class summary
+show cable modem <VC:VS> docsis device-class summary total
+show cable modem <VC:VS> docsis device-class total
+show cable modem <VC:VS> docsis version
+show cable modem <VC:VS> docsis version summary
+show cable modem <VC:VS> docsis version total
+show cable modem <VC:VS> ip
+show cable modem <VC:VS> ip registered
+show cable modem <VC:VS> ip unregistered
+show cable modem <VC:VS> ipv6
+show cable modem <VC:VS> ipv6 cpe
+show cable modem <VC:VS> ipv6 cpe dhcp
+show cable modem <VC:VS> ipv6 cpe dhcp verbose
+show cable modem <VC:VS> ipv6 dhcp
+show cable modem <VC:VS> ipv6 dhcp verbose
+show cable modem <VC:VS> ipv6 prefix
+show cable modem <VC:VS> ipv6 registered
+show cable modem <VC:VS> ipv6 unregistered
+show cable modem <VC:VS> lcce <LCCE IPv4/IPv6 address>
+show cable modem <VC:VS> lcce
+show cable modem <VC:VS> leasequery-filter
+show cable modem <VC:VS> leasequery-filter min-filtered <unsignedInt>
+show cable modem <VC:VS> load-balance group
+show cable modem <VC:VS> load-balance group restricted
+show cable modem <VC:VS> mtu
+show cable modem <VC:VS> oam
+show cable modem <VC:VS> oam lbm
+show cable modem <VC:VS> oam ltm
+show cable modem <VC:VS> ofdm-profile
+show cable modem <VC:VS> ofdm-profile total
+show cable modem <VC:VS> ofdma probe stats
+show cable modem <VC:VS> ofdma-profile
+show cable modem <VC:VS> ofdma-profile history
+show cable modem <VC:VS> ofdma-profile hold-down-timer
+show cable modem <VC:VS> ofdma-profile total
+show cable modem <VC:VS> offline
+show cable modem <VC:VS> partial-mode
+show cable modem <VC:VS> pgs
+show cable modem <VC:VS> phy
+show cable modem <VC:VS> phy total
+show cable modem <VC:VS> primary-channel
+show cable modem <VC:VS> primary-channel select [unregistered/registered/offline/non-bonding-capable/failed-bonding/us-bonding/ds-bonding/bonding]
+show cable modem <VC:VS> primary-channel select [unregistered/registered/offline/non-bonding-capable/failed-bonding/us-bonding/ds-bonding/bonding] total
+show cable modem <VC:VS> primary-channel total
+show cable modem <VC:VS> privacy
+show cable modem <VC:VS> privacy verbose
+show cable modem <VC:VS> qos [bps/service-class/verbose]
+show cable modem <VC:VS> qos
+show cable modem <VC:VS> remote-query
+show cable modem <VC:VS> ripv2
+show cable modem <VC:VS> select [unregistered/registered/offline/non-bonding-capable/failed-bonding/us-bonding/ds-bonding/bonding]
+show cable modem <VC:VS> select [unregistered/registered/offline/non-bonding-capable/failed-bonding/us-bonding/ds-bonding/bonding] total
+show cable modem <VC:VS> service-flow <Service Flow ID> [aqm/uptime/type/classifiers/verbose]
+show cable modem <VC:VS> service-flow <Service Flow ID>
+show cable modem <VC:VS> service-flow [aqm/uptime/type/classifiers/verbose] [aqm/uptime/type/classifiers/verbose]
+show cable modem <VC:VS> service-flow [aqm/uptime/type/classifiers/verbose]
+show cable modem <VC:VS> service-flow
+show cable modem <VC:VS> total
+show cable modem <VC:VS> ugs
+show cable modem <VC:VS> uptime
+show cable modem <VC:VS> verbose
+show cable modem <VC:VS> verbose extended
+show cable modem [vendor] [vendor]
+show cable modem [vendor] [vendor] summary
+show cable modem [vendor]
+show cable modem [vendor] asf <Service Flow ID>
+show cable modem [vendor] asf
+show cable modem [vendor] battery-mode
+show cable modem [vendor] bonding
+show cable modem [vendor] bonding downstream
+show cable modem [vendor] bonding downstream detailed
+show cable modem [vendor] bonding downstream detailed total
+show cable modem [vendor] bonding downstream total
+show cable modem [vendor] bonding total
+show cable modem [vendor] bonding upstream
+show cable modem [vendor] bonding upstream detailed
+show cable modem [vendor] bonding upstream detailed total
+show cable modem [vendor] bonding upstream total
+show cable modem [vendor] calls
+show cable modem [vendor] classifiers
+show cable modem [vendor] connectivity
+show cable modem [vendor] counters
+show cable modem [vendor] counters total
+show cable modem [vendor] cpe
+show cable modem [vendor] cpe dhcp
+show cable modem [vendor] cpe dhcp verbose
+show cable modem [vendor] cpe ipv6
+show cable modem [vendor] cpe ipv6 dhcp
+show cable modem [vendor] cpe ipv6 dhcp verbose
+show cable modem [vendor] cpe offline
+show cable modem [vendor] dhcp
+show cable modem [vendor] dhcp verbose
+show cable modem [vendor] docsis device-class
+show cable modem [vendor] docsis device-class summary
+show cable modem [vendor] docsis device-class summary total
+show cable modem [vendor] docsis device-class total
+show cable modem [vendor] docsis version
+show cable modem [vendor] docsis version summary
+show cable modem [vendor] docsis version total
+show cable modem [vendor] ip
+show cable modem [vendor] ip registered
+show cable modem [vendor] ip unregistered
+show cable modem [vendor] ipv6
+show cable modem [vendor] ipv6 cpe
+show cable modem [vendor] ipv6 cpe dhcp
+show cable modem [vendor] ipv6 cpe dhcp verbose
+show cable modem [vendor] ipv6 dhcp
+show cable modem [vendor] ipv6 dhcp verbose
+show cable modem [vendor] ipv6 prefix
+show cable modem [vendor] ipv6 registered
+show cable modem [vendor] ipv6 unregistered
+show cable modem [vendor] lcce <LCCE IPv4/IPv6 address>
+show cable modem [vendor] lcce
+show cable modem [vendor] leasequery-filter
+show cable modem [vendor] leasequery-filter min-filtered <unsignedInt>
+show cable modem [vendor] load-balance group
+show cable modem [vendor] load-balance group restricted
+show cable modem [vendor] mtu
+show cable modem [vendor] oam
+show cable modem [vendor] oam lbm
+show cable modem [vendor] oam ltm
+show cable modem [vendor] ofdm-profile
+show cable modem [vendor] ofdm-profile total
+show cable modem [vendor] ofdma probe stats
+show cable modem [vendor] ofdma-profile
+show cable modem [vendor] ofdma-profile history
+show cable modem [vendor] ofdma-profile hold-down-timer
+show cable modem [vendor] ofdma-profile total
+show cable modem [vendor] offline
+show cable modem [vendor] partial-mode
+show cable modem [vendor] pgs
+show cable modem [vendor] phy
+show cable modem [vendor] phy total
+show cable modem [vendor] primary-channel
+show cable modem [vendor] primary-channel select [unregistered/registered/offline/non-bonding-capable/failed-bonding/us-bonding/ds-bonding/bonding]
+show cable modem [vendor] primary-channel select [unregistered/registered/offline/non-bonding-capable/failed-bonding/us-bonding/ds-bonding/bonding] total
+show cable modem [vendor] primary-channel total
+show cable modem [vendor] privacy
+show cable modem [vendor] privacy verbose
+show cable modem [vendor] qos [bps/service-class/verbose]
+show cable modem [vendor] qos
+show cable modem [vendor] remote-query
+show cable modem [vendor] ripv2
+show cable modem [vendor] select [unregistered/registered/offline/non-bonding-capable/failed-bonding/us-bonding/ds-bonding/bonding]
+show cable modem [vendor] select [unregistered/registered/offline/non-bonding-capable/failed-bonding/us-bonding/ds-bonding/bonding] total
+show cable modem [vendor] service-flow <Service Flow ID> [aqm/uptime/type/classifiers/verbose]
+show cable modem [vendor] service-flow <Service Flow ID>
+show cable modem [vendor] service-flow [aqm/uptime/type/classifiers/verbose] [aqm/uptime/type/classifiers/verbose]
+show cable modem [vendor] service-flow [aqm/uptime/type/classifiers/verbose]
+show cable modem [vendor] service-flow
+show cable modem [vendor] summary
+show cable modem [vendor] total
+show cable modem [vendor] ugs
+show cable modem [vendor] uptime
+show cable modem [vendor] verbose
+show cable modem [vendor] verbose extended
+show cable modem
+show cable modem battery-mode
+show cable modem bonding
+show cable modem bonding downstream
+show cable modem bonding downstream detailed
+show cable modem bonding downstream detailed total
+show cable modem bonding downstream total
+show cable modem bonding total
+show cable modem bonding upstream
+show cable modem bonding upstream detailed
+show cable modem bonding upstream detailed total
+show cable modem bonding upstream total
+show cable modem calls
+show cable modem connectivity
+show cable modem counters
+show cable modem counters total
+show cable modem cpe
+show cable modem cpe dhcp
+show cable modem cpe dhcp verbose
+show cable modem cpe ipv6
+show cable modem cpe ipv6 dhcp
+show cable modem cpe ipv6 dhcp verbose
+show cable modem cpe offline
+show cable modem dhcp
+show cable modem dhcp verbose
+show cable modem docsis device-class
+show cable modem docsis device-class summary
+show cable modem docsis device-class summary total
+show cable modem docsis device-class total
+show cable modem docsis version
+show cable modem docsis version summary
+show cable modem docsis version total
+show cable modem ip
+show cable modem ip registered
+show cable modem ip unregistered
+show cable modem ipv6
+show cable modem ipv6 cpe
+show cable modem ipv6 cpe dhcp
+show cable modem ipv6 cpe dhcp verbose
+show cable modem ipv6 dhcp
+show cable modem ipv6 dhcp verbose
+show cable modem ipv6 prefix
+show cable modem ipv6 registered
+show cable modem ipv6 unregistered
+show cable modem lcce <LCCE IPv4/IPv6 address>
+show cable modem lcce
+show cable modem leasequery-filter
+show cable modem leasequery-filter min-filtered <unsignedInt>
+show cable modem leasequery-filter total
+show cable modem load-balance group
+show cable modem load-balance group restricted
+show cable modem mtu
+show cable modem oam
+show cable modem oam lbm
+show cable modem oam ltm
+show cable modem ofdm-profile
+show cable modem ofdm-profile total
+show cable modem ofdma probe stats
+show cable modem ofdma-profile
+show cable modem ofdma-profile hold-down-timer
+show cable modem ofdma-profile total
+show cable modem offline
+show cable modem partial-mode
+show cable modem pgs
+show cable modem phy
+show cable modem phy total
+show cable modem phy virtual
+show cable modem primary-channel
+show cable modem primary-channel select [unregistered/registered/offline/non-bonding-capable/failed-bonding/us-bonding/ds-bonding/bonding]
+show cable modem primary-channel select [unregistered/registered/offline/non-bonding-capable/failed-bonding/us-bonding/ds-bonding/bonding] total
+show cable modem primary-channel total
+show cable modem registered
+show cable modem remote-query
+show cable modem ripv2
+show cable modem rogue
+show cable modem select [unregistered/registered/offline/non-bonding-capable/failed-bonding/us-bonding/ds-bonding/bonding]
+show cable modem select [unregistered/registered/offline/non-bonding-capable/failed-bonding/us-bonding/ds-bonding/bonding] total
+show cable modem summary <VC:VS>
+show cable modem summary <VC:VS> lcce <LCCE IPv4/IPv6 address>
+show cable modem summary <VC:VS> lcce <LCCE IPv4/IPv6 address> total
+show cable modem summary <VC:VS> total
+show cable modem summary <VC:VS> total lcce <LCCE IPv4/IPv6 address>
+show cable modem summary
+show cable modem summary lcce <LCCE IPv4/IPv6 address>
+show cable modem summary lcce <LCCE IPv4/IPv6 address> total
+show cable modem summary total
+show cable modem summary total lcce <LCCE IPv4/IPv6 address>
+show cable modem total
+show cable modem ugs
+show cable modem unregistered
+show cable modem uptime
+show cable modem virtual
+show cable modulation-profile <Modulation Profile Index>
+show cable modulation-profile
+show cable modulation-profile ofdma <401..499>
+show cable modulation-profile ofdma
+show cable multicast
+show cable multicast db
+show cable multicast dsid
+show cable nbnr <mdVC:VS/PP.0>
+show cable privacy manufacturer-cert-list
+show cable privacy root-cert-list
+show cable proto-throttle [igmp-msgs-throttled/arpnd-replies-throttled/arpnd-requests-throttled] <Threshold>
+show cable proto-throttle [igmp-msgs-throttled/arpnd-replies-throttled/arpnd-requests-throttled]
+show cable proto-throttle
+show cable proto-throttle detail
+show cable ptp [time-property]
+show cable rcp <Rcp id> verbose
+show cable reef <ddd.ddd.ddd.ddd>
+show cable reef <ddd.ddd.ddd.ddd> chassis
+show cable reef <ddd.ddd.ddd.ddd> chassis verbose
+show cable remote-query cm <ddd.ddd.ddd.ddd>
+show cable rpd <ddd.ddd.ddd.ddd> [gcp-instance]
+show cable rpd <ddd.ddd.ddd.ddd>
+show cable rpd <ddd.ddd.ddd.ddd> analog-overlay
+show cable rpd <ddd.ddd.ddd.ddd> bundle
+show cable rpd <ddd.ddd.ddd.ddd> capabilities
+show cable rpd <ddd.ddd.ddd.ddd> counters downstream <rf-port-identifier(0-11)>
+show cable rpd <ddd.ddd.ddd.ddd> counters downstream
+show cable rpd <ddd.ddd.ddd.ddd> counters eth-port <ether-port-identifier(1-5)>
+show cable rpd <ddd.ddd.ddd.ddd> counters eth-port
+show cable rpd <ddd.ddd.ddd.ddd> counters map <rf-port-identifier(0-11)> <physical-channel(0-11)>
+show cable rpd <ddd.ddd.ddd.ddd> counters map <rf-port-identifier(0-11)>
+show cable rpd <ddd.ddd.ddd.ddd> counters map
+show cable rpd <ddd.ddd.ddd.ddd> counters ofdma-map <rf-port-identifier(0-11)> <physical-channel(0-1)>
+show cable rpd <ddd.ddd.ddd.ddd> counters ofdma-map <rf-port-identifier(0-11)>
+show cable rpd <ddd.ddd.ddd.ddd> counters ofdma-map
+show cable rpd <ddd.ddd.ddd.ddd> counters ofdma-upstream <rf-port-identifier(0-11)> <physical-channel(0-1)>
+show cable rpd <ddd.ddd.ddd.ddd> counters ofdma-upstream <rf-port-identifier(0-11)>
+show cable rpd <ddd.ddd.ddd.ddd> counters ofdma-upstream
+show cable rpd <ddd.ddd.ddd.ddd> counters oob downstream
+show cable rpd <ddd.ddd.ddd.ddd> counters oob upstream
+show cable rpd <ddd.ddd.ddd.ddd> counters upstream <rf-port-identifier(0-11)> <physical-channel(0-11)>
+show cable rpd <ddd.ddd.ddd.ddd> counters upstream
+show cable rpd <ddd.ddd.ddd.ddd> counters upstream <rf-port-identifier(0-11)>
+show cable rpd <ddd.ddd.ddd.ddd> environment network-topology
+show cable rpd <ddd.ddd.ddd.ddd> environment network-topology ip
+show cable rpd <ddd.ddd.ddd.ddd> environment temperature
+show cable rpd <ddd.ddd.ddd.ddd> environment voltage
+show cable rpd <ddd.ddd.ddd.ddd> identify-failed
+show cable rpd <ddd.ddd.ddd.ddd> mtu
+show cable rpd <ddd.ddd.ddd.ddd> ndfr clear-alarms
+show cable rpd <ddd.ddd.ddd.ddd> ndfr input-bitrate
+show cable rpd <ddd.ddd.ddd.ddd> ndfr output-bitrate
+show cable rpd <ddd.ddd.ddd.ddd> ndfr status
+show cable rpd <ddd.ddd.ddd.ddd> port-transceiver [verbose]
+show cable rpd <ddd.ddd.ddd.ddd> port-transceiver
+show cable rpd <ddd.ddd.ddd.ddd> ptp time-property
+show cable rpd <ddd.ddd.ddd.ddd> ptp verbose
+show cable rpd <ddd.ddd.ddd.ddd> reset-history
+show cable rpd <ddd.ddd.ddd.ddd> session
+show cable rpd <ddd.ddd.ddd.ddd> spanning-tree <mstp ring index [int]_>
+show cable rpd <ddd.ddd.ddd.ddd> spanning-tree <mstp ring index [int]_> verbose
+show cable rpd <ddd.ddd.ddd.ddd> spanning-tree
+show cable rpd <ddd.ddd.ddd.ddd> spanning-tree verbose <mstp ring index [int]_>
+show cable rpd <ddd.ddd.ddd.ddd> spanning-tree verbose
+show cable rpd <ddd.ddd.ddd.ddd> ssd-status
+show cable rpd <ddd.ddd.ddd.ddd> ssh-public-key [verbose]
+show cable rpd <ddd.ddd.ddd.ddd> ssh-public-key
+show cable rpd <ddd.ddd.ddd.ddd> verbose
+show cable rpd <ddd.ddd.ddd.ddd> video-channel <down-channel [dsVC:VS/PP/C]> [verbose]
+show cable rpd <ddd.ddd.ddd.ddd> video-channel <down-channel [dsVC:VS/PP/C]> [verbose] counters
+show cable rpd <ddd.ddd.ddd.ddd> video-channel <down-channel [dsVC:VS/PP/C]>
+show cable rpd <ddd.ddd.ddd.ddd> video-channel <down-channel [dsVC:VS/PP/C]> counters
+show cable rpd <ddd.ddd.ddd.ddd> video-channel
+show cable rpd <ddd.ddd.ddd.ddd> video-channel counters <down-channel [dsVC:VS/PP/C]> [verbose]
+show cable rpd <ddd.ddd.ddd.ddd> video-channel counters <down-channel [dsVC:VS/PP/C]>
+show cable rpd <ddd.ddd.ddd.ddd> video-channel counters
+show cable rpd <ddd.ddd.ddd.ddd> video-type
+show cable rpd [gcp-instance] [gcp-instance]
+show cable rpd [gcp-instance]
+show cable rpd [gcp-instance] analog-overlay
+show cable rpd [gcp-instance] bundle
+show cable rpd [gcp-instance] capabilities
+show cable rpd [gcp-instance] counters downstream <rf-port-identifier(0-11)>
+show cable rpd [gcp-instance] counters downstream
+show cable rpd [gcp-instance] counters eth-port <ether-port-identifier(1-5)>
+show cable rpd [gcp-instance] counters eth-port
+show cable rpd [gcp-instance] counters map <rf-port-identifier(0-11)>
+show cable rpd [gcp-instance] counters map
+show cable rpd [gcp-instance] counters ofdma-map <rf-port-identifier(0-11)> <physical-channel(0-1)>
+show cable rpd [gcp-instance] counters ofdma-map <rf-port-identifier(0-11)>
+show cable rpd [gcp-instance] counters ofdma-map
+show cable rpd [gcp-instance] counters ofdma-upstream <rf-port-identifier(0-11)> <physical-channel(0-1)>
+show cable rpd [gcp-instance] counters ofdma-upstream <rf-port-identifier(0-11)>
+show cable rpd [gcp-instance] counters ofdma-upstream
+show cable rpd [gcp-instance] counters oob downstream
+show cable rpd [gcp-instance] counters oob upstream
+show cable rpd [gcp-instance] environment network-topology
+show cable rpd [gcp-instance] environment network-topology ip
+show cable rpd [gcp-instance] environment temperature
+show cable rpd [gcp-instance] environment voltage
+show cable rpd [gcp-instance] identify-failed
+show cable rpd [gcp-instance] mtu
+show cable rpd [gcp-instance] ndfr clear-alarms
+show cable rpd [gcp-instance] ndfr input-bitrate
+show cable rpd [gcp-instance] ndfr output-bitrate
+show cable rpd [gcp-instance] ndfr status
+show cable rpd [gcp-instance] port-transceiver [verbose]
+show cable rpd [gcp-instance] port-transceiver
+show cable rpd [gcp-instance] ptp time-property
+show cable rpd [gcp-instance] ptp verbose
+show cable rpd [gcp-instance] reset-history
+show cable rpd [gcp-instance] session
+show cable rpd [gcp-instance] spanning-tree <mstp ring index [int]_>
+show cable rpd [gcp-instance] spanning-tree <mstp ring index [int]_> verbose
+show cable rpd [gcp-instance] spanning-tree
+show cable rpd [gcp-instance] spanning-tree verbose <mstp ring index [int]_>
+show cable rpd [gcp-instance] spanning-tree verbose
+show cable rpd [gcp-instance] ssd-status
+show cable rpd [gcp-instance] ssh-public-key [verbose]
+show cable rpd [gcp-instance] ssh-public-key
+show cable rpd [gcp-instance] verbose
+show cable rpd [gcp-instance] video-channel <down-channel [dsVC:VS/PP/C]> [verbose]
+show cable rpd [gcp-instance] video-channel <down-channel [dsVC:VS/PP/C]> [verbose] counters
+show cable rpd [gcp-instance] video-channel <down-channel [dsVC:VS/PP/C]>
+show cable rpd [gcp-instance] video-channel <down-channel [dsVC:VS/PP/C]> counters
+show cable rpd [gcp-instance] video-channel
+show cable rpd [gcp-instance] video-channel counters <down-channel [dsVC:VS/PP/C]> [verbose]
+show cable rpd [gcp-instance] video-channel counters <down-channel [dsVC:VS/PP/C]>
+show cable rpd [gcp-instance] video-channel counters
+show cable rpd [gcp-instance] video-type
+show cable rpd
+show cable rpd bundle
+show cable rpd description
+show cable rpd identify-failed
+show cable rpd mtu
+show cable rpd passive
+show cable rpd port-transceiver
+show cable rpd video-type
+show cable us-rf-port <VC:VS/PP> ofdma-channel [1/0] [oudp] [status/stats]
+show cable us-rf-port <VC:VS/PP> ofdma-channel [1/0]
+show cable us-rf-port <VC:VS/PP> ofdma-channel [1/0] data-mer [average/minimum] [frequency/mini-slot] [table/graph]
+show cable us-rf-port <VC:VS/PP> ofdma-channel [1/0] probe-mer [average/minimum] [mini-slot] [table]
+show cable us-rf-port ucd-refresh
+show cable us-rf-port virtual-combine
+show capture preconfigured us-spectrum <VC:VS/PP - Upstream RF port> sac-index [5/4/3/2/1/0]
+show cli
+show clock
+show cluster
+show cluster status
+show cluster status verbose
+show configuration commit changes <integer>
+show configuration commit changes <integer> aaa new-model
+show configuration commit changes <integer> banner login
+show configuration commit changes <integer> banner motd
+show configuration commit changes <integer> cable aqm-global
+show configuration commit changes <integer> cable aqm-global-ds
+show configuration commit changes <integer> cable aqm-global-us
+show configuration commit changes <integer> cable bpi-enforce
+show configuration commit changes <integer> cable cmts-steering
+show configuration commit changes <integer> cable core-type
+show configuration commit changes <integer> cable dsg unique-dsid
+show configuration commit changes <integer> cable dsi cre-ip-address
+show configuration commit changes <integer> cable dsi cre-ipv6-address
+show configuration commit changes <integer> cable dsi cre-vlan-id
+show configuration commit changes <integer> cable dsi gcp-ip-address
+show configuration commit changes <integer> cable dsi gcp-ipv6-address
+show configuration commit changes <integer> cable dsi gcp-mtu
+show configuration commit changes <integer> cable dsi lcce-assignment workload-profile
+show configuration commit changes <integer> cable dsi lcce-gw-ip-address
+show configuration commit changes <integer> cable dsi lcce-gw-ipv6-address
+show configuration commit changes <integer> cable dsi lcce-ip-address-pool count
+show configuration commit changes <integer> cable dsi lcce-ip-address-pool start-ipv4-addr
+show configuration commit changes <integer> cable dsi lcce-ip-address-pool start-ipv6-addr
+show configuration commit changes <integer> cable dynamic-secret tftp insert-upgrade-server
+show configuration commit changes <integer> cable flap-list aging
+show configuration commit changes <integer> cable flap-list insertion-time
+show configuration commit changes <integer> cable flap-list miss-threshold
+show configuration commit changes <integer> cable flap-list power-adjust threshold
+show configuration commit changes <integer> cable flap-list size
+show configuration commit changes <integer> cable freq-range european
+show configuration commit changes <integer> cable gcp connection core-detach-timeout-sec
+show configuration commit changes <integer> cable gcp connection max-idle-time-sec
+show configuration commit changes <integer> cable gcp connection reconnect-timeout-sec
+show configuration commit changes <integer> cable gcp connection recovery-action-delay-sec
+show configuration commit changes <integer> cable gcp connection recovery-action-retry-num
+show configuration commit changes <integer> cable gcp core-id
+show configuration commit changes <integer> cable gcp device-alias-source
+show configuration commit changes <integer> cable l2vpn mpls
+show configuration commit changes <integer> cable l2vpn mpls bgp
+show configuration commit changes <integer> cable l2vpn mpls igp
+show configuration commit changes <integer> cable l2vpn mpls is-is type
+show configuration commit changes <integer> cable l2vpn mpls ospf
+show configuration commit changes <integer> cable l2vpn mpls ospf6
+show configuration commit changes <integer> cable l2vpn mpls pseudowire-cw
+show configuration commit changes <integer> cable l2vpn mpls vxlan
+show configuration commit changes <integer> cable l2vpn mpls-to-vlan-mapping
+show configuration commit changes <integer> cable l2vpn mpls-to-vlan-mapping max-vlan-id
+show configuration commit changes <integer> cable l2vpn mpls-to-vlan-mapping min-vlan-id
+show configuration commit changes <integer> cable l2vpn oam admin-state
+show configuration commit changes <integer> cable l2vpn oam enabled
+show configuration commit changes <integer> cable l2vpn oam md-levelshow configuration commit changes <integer> cable l2vpn oam mip-mac-address
+show configuration commit changes <integer> cable lawful-intercept
+show configuration commit changes <integer> cable load-balance
+show configuration commit changes <integer> cable load-balance balancing-period-secs
+show configuration commit changes <integer> cable load-balance downstream
+show configuration commit changes <integer> cable load-balance downstream dbg-creation
+show configuration commit changes <integer> cable load-balance downstream frequency-setting dynamic-lb
+show configuration commit changes <integer> cable load-balance downstream frequency-setting static-lb
+show configuration commit changes <integer> cable load-balance downstream resets-before-exclude-on-dbc-timeout count
+show configuration commit changes <integer> cable load-balance downstream resets-before-exclude-on-dcc-dbc-failed count
+show configuration commit changes <integer> cable load-balance downstream threshold min-chan-load-pct
+show configuration commit changes <integer> cable load-balance downstream threshold min-channel-deviation-pct
+show configuration commit changes <integer> cable load-balance downstream threshold min-load-diff-pct
+show configuration commit changes <integer> cable load-balance downstream threshold min-stddev-improve-pct
+show configuration commit changes <integer> cable load-balance fail-exclude-period-secs
+show configuration commit changes <integer> cable load-balance general default control
+show configuration commit changes <integer> cable load-balance general default init-tech
+show configuration commit changes <integer> cable load-balance move-exclude-period-secs
+show configuration commit changes <integer> cable load-balance upstream
+show configuration commit changes <integer> cable load-balance upstream channel-id-setting dynamic-lb
+show configuration commit changes <integer> cable load-balance upstream channel-id-setting static-lb
+show configuration commit changes <integer> cable load-balance upstream resets-before-exclude-on-dbc-timeout count
+show configuration commit changes <integer> cable load-balance upstream resets-before-exclude-on-dcc-dbc-failed count
+show configuration commit changes <integer> cable load-balance upstream threshold min-chan-load-pct
+show configuration commit changes <integer> cable load-balance upstream threshold min-load-diff-pct
+show configuration commit changes <integer> cable load-balance upstream threshold min-stddev-improve-pct
+show configuration commit changes <integer> cable mac-address aging-time
+show configuration commit changes <integer> cable mac-domain-address-oui
+show configuration commit changes <integer> cable mcast cm-max-sessions
+show configuration commit changes <integer> cable mcast cre-vlan-id
+show configuration commit changes <integer> cable mcast dbc-t10-timer
+show configuration commit changes <integer> cable mcast general-query-interval-sec
+show configuration commit changes <integer> cable mcast operating-mode
+show configuration commit changes <integer> cable mcast robustness-variable
+show configuration commit changes <integer> cable modem remote-query
+show configuration commit changes <integer> cable mtu-enhance
+show configuration commit changes <integer> cable mtu-enhance size
+show configuration commit changes <integer> cable ofdma-ucd-refresh
+show configuration commit changes <integer> cable oudp-leakage
+show configuration commit changes <integer> cable privacy accept-self-signed-certificate cm
+show configuration commit changes <integer> cable privacy accept-self-signed-certificate manufacturer
+show configuration commit changes <integer> cable privacy bpi-plus
+show configuration commit changes <integer> cable privacy cmts-certificate
+show configuration commit changes <integer> cable privacy skip-certificate-expiration-time cm
+show configuration commit changes <integer> cable privacy skip-certificate-expiration-time manufacturer
+show configuration commit changes <integer> cable proto-throttle
+show configuration commit changes <integer> cable provisioning core-ip-address-pool count
+show configuration commit changes <integer> cable provisioning core-ip-address-pool start-ipv4-addr
+show configuration commit changes <integer> cable provisioning core-ip-address-pool start-ipv6-addr
+show configuration commit changes <integer> cable provisioning cre-ip-address
+show configuration commit changes <integer> cable provisioning cre-ipv6-address
+show configuration commit changes <integer> cable provisioning cre-vlan-id
+show configuration commit changes <integer> cable proxy-arp
+show configuration commit changes <integer> cable proxy-nd
+show configuration commit changes <integer> cable proxy-nd nsi
+show configuration commit changes <integer> cable proxy-nd ra-interval
+show configuration commit changes <integer> cable ptp dscp
+show configuration commit changes <integer> cable ptp primary-clock ip
+show configuration commit changes <integer> cable ptp profile
+show configuration commit changes <integer> cable ptp secondary-clock ip
+
+show configuration commit changes diff <integer> cable rip authentication auth-mode
+show configuration commit changes diff <integer> cable scn-restrict
+show configuration commit changes diff <integer> cable service-flow activity-timeout
+show configuration commit changes diff <integer> cable sid-allocation voice
+show configuration commit changes diff <integer> cable source-verify static
+show configuration commit changes diff <integer> cable submgmt default active
+show configuration commit changes diff <integer> cable submgmt default cpe-max-ipv4
+show configuration commit changes diff <integer> cable submgmt default cpe-max-ipv6
+show configuration commit changes diff <integer> cable submgmt default filter-group cm
+show configuration commit changes diff <integer> cable submgmt default filter-group cpe
+show configuration commit changes diff <integer> cable submgmt default filter-group mta
+show configuration commit changes diff <integer> cable submgmt default filter-group ps
+show configuration commit changes diff <integer> cable submgmt default filter-group stb
+show configuration commit changes diff <integer> cable us-scheduler max-ack-delay-msec
+show configuration commit changes diff <integer> cable us-scheduler ofdma-sid-cluster-max-outstanding-bytes
+show configuration commit changes diff <integer> cable us-scheduler ofdma-sid-cluster-max-requested-total-bytes
+show configuration commit changes diff <integer> cable us-scheduler qam-sid-cluster-max-outstanding-bytes
+show configuration commit changes diff <integer> cable us-scheduler qam-sid-cluster-max-requested-total-bytes
+show configuration commit changes diff <integer> cable us-scheduler sid-cluster-max-request
+show configuration commit changes diff <integer> cable us-scheduler sid-cluster-max-time
+show configuration commit changes diff <integer> cable utilization-interval-sec
+show configuration commit changes diff <integer> cli
+show configuration commit changes diff <integer> clock timezone
+show configuration commit changes diff <integer> hostname
+show configuration commit changes diff <integer> interface bng-data
+show configuration commit changes diff <integer> interface bng-data tunnel-data
+show configuration commit changes diff <integer> interface bng-data tunnel-data dsi-vlan-id ip-address-pool
+show configuration commit changes diff <integer> interface bng-data tunnel-data ip-address-pool
+show configuration commit changes diff <integer> interface fttx mac-address aging-time
+show configuration commit changes diff <integer> interface fttx onu-sn-vendor-id-format
+show configuration commit changes diff <integer> interface fttx rogue-onu error-type us-bip error-ratio
+show configuration commit changes diff <integer> interface fttx rogue-onu error-type us-bip recovery
+show configuration commit changes diff <integer> interface fttx rogue-onu error-type us-bip recovery back-off
+show configuration commit changes diff <integer> interface fttx rogue-onu error-type us-bip recovery max-recovery-attempts
+show configuration commit changes diff <integer> interface fttx rogue-onu error-type us-bip recovery recovery-stable-period
+show configuration commit changes diff <integer> interface fttx rogue-onu error-type us-bip recovery timeout
+show configuration commit changes diff <integer> interface fttx rogue-onu error-type us-bip sample-size
+show configuration commit changes diff <integer> interface fttx rogue-onu error-type us-hec error-ratio
+show configuration commit changes diff <integer> interface fttx rogue-onu error-type us-hec recovery
+show configuration commit changes diff <integer> interface fttx rogue-onu error-type us-hec recovery back-off
+show configuration commit changes diff <integer> interface fttx rogue-onu error-type us-hec recovery max-recovery-attempts
+show configuration commit changes diff <integer> interface fttx rogue-onu error-type us-hec recovery recovery-stable-period
+show configuration commit changes diff <integer> interface fttx rogue-onu error-type us-hec recovery timeout
+show configuration commit changes diff <integer> interface fttx rogue-onu error-type us-hec sample-size
+show configuration commit changes diff <integer> interface olt-control
+show configuration commit changes diff <integer> interface olt-control tunnel-mgmt
+show configuration commit changes diff <integer> interface olt-control tunnel-mgmt dsi-vlan-id ip-address-pool
+show configuration commit changes diff <integer> interface olt-control tunnel-mgmt ip-address-pool
+show configuration commit changes diff <integer> interface service-class
+show configuration commit changes diff <integer> ipdr exporter
+show configuration commit changes diff <integer> ipdr exporter ack-timeout-secs
+show configuration commit changes diff <integer> ipdr exporter connection
+show configuration commit changes diff <integer> ipdr exporter keep-alive-secs
+show configuration commit changes diff <integer> ipdr exporter max-unacked
+show configuration commit changes diff <integer> logging buffered size-mb
+show configuration commit changes diff <integer> logging monitor
+show configuration commit changes diff <integer> logging syslog
+show configuration commit changes diff <integer> network l3-toward-access
+show configuration commit changes diff <integer> network link-holdoff-time-ms
+show configuration commit changes diff <integer> network ntp-server
+show configuration commit changes diff <integer> packetcable cops dscp
+show configuration commit changes diff <integer> packetcable dqos-lite
+show configuration commit changes diff <integer> packetcable dynamic
+show configuration commit changes diff <integer> packetcable gate
+show configuration commit changes diff <integer> packetcable multimedia
+show configuration commit changes diff <integer> packetcable timer
+show configuration commit changes diff <integer> snmp object docsIfCmtsCmStatusValue online
+show configuration commit changes diff <integer> snmp-server
+show configuration commit changes diff <integer> snmp-server community-encryption
+show configuration commit changes diff <integer> snmp-server engineID
+show configuration commit changes diff <integer> snmp-server informs
+show configuration commit changes diff <integer> ssh
+show configuration commit changes diff <integer> system cluster server-count
+show configuration commit changes diff <integer> system ipsec tunnel admin-state
+show configuration commit changes diff <integer> system ipsec tunnel dscp
+show configuration commit changes diff <integer> system management auto-copy-to-startup interval-min
+show configuration commit changes diff <integer> system management cli-devel-log
+show configuration commit changes diff <integer> system management cli-devel-log severity
+show configuration commit changes diff <integer> system management in-band-ssh-password
+show configuration commit changes diff <integer> system management netconf
+show configuration commit changes diff <integer> system management netconf get-default
+show configuration commit changes diff <integer> system management snmp fast-counters
+show configuration commit changes diff <integer> system management sonar-service
+show configuration commit changes diff <integer> system management sshd insecure-mode
+show configuration commit changes diff <integer> system management sub-interface
+show configuration commit changes diff <integer> system proto-filter ds-broadcast
+show configuration commit changes diff <integer> system public-services
+show configuration commit changes diff <integer> system scep admin-state
+show configuration commit changes diff <integer> system scep cnf
+show configuration commit changes diff <integer> system scep common-name
+show configuration commit changes diff <integer> system scep fingerprint
+show configuration commit changes diff <integer> system scep number-certs
+show configuration commit changes diff <integer> system scep renew
+show configuration commit changes diff <integer> system scep server
+show configuration commit changes diff <integer> system scep timeout
+show configuration commit changes diff <integer> system server-cpu-core-count
+show configuration commit changes diff <integer> system tftp watchdog control
+show configuration commit changes diff <integer> system tftp watchdog max-completion-time
+show configuration commit changes diff <integer> system tftp watchdog restart-timeout
+show configuration commit changes diff
+show configuration commit list
+show configuration rollback changes <integer>
+show configuration rollback changes
+show cops servers
+show csr <File>
+show csr <File> decode
+show defaults
+show dhcp-relay
+show dhcp-relay statistics [egress/ingress]
+show dhcp-relay statistics
+show dhcp-relay statistics ipv4 [egress/ingress]
+show dhcp-relay statistics ipv4
+show dhcp-relay statistics ipv6 [egress/ingress]
+show dhcp-relay statistics ipv6
+show downloaded-releases
+show environment cable rpd <hhhh.hhhh.hhhh> [voltage/temperature]
+show environment cluster-server [all] [light-level/input-power/voltage/temperature]
+show gcp pod
+show history <number of items to show>
+show history
+show interface <usVC:VS/PP/C> forwarding
+show interface <usVC:VS/PP/C> iuc-stat
+show interface <usVC:VS/PP/C> snr
+show interface cable <usVC:VS/PP> sid <Service identification information number> [qos]
+show interface cable <usVC:VS/PP> sid [qos] [qos]
+show interfaces description
+show interfaces down-channel description
+show interfaces down-channel status
+show interfaces ds-rf-port description
+show interfaces ds-rf-port status
+show interfaces ethernet <ddd.ddd.ddd.ddd> description
+show interfaces ethernet <ddd.ddd.ddd.ddd> status
+show interfaces ethernet description
+show interfaces ethernet status
+show interfaces mac-domain <mdVC:VS/PP.0> description
+show interfaces mac-domain <mdVC:VS/PP.0> status
+show interfaces mac-domain description
+show interfaces mac-domain status
+show interfaces ofdm-channel <OfVC:VS/PP/C> description
+show interfaces ofdm-channel <OfVC:VS/PP/C> status
+show interfaces ofdm-channel description
+show interfaces ofdm-channel status
+show interfaces ofdma-channel <OaVC:VS/PP/C> description
+show interfaces ofdma-channel <OaVC:VS/PP/C> status
+show interfaces ofdma-channel description
+show interfaces ofdma-channel status
+show interfaces status
+show interfaces us-logical-channel <usVC:VS/PP/C.L> description
+show interfaces us-logical-channel <usVC:VS/PP/C.L> status
+show interfaces us-logical-channel description
+show interfaces us-logical-channel status
+show interfaces us-phy-channel <usVC:VS/PP/C> description
+show interfaces us-phy-channel <usVC:VS/PP/C> status
+show interfaces us-phy-channel description
+show interfaces us-phy-channel status
+show interfaces us-rf-port <usVC:VS/PP> description
+show interfaces us-rf-port <usVC:VS/PP> status
+show interfaces us-rf-port description
+show interfaces us-rf-port status
+show inventory core <core name>
+show inventory core
+show inventory rpd <ddd.ddd.ddd.ddd>
+show inventory rpd
+show ipdr exporter
+show jobs
+show lcce <LCCE IPv4/IPv6 address>
+show lcce <LCCE IPv4/IPv6 address> summary
+show lcce
+show lcce summary
+show lcce summary summary
+show module <Filter by module MAC>
+show module <Filter by module MAC> firmware-update
+show module <Filter by module MAC> transceiver
+show module <Filter by module MAC> uptime
+show module <Filter by module MAC> verbose
+show module
+show module firmware-update
+show module transceiver
+show module uptime
+show packetcable cms
+show packetcable cms verbose
+show packetcable gate <unsignedInt>
+show packetcable gate summary
+show packetcable global
+show platform upgrade process
+show pon filter
+show pon filter group <group id>
+show pon filter group <group id> rule <rule id>
+show pon multicast <ddd.ddd.ddd.ddd>
+show pon multicast <ddd.ddd.ddd.ddd> ipv6
+show pon multicast
+show pon multicast ipv6
+show pon olt <Filter by chassis:slot>
+show pon olt <Filter by chassis:slot> olt-name <Filter by OLT name>
+show pon olt <Filter by chassis:slot> olt-name
+show pon olt <Filter by chassis:slot> service-provisioning <Filter by spa instance number>
+show pon olt <Filter by chassis:slot> service-provisioning
+show pon olt <Filter by chassis:slot> uptime
+show pon olt <Filter by chassis:slot> verbose
+show pon olt
+show pon olt olt-name <Filter by OLT name>
+show pon olt olt-name
+show pon olt service-provisioning <Filter by spa instance number>
+show pon olt service-provisioning
+show pon olt uptime
+show pon onu <Filter by chassis:slot>
+show pon onu <Filter by chassis:slot> counters
+show pon onu <Filter by chassis:slot> cpe <Filter by mac>
+show pon onu <Filter by chassis:slot> cpe
+show pon onu <Filter by chassis:slot> firmware-update
+show pon onu <Filter by chassis:slot> flows networking
+show pon onu <Filter by chassis:slot> flows qos
+show pon onu <Filter by chassis:slot> last-reset-cause
+show pon onu <Filter by chassis:slot> offline
+show pon onu <Filter by chassis:slot> phy distance
+show pon onu <Filter by chassis:slot> phy fec
+show pon onu <Filter by chassis:slot> phy optics
+show pon onu <Filter by chassis:slot> phy transceiver
+show pon onu <Filter by chassis:slot> pon-name <Filter by PON Port name>
+show pon onu <Filter by chassis:slot> pon-name
+show pon onu <Filter by chassis:slot> rogue disabled
+show pon onu <Filter by chassis:slot> uptime
+show pon onu <Filter by chassis:slot> verbose
+show pon onu
+show pon onu counters
+show pon onu cpe <Filter by mac>
+show pon onu cpe
+show pon onu firmware-update
+show pon onu flows networking
+show pon onu flows qos
+show pon onu last-reset-cause
+show pon onu offline
+show pon onu phy distance
+show pon onu phy fec
+show pon onu phy optics
+show pon onu phy transceiver
+show pon onu pon-name <Filter by PON Port name>
+show pon onu pon-name
+show pon onu rogue disabled
+show pon onu summary
+show pon onu summary total
+show pon onu uptime
+show pon vcm <Filter by chassis:slot> last-reset-cause
+show pon vcm <Filter by chassis:slot> offline
+show pon vcm <Filter by chassis:slot> verbose
+show pon vcm
+show pon vcm last-reset-cause
+show pon vcm offline
+show rpn <ddd.ddd.ddd.ddd> alarms
+show rpn <ddd.ddd.ddd.ddd> config
+show rpn <ddd.ddd.ddd.ddd> environment
+show rpn <ddd.ddd.ddd.ddd> verbose
+show running-config ...
+show snmp
+show startup-config
+show startup-config archive
+show system ipsec tunnel state
+show system management acl
+show system proto-throttle
+show system scep
+show tech-support
+show upgrade process
+show user
+show utilization ds
+show utilization ds profiles
+show utilization us
+show version
+show version application
+show version cluster-nic
+show version cluster-server
+show vswitch allowed-foreign-mac
+show vswitch interfaces <string>
+show vswitch interfaces
+show vswitch status
+source <File>
+switchover mpls <MPLS Peer IP> <MPLS Pseudowire ID>
+terminal <generic/xterm/vt100/ansi/linux>
+test cable dbc <cm-mac-addr hhhh.hhhh.hhhh> <Select downstream bonding group configured with 'cable mac-domain VC:VS/PP.0 ds-bonding group B: dsVC:VS/PP:B'.> init-tech [ext-direct/unicast-initial-ranging/ranging/station/initial/reinit]
+test cable dbc <cm-mac-addr hhhh.hhhh.hhhh> <Select downstream bonding group configured with 'cable mac-domain VC:VS/PP.0 ds-bonding group B: dsVC:VS/PP:B'.> init-tech [ext-direct/unicast-initial-ranging/ranging/station/initial/reinit] force
+test cable dbc <cm-mac-addr hhhh.hhhh.hhhh> rcs <Receive Channel Set in format 'ds-chan-id-0-start[-ds-chan-id-0-end][> init-tech [ext-direct/unicast-initial-ranging/ranging/station/initial/reinit]
+test cable dbc <cm-mac-addr hhhh.hhhh.hhhh> rcs <Receive Channel Set in format 'ds-chan-id-0-start[-ds-chan-id-0-end][> init-tech [ext-direct/unicast-initial-ranging/ranging/station/initial/reinit] force
+test cable dbc <cm-mac-addr hhhh.hhhh.hhhh> tcs <Transmit Channel Set in format 'us-chan-id-0-start[-us-chan-id-0-end][> init-tech [ext-direct/unicast-initial-ranging/ranging/station/initial/reinit]
+test cable dbc <cm-mac-addr hhhh.hhhh.hhhh> tcs <Transmit Channel Set in format 'us-chan-id-0-start[-us-chan-id-0-end][> init-tech [ext-direct/unicast-initial-ranging/ranging/station/initial/reinit] force
+test cable dcc <cm-mac-addr hhhh.hhhh.hhhh> <Select downstream RF channels configured with 'cable ds-rf-port VC:VS/PP down-channel C'.> init-tech [ranging/station/initial/reinit]
+test cable dcc <cm-mac-addr hhhh.hhhh.hhhh> <Select downstream RF channels configured with 'cable ds-rf-port VC:VS/PP down-channel C'.> init-tech [ranging/station/initial/reinit] force
+test cable dcc <cm-mac-addr hhhh.hhhh.hhhh> rcs <Receive Channel Set in format 'ds-chan-id-0-start[-ds-chan-id-0-end][> init-tech [ranging/station/initial/reinit]
+test cable dcc <cm-mac-addr hhhh.hhhh.hhhh> rcs <Receive Channel Set in format 'ds-chan-id-0-start[-ds-chan-id-0-end][> init-tech [ranging/station/initial/reinit] force
+test cable dcc <cm-mac-addr hhhh.hhhh.hhhh> tcs <Transmit Channel Set in format 'us-chan-id-0-start[-us-chan-id-0-end][> init-tech [ranging/station/initial/reinit]
+test cable dcc <cm-mac-addr hhhh.hhhh.hhhh> tcs <Transmit Channel Set in format 'us-chan-id-0-start[-us-chan-id-0-end][> init-tech [ranging/station/initial/reinit] force
+test cable dsd <ddd.ddd.ddd.ddd>
+test cable dsd service-flow <mdNN:SS/NN.D> <unsigned int>
+test cable ism ofdma <mdVC:VS/PP.0> <OaVC:VS/PP/C>
+timestamp [disable/enable]
+traceroute <IPv4|IPv6|hostname> [source-ip <IPv4|IPv6>] [count <1..10>] [max-hops <1..255>] [packetlen <0..65000>] [port <0..65535>] [protocol <upd|icmp|tcp|UL|dccp>] [sendwait <0..10000>]
+update release all <version>
+update release bng-d <BNG Protection Group ID. e.g bng-pg-0> <version>
+update release bng-d all <version>
+update release cmts <CMTS Protection Group ID. e.g vcmts-cd-0> <version>
+update release cmts all <version>
+update release cos-algorithms-services <version>
+update release infra <version>
+update release module-mgmt <Module management index. e.g 1> <version>
+update release module-mgmt all <version>
+update release olt-c <olt port index index. e.g 1:1/1> <version>
+update release olt-c all <version>
+update release sonar-service <version>
+update release spa <SPA prov index. e.g 1> <version>
+update release spa all <version>
+validate-config <string> <X.X.X.X-X+autoX>
+validate-config <string> <X.X.X.X-X+autoX> force
+write
