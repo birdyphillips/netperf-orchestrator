@@ -24,22 +24,61 @@ logger = logging.getLogger(__name__)
 # Suppress paramiko's verbose logging
 logging.getLogger("paramiko").setLevel(logging.WARNING)
 
+
+def normalize_mac(mac):
+    """Normalize MAC address to dotted format (e.g. 206a.9492.23b8).
+    Accepts: 206a.9492.23b8, 20:6a:94:92:23:b8, 206a949223b8
+    """
+    raw = mac.replace(':', '').replace('.', '').replace('-', '').lower()
+    if len(raw) != 12:
+        raise ValueError(f"Invalid MAC address: {mac}")
+    return f"{raw[0:4]}.{raw[4:8]}.{raw[8:12]}"
+
+
+def parse_ipv6_from_vcmts(output):
+    """Parse IPv6 from vCMTS 'scm <mac> ip' output.
+    Example line:
+     206a.9492.23b8   b-online(pt)   N      2605:1c00:50f2:203:9826:3c40:8796:1c3    -
+    """
+    import re
+    for line in output.splitlines():
+        m = re.search(r'([0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4}){5,7})', line)
+        if m:
+            return m.group(1)
+    return None
+
+
+def parse_ipv6_from_icmts(output):
+    """Parse IPv6 from iCMTS 'show cable modem cm-mac <mac>' output.
+    Example line:
+    12/8/16-1/4/2  9  33x6  Operational 3.1  1440M/1125M  1  0cb9.379c.64b4  2605:1c00:fff0:118:5d0b:2ba0:1140:a3cd
+    """
+    import re
+    for line in output.splitlines():
+        m = re.search(r'([0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4}){5,7})', line)
+        if m:
+            return m.group(1)
+    return None
+
 def ssh_cmts_collector(username, jumpserver, cmts_host, cmts_password, cm_mac, cmts_type, output_file=None):
     """SSH into jump server, then to CMTS and execute service flow commands"""
+    
+    # Normalize MAC to dotted format for CMTS CLI
+    cm_mac = normalize_mac(cm_mac)
     
     logger.info(f"Starting CMTS collection for {cmts_type.upper()} {cmts_host}, CM MAC: {cm_mac}")
     
     # Determine commands based on CMTS type
     if cmts_type.lower() == 'icmts':
         commands = [
-            f"scm {cm_mac}",
-            f"scm {cm_mac} detail",
-            f"scm {cm_mac} qos"
+            f"show cable modem cm-mac {cm_mac}",
+            f"show cable modem cm-mac {cm_mac} verbose",
+            f"show cable modem cm-mac {cm_mac} service-flow"
         ]
         labels = [
             "Cable Modem Summary",
             "Cable Modem Details",
-            "QoS Information"
+            "Service Flow Information"
         ]
     else:  # vcmts
         commands = [
@@ -169,11 +208,11 @@ def ssh_cmts_collector(username, jumpserver, cmts_host, cmts_password, cm_mac, c
             
             # Extract IPv6 on first command (IP info)
             if i == 0:
-                import re
-                # Match full IPv6 address (at least 4 groups with colons)
-                ipv6_match = re.search(r'([0-9a-f]{1,4}:[0-9a-f]{1,4}:[0-9a-f:]+:[0-9a-f:]+)', output, re.IGNORECASE)
-                if ipv6_match:
-                    cm_ipv6 = ipv6_match.group(1)
+                if cmts_type.lower() == 'icmts':
+                    cm_ipv6 = parse_ipv6_from_icmts(output)
+                else:
+                    cm_ipv6 = parse_ipv6_from_vcmts(output)
+                if cm_ipv6:
                     logger.info(f"Extracted Cable Modem IPv6: {cm_ipv6}")
                     print(f"\nCable Modem IPv6: {cm_ipv6}")
             

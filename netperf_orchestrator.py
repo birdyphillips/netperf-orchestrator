@@ -32,11 +32,21 @@ class ByteBlowerCLI:
     def __init__(self):
         self.logger = Logger("ByteBlowerCLI")
         # Prompt for modem IPv6 address
-        user_input = input("Enter modem IPv6 address: ")
-        while not user_input.strip():
-            user_input = input("Modem IPv6 address is required. Please enter: ")
-        self.target_ip = user_input.strip()
-        self.logger.info(f"Using modem IPv6: {self.target_ip}")
+        user_input = input("Enter modem IPv6 address (or press Enter to skip SNMP): ")
+        self.target_ip = user_input.strip() if user_input.strip() else None
+        if self.target_ip:
+            self.logger.info(f"Using modem IPv6: {self.target_ip}")
+        else:
+            self.logger.warning("No modem IPv6 — SNMP collection will be skipped")
+        
+        # Prompt for CM MAC (used by CMTS Kafka collector)
+        mac_input = input("Enter CM MAC address (or press Enter to use config.yaml): ")
+        self.cm_mac = mac_input.strip() if mac_input.strip() else None
+        if self.cm_mac:
+            from cmts_modem_info import normalize_mac
+            self.cm_mac = normalize_mac(self.cm_mac)
+            self.logger.info(f"Using CM MAC: {self.cm_mac}")
+        
         self.output_dir = None
         self.cmts_collector = None
     
@@ -46,7 +56,7 @@ class ByteBlowerCLI:
             self.logger.warning("CMTS collector not available (kafka-python not installed) — skipping")
             return False
         try:
-            self.cmts_collector = CmtsCollector(direction=direction)
+            self.cmts_collector = CmtsCollector(mac=self.cm_mac, direction=direction)
             self.cmts_collector.start()
             return True
         except Exception as e:
@@ -71,6 +81,8 @@ class ByteBlowerCLI:
             return None
 
     def run_snmp_collection(self, test_name, phase, output_dir=None, rtt_suffix=""):
+        if not self.target_ip:
+            return False
         try:
             if output_dir is None:
                 output_dir = "Results"
