@@ -1,0 +1,202 @@
+# Modem Metrics Database Validation Test Case
+
+## Test Case Information
+- **Test Case ID**: TC_MODEM_METRICS_DB_001
+- **Test Case Title**: Verify Modem Metrics Are Populating in PostgreSQL Database
+- **Test Type**: Functional/Data Validation
+- **Priority**: High
+- **Component**: Modem Metrics Database (PostgreSQL)
+- **Test Environment**: vCMTS Lab - PostgreSQL DB at 172.30.80.33:5433
+- **Automatable**: Yes
+
+## Test Objective
+Verify that all modem metrics tables in the PostgreSQL database (modem_metrics) are actively receiving data from the vCMTS and CM collection pipelines. Confirm data freshness, row counts, schema integrity, and that key metrics (latency, AQM drops, congestion marking, sanctioned packets) are populating correctly per cable modem MAC, direction, and service flow.
+
+## Preconditions
+**System Configurations**:
+- PostgreSQL database is running and accessible at 172.30.80.33:5433
+- vCMTS is online and actively polling metrics (~15 second intervals)
+- At least one cable modem is registered and online with LLD enabled
+- CM metrics collection pipeline is running (flow_stats, histogram_stats, congestion_stats, agg_flow_stats)
+- modem_metrics.py CLI tool is available on the test machine
+- psycopg2 and openpyxl Python packages are installed
+
+**Access Requirements**:
+- Database credentials: user=postgres, password=<password>, dbname=modem_metrics
+- SSH access to test machine with modem_metrics.py
+- Known cable modem MAC address for targeted queries
+
+## Test Steps
+
+### Step 1: Verify Database Connectivity
+```bash
+python3 modem_metrics.py tables
+```
+Expected Results: All tables are listed under CM Metrics, vCMTS Metrics, and Unused categories
+Actual Results:
+
+### Step 2: Verify All Table Schemas Are Intact
+```bash
+python3 modem_metrics.py describe flow_stats
+python3 modem_metrics.py describe histogram_stats
+python3 modem_metrics.py describe congestion_stats
+python3 modem_metrics.py describe agg_flow_stats
+python3 modem_metrics.py describe vcmts_sfid_info
+python3 modem_metrics.py describe dp_flow_aqm_dropped_packets
+python3 modem_metrics.py describe dp_flow_aqm_marked_congested_packets
+python3 modem_metrics.py describe dp_flow_queue_latency_bin_pkt_count
+python3 modem_metrics.py describe dp_flow_queue_latency_max_usec
+python3 modem_metrics.py describe dp_flow_sanctioned_packets
+python3 modem_metrics.py describe qos_service_flow_packets
+python3 modem_metrics.py describe qos_service_flow_octets
+python3 modem_metrics.py describe channel_utilization
+python3 modem_metrics.py describe cm_reg_status_config
+python3 modem_metrics.py describe ksamis1_delta_packets_dropped
+python3 modem_metrics.py describe ksamis1_service_time_created
+```
+Expected Results: All tables return column definitions with correct data types and nullable flags
+Actual Results:
+
+### Step 3: Verify Row Counts — Tables Are Not Empty
+```bash
+python3 modem_metrics.py count flow_stats
+python3 modem_metrics.py count histogram_stats
+python3 modem_metrics.py count congestion_stats
+python3 modem_metrics.py count agg_flow_stats
+python3 modem_metrics.py count vcmts_sfid_info
+python3 modem_metrics.py count dp_flow_aqm_dropped_packets
+python3 modem_metrics.py count dp_flow_aqm_marked_congested_packets
+python3 modem_metrics.py count dp_flow_queue_latency_bin_pkt_count
+python3 modem_metrics.py count dp_flow_queue_latency_max_usec
+python3 modem_metrics.py count dp_flow_sanctioned_packets
+python3 modem_metrics.py count qos_service_flow_packets
+python3 modem_metrics.py count qos_service_flow_octets
+python3 modem_metrics.py count channel_utilization
+python3 modem_metrics.py count cm_reg_status_config
+python3 modem_metrics.py count ksamis1_delta_packets_dropped
+python3 modem_metrics.py count ksamis1_service_time_created
+```
+Expected Results: All tables have row counts > 0
+Actual Results:
+
+### Step 4: Verify Data Freshness — Check Last Entry Timestamps
+Run the following SQL to check when each table last received data:
+```bash
+python3 modem_metrics.py sql "SELECT 'flow_stats' as table_name, MAX(time) as last_entry FROM flow_stats UNION ALL SELECT 'histogram_stats', MAX(time) FROM histogram_stats UNION ALL SELECT 'agg_flow_stats', MAX(time) FROM agg_flow_stats UNION ALL SELECT 'congestion_stats', MAX(time) FROM congestion_stats UNION ALL SELECT 'vcmts_sfid_info', MAX(time) FROM vcmts_sfid_info UNION ALL SELECT 'dp_flow_aqm_dropped_packets', MAX(timestamp) FROM dp_flow_aqm_dropped_packets UNION ALL SELECT 'dp_flow_queue_latency_bin_pkt_count', MAX(timestamp) FROM dp_flow_queue_latency_bin_pkt_count UNION ALL SELECT 'dp_flow_queue_latency_max_usec', MAX(timestamp) FROM dp_flow_queue_latency_max_usec UNION ALL SELECT 'dp_flow_sanctioned_packets', MAX(timestamp) FROM dp_flow_sanctioned_packets UNION ALL SELECT 'dp_flow_aqm_marked_congested_packets', MAX(timestamp) FROM dp_flow_aqm_marked_congested_packets UNION ALL SELECT 'qos_service_flow_packets', MAX(timestamp) FROM qos_service_flow_packets UNION ALL SELECT 'qos_service_flow_octets', MAX(timestamp) FROM qos_service_flow_octets UNION ALL SELECT 'channel_utilization', MAX(timestamp) FROM channel_utilization UNION ALL SELECT 'cm_reg_status_config', MAX(timestamp) FROM cm_reg_status_config UNION ALL SELECT 'ksamis1_delta_packets_dropped', MAX(timestamp) FROM ksamis1_delta_packets_dropped UNION ALL SELECT 'ksamis1_service_time_created', MAX(timestamp) FROM ksamis1_service_time_created ORDER BY table_name"
+```
+Expected Results: 
+- vCMTS tables (timestamp column): last_entry within the last 5 minutes
+- CM tables (time column): last_entry within the last 5 minutes
+- If any CM table shows a last_entry older than 24 hours, the CM metrics collection pipeline has stopped and needs investigation
+Actual Results:
+
+### Step 5: Verify SFID Mapping for a Known Cable Modem
+```bash
+python3 modem_metrics.py sql "SELECT DISTINCT sfid, name FROM vcmts_sfid_info WHERE mac = '<cm_mac_colon_format>' ORDER BY name"
+```
+Expected Results: Returns SFID-to-name mappings showing us/ds service flow names (e.g. usHSI039, dsHSI039, usHSI039-AQP, dsHSI039-AQP)
+Actual Results:
+
+### Step 6: Verify Latency Histogram Data Is Populating
+```bash
+python3 modem_metrics.py query dp_flow_queue_latency_bin_pkt_count --cm-mac <cm_mac> -n 20
+```
+Expected Results: Returns rows with cm_mac_addr, direction, sf_index, bin_num (0-15), lower_edge_msec, upper_edge_msec, timestamp, and value columns populated
+Actual Results:
+
+### Step 7: Verify Max Latency Data Is Populating
+```bash
+python3 modem_metrics.py query dp_flow_queue_latency_max_usec --cm-mac <cm_mac> -n 10
+```
+Expected Results: Returns rows with max latency values in microseconds per direction and sf_index
+Actual Results:
+
+### Step 8: Verify AQM Dropped Packets Data Is Populating
+```bash
+python3 modem_metrics.py query dp_flow_aqm_dropped_packets --cm-mac <cm_mac> -n 10
+```
+Expected Results: Returns rows with AQM drop counter values per direction and sf_index. Values should be cumulative counters (increasing over time).
+Actual Results:
+
+### Step 9: Verify Congestion Marking Data Is Populating
+```bash
+python3 modem_metrics.py query dp_flow_aqm_marked_congested_packets --cm-mac <cm_mac> -n 10
+```
+Expected Results: Returns rows with congestion marking counter values per direction and sf_index
+Actual Results:
+
+### Step 10: Verify Sanctioned Packets Data Is Populating
+```bash
+python3 modem_metrics.py query dp_flow_sanctioned_packets --cm-mac <cm_mac> -n 10
+```
+Expected Results: Returns rows with sanctioned packet counter values per direction and sf_index
+Actual Results:
+
+### Step 11: Verify CM Metrics Pipeline — flow_stats
+```bash
+python3 modem_metrics.py query flow_stats -n 10
+```
+Expected Results: Returns rows with sfid, time, pkts, octets, aqmdroppedpkts, policeddroppkts columns populated with recent timestamps
+Actual Results:
+
+### Step 12: Verify CM Metrics Pipeline — histogram_stats
+```bash
+python3 modem_metrics.py query histogram_stats -n 10
+```
+Expected Results: Returns rows with sfid, time, maxlatency, bin1pkts through bin16pkts columns populated
+Actual Results:
+
+### Step 13: Verify CM Metrics Pipeline — congestion_stats
+```bash
+python3 modem_metrics.py query congestion_stats -n 10
+```
+Expected Results: Returns rows with sfid, time, sanctioned, totalect0pkts, totalect1pkts, cemarkpkts, cearrivepkts columns populated
+Actual Results:
+
+### Step 14: Verify vCMTS Snapshot Export Works End-to-End
+```bash
+python3 modem_metrics.py vcmts-snapshot --since "<start_time>" --until "<end_time>" --cm-mac <cm_mac> -o ./vcmts_snapshot_test
+```
+Expected Results:
+- CSV files generated for each table in the output directory
+- Excel workbook generated with summary sheet showing per-flow deltas
+- Summary includes: direction, sf_index, total_packets, total_octets, throughput, avg_latency_ms, p99_latency_ms, max_latency_usec, aqm_dropped_pkts, sanctioned_pkts
+Actual Results:
+
+### Step 15: Verify Polling Interval Consistency
+```bash
+python3 modem_metrics.py sql "SELECT timestamp, value, timestamp - LAG(timestamp) OVER (ORDER BY timestamp) as interval FROM dp_flow_aqm_dropped_packets WHERE cm_mac_addr = '<cm_mac_colon_format>' AND direction = 'upstream' AND sf_index = 0 ORDER BY timestamp DESC LIMIT 20"
+```
+Expected Results: Intervals between rows should be approximately 15-30 seconds (consistent polling). Large gaps indicate collection interruptions.
+Actual Results:
+
+## Pass/Fail Criteria
+
+**PASS — All pipelines healthy:**
+- All 16 tables have rows (count > 0)
+- All vCMTS tables have data within the last 5 minutes
+- All CM tables have data within the last 5 minutes
+- SFID mapping returns valid us/ds service flow names for a known modem
+- Latency, AQM drops, congestion marking, and sanctioned packet tables show data per modem/direction/sf_index
+- Polling intervals are consistent (~15-30 seconds)
+- vcmts-snapshot export generates valid CSV and Excel output
+
+**FAIL — Pipeline issue detected:**
+- Any table has 0 rows
+- Any vCMTS table has stale data (last entry > 5 minutes old)
+- Any CM table has stale data (last entry > 24 hours old — known issue, pipeline may have stopped)
+- SFID mapping returns no results for a registered modem
+- Latency or AQM tables return empty results for a modem that should have data
+- Polling intervals show large gaps (> 2 minutes between samples)
+
+## Known Issues
+- **CM metrics pipeline stoppage**: The CM metrics tables (flow_stats, histogram_stats, congestion_stats, agg_flow_stats, vcmts_sfid_info) have previously stopped collecting data. If Step 4 shows stale CM data, escalate to investigate the collection pipeline.
+- **qos_service_flow_packets/octets are NOT data-plane**: These counters only show management traffic (~28KB during a 421Mbps test). Do not use for throughput validation — use ByteBlower or iPerf3 results instead.
+- **MAC format**: The database stores MACs in colon-separated lowercase (e.g. 0c:b9:37:64:3a:b0). The modem_metrics.py tool auto-converts from Cisco notation (0cb9.3764.3ab0) but raw SQL queries require colon format.
+- **Polling interval**: vCMTS metrics poll every ~15 seconds. When aligning with test start/end times, widen the query window by ±30 seconds to capture bracketing samples.
+
+## Notes
+- Replace `<cm_mac>` with the actual cable modem MAC address (any format — the tool auto-converts)
+- Replace `<cm_mac_colon_format>` with colon-separated lowercase MAC for raw SQL queries
+- Replace `<start_time>` and `<end_time>` with actual timestamps in ISO format (e.g. "2026-04-08 17:57:00")
+- The database is at 172.30.80.33:5433, dbname=modem_metrics, user=postgres

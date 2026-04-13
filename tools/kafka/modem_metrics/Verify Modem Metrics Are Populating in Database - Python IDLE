@@ -1,0 +1,319 @@
+# Verify Modem Metrics Are Populating in Database - Python IDLE
+
+## Test Case Information
+- **Test Case ID**: TC_MODEM_METRICS_DB_003
+- **Test Case Title**: Verify Modem Metrics Are Populating in Database - Python IDLE
+- **Test Type**: Functional/Data Validation
+- **Priority**: High
+- **Component**: Modem Metrics Database (PostgreSQL)
+- **Test Environment**: Python IDLE → PostgreSQL DB at 172.30.80.33:5433
+- **Automatable**: No (interactive manual verification)
+
+## Test Objective
+Verify that modem metrics tables in the PostgreSQL database are actively receiving data by running Python commands interactively in IDLE. This allows step-by-step exploration and validation without needing the modem_metrics.py CLI tool.
+
+## Preconditions
+- Python 3 with psycopg2 installed (`pip install psycopg2-binary`)
+- PostgreSQL database is running and accessible at 172.30.80.33:5433
+- Network access to the database from the machine running IDLE
+- Known cable modem MAC address for targeted queries
+
+## Setup — Run These First in IDLE
+
+```python
+import psycopg2
+
+conn = psycopg2.connect(
+    host="172.30.80.33",
+    port=5433,
+    user="postgres",
+    password="<password>",
+    dbname="modem_metrics"
+)
+cur = conn.cursor()
+
+def run(sql):
+    cur.execute(sql)
+    cols = [d[0] for d in cur.description]
+    rows = cur.fetchall()
+    print(" | ".join(cols))
+    print("-" * 80)
+    for row in rows:
+        print(" | ".join(str(v) for v in row))
+    print(f"({len(rows)} rows)")
+```
+
+---
+
+## Test Steps
+
+### Step 1: Verify Database Connectivity
+```python
+run("SELECT current_database(), current_user, now()")
+```
+Expected Results: Returns modem_metrics, postgres, and current timestamp
+Actual Results:
+
+### Step 2: List All Tables
+```python
+run("SELECT table_name FROM information_schema.tables WHERE table_schema='public' ORDER BY table_name")
+```
+Expected Results: All 16+ tables listed
+Actual Results:
+
+### Step 3: Check Row Counts for All Tables
+```python
+tables = [
+    "flow_stats", "histogram_stats", "agg_flow_stats", "congestion_stats",
+    "vcmts_sfid_info", "dp_flow_aqm_dropped_packets",
+    "dp_flow_aqm_marked_congested_packets", "dp_flow_queue_latency_bin_pkt_count",
+    "dp_flow_queue_latency_max_usec", "dp_flow_sanctioned_packets",
+    "qos_service_flow_packets", "qos_service_flow_octets",
+    "channel_utilization", "cm_reg_status_config",
+    "ksamis1_delta_packets_dropped", "ksamis1_service_time_created"
+]
+
+for t in tables:
+    cur.execute(f'SELECT COUNT(*) FROM "{t}"')
+    print(f"{t}: {cur.fetchone()[0]} rows")
+```
+Expected Results: All tables have row counts > 0
+Actual Results:
+
+### Step 4: Check Data Freshness — CM Tables (time column)
+```python
+cm_tables = ["flow_stats", "histogram_stats", "agg_flow_stats", "congestion_stats", "vcmts_sfid_info"]
+
+for t in cm_tables:
+    cur.execute(f'SELECT MIN(time), MAX(time) FROM "{t}"')
+    mn, mx = cur.fetchone()
+    print(f"{t}: {mn} → {mx}")
+```
+Expected Results: MAX(time) within the last 5 minutes for all CM tables. If stale, CM pipeline has stopped.
+Actual Results:
+
+### Step 5: Check Data Freshness — vCMTS Tables (timestamp column)
+```python
+vcmts_tables = [
+    "dp_flow_aqm_dropped_packets", "dp_flow_aqm_marked_congested_packets",
+    "dp_flow_queue_latency_bin_pkt_count", "dp_flow_queue_latency_max_usec",
+    "dp_flow_sanctioned_packets", "qos_service_flow_packets",
+    "qos_service_flow_octets", "channel_utilization",
+    "cm_reg_status_config", "ksamis1_delta_packets_dropped",
+    "ksamis1_service_time_created"
+]
+
+for t in vcmts_tables:
+    cur.execute(f'SELECT MIN("timestamp"), MAX("timestamp") FROM "{t}"')
+    mn, mx = cur.fetchone()
+    print(f"{t}: {mn} → {mx}")
+```
+Expected Results: MAX(timestamp) within the last 5 minutes for all vCMTS tables
+Actual Results:
+
+### Step 6: Describe a Table Schema
+```python
+def describe(table):
+    cur.execute(
+        "SELECT column_name, data_type, is_nullable "
+        "FROM information_schema.columns "
+        "WHERE table_schema='public' AND table_name=%s "
+        "ORDER BY ordinal_position", (table,)
+    )
+    for col, dtype, nullable in cur.fetchall():
+        print(f"  {col:<30} {dtype:<35} {nullable}")
+
+describe("dp_flow_aqm_dropped_packets")
+```
+Try other tables:
+```python
+describe("flow_stats")
+describe("histogram_stats")
+describe("dp_flow_queue_latency_bin_pkt_count")
+```
+Expected Results: Column definitions with correct data types displayed
+Actual Results:
+
+### Step 7: Look Up SFIDs for a Cable Modem
+```python
+mac = "0c:b9:37:64:3a:b0"  # replace with your modem MAC
+
+run(f"SELECT DISTINCT sfid, name FROM vcmts_sfid_info WHERE mac = '{mac}' ORDER BY name")
+```
+Expected Results: Returns SFID-to-name mappings (e.g. usHSI039, dsHSI039, usHSI039-AQP)
+Actual Results:
+
+### Step 8: Check Latency Histogram Data for a Modem
+```python
+mac = "0c:b9:37:64:3a:b0"
+
+run(f"""
+    SELECT direction, sf_index, bin_num, lower_edge_msec, upper_edge_msec, "timestamp", value
+    FROM dp_flow_queue_latency_bin_pkt_count
+    WHERE cm_mac_addr = '{mac}'
+    ORDER BY "timestamp" DESC, direction, sf_index, bin_num
+    LIMIT 32
+""")
+```
+Expected Results: Returns rows with 16 bins per direction/sf_index with recent timestamps
+Actual Results:
+
+### Step 9: Check AQM Drops for a Modem
+```python
+mac = "0c:b9:37:64:3a:b0"
+
+run(f"""
+    SELECT direction, sf_index, "timestamp", value
+    FROM dp_flow_aqm_dropped_packets
+    WHERE cm_mac_addr = '{mac}'
+    ORDER BY "timestamp" DESC
+    LIMIT 10
+""")
+```
+Expected Results: Returns rows with cumulative AQM drop counter values
+Actual Results:
+
+### Step 10: Check Max Latency for a Modem
+```python
+mac = "0c:b9:37:64:3a:b0"
+
+run(f"""
+    SELECT direction, sf_index, "timestamp", value as max_latency_usec
+    FROM dp_flow_queue_latency_max_usec
+    WHERE cm_mac_addr = '{mac}'
+    ORDER BY "timestamp" DESC
+    LIMIT 10
+""")
+```
+Expected Results: Returns rows with max latency values in microseconds
+Actual Results:
+
+### Step 11: Check Sanctioned Packets for a Modem
+```python
+mac = "0c:b9:37:64:3a:b0"
+
+run(f"""
+    SELECT direction, sf_index, "timestamp", value
+    FROM dp_flow_sanctioned_packets
+    WHERE cm_mac_addr = '{mac}'
+    ORDER BY "timestamp" DESC
+    LIMIT 10
+""")
+```
+Expected Results: Returns rows with sanctioned packet counter values
+Actual Results:
+
+### Step 12: Check Congestion Marking for a Modem
+```python
+mac = "0c:b9:37:64:3a:b0"
+
+run(f"""
+    SELECT direction, sf_index, "timestamp", value
+    FROM dp_flow_aqm_marked_congested_packets
+    WHERE cm_mac_addr = '{mac}'
+    ORDER BY "timestamp" DESC
+    LIMIT 10
+""")
+```
+Expected Results: Returns rows with congestion marking counter values
+Actual Results:
+
+### Step 13: Check CM Metrics — flow_stats
+```python
+run('SELECT * FROM flow_stats ORDER BY time DESC LIMIT 5')
+```
+Expected Results: Returns rows with sfid, time, pkts, octets, aqmdroppedpkts columns with recent timestamps
+Actual Results:
+
+### Step 14: Check CM Metrics — histogram_stats
+```python
+run('SELECT * FROM histogram_stats ORDER BY time DESC LIMIT 5')
+```
+Expected Results: Returns rows with sfid, time, maxlatency, bin1pkts through bin16pkts
+Actual Results:
+
+### Step 15: Check CM Metrics — congestion_stats
+```python
+run('SELECT * FROM congestion_stats ORDER BY time DESC LIMIT 5')
+```
+Expected Results: Returns rows with sfid, time, sanctioned, totalect0pkts, cemarkpkts
+Actual Results:
+
+### Step 16: Check Polling Interval Consistency
+```python
+mac = "0c:b9:37:64:3a:b0"
+
+run(f"""
+    SELECT "timestamp", value,
+           "timestamp" - LAG("timestamp") OVER (ORDER BY "timestamp") as interval
+    FROM dp_flow_aqm_dropped_packets
+    WHERE cm_mac_addr = '{mac}' AND direction = 'upstream' AND sf_index = 0
+    ORDER BY "timestamp" DESC
+    LIMIT 20
+""")
+```
+Expected Results: Intervals are approximately 15-30 seconds. Large gaps (> 2 min) indicate collection issues.
+Actual Results:
+
+### Step 17: Quick Health Check — One Block
+Copy and paste this entire block into IDLE for a quick pipeline health summary:
+```python
+from datetime import datetime
+
+print("=" * 60)
+print(f"  MODEM METRICS HEALTH CHECK — {datetime.now()}")
+print("=" * 60)
+
+print("\n--- CM Tables (time column) ---")
+for t in ["flow_stats", "histogram_stats", "agg_flow_stats", "congestion_stats", "vcmts_sfid_info"]:
+    cur.execute(f'SELECT COUNT(*), MAX(time) FROM "{t}"')
+    cnt, mx = cur.fetchone()
+    print(f"  {t:<25} {cnt:>8} rows  last: {mx}")
+
+print("\n--- vCMTS Tables (timestamp column) ---")
+for t in ["dp_flow_aqm_dropped_packets", "dp_flow_aqm_marked_congested_packets",
+          "dp_flow_queue_latency_bin_pkt_count", "dp_flow_queue_latency_max_usec",
+          "dp_flow_sanctioned_packets", "qos_service_flow_packets",
+          "channel_utilization", "cm_reg_status_config",
+          "ksamis1_delta_packets_dropped", "ksamis1_service_time_created"]:
+    cur.execute(f'SELECT COUNT(*), MAX("timestamp") FROM "{t}"')
+    cnt, mx = cur.fetchone()
+    print(f"  {t:<45} {cnt:>8} rows  last: {mx}")
+
+print("\n" + "=" * 60)
+```
+Expected Results: All tables show row counts > 0 and recent "last" timestamps
+Actual Results:
+
+---
+
+## Cleanup — When Done
+```python
+cur.close()
+conn.close()
+```
+
+## Pass/Fail Criteria
+
+**PASS:**
+- Connection to database succeeds
+- All tables have rows > 0
+- All vCMTS tables have data within the last 5 minutes
+- All CM tables have data within the last 5 minutes
+- SFID mapping returns valid us/ds service flow names
+- Latency, AQM, congestion, and sanctioned tables show data per modem
+- Polling intervals are consistent (~15-30 seconds)
+
+**FAIL:**
+- Connection fails
+- Any table has 0 rows
+- Any table has stale data (vCMTS > 5 min, CM > 24 hours)
+- SFID mapping returns no results for a registered modem
+- Polling intervals show large gaps (> 2 minutes)
+
+## Notes
+- Replace `0c:b9:37:64:3a:b0` with your actual cable modem MAC (colon-separated lowercase)
+- Use Alt+P / Alt+N in IDLE to scroll through previous commands
+- The `run()` helper function prints results in a table format — define it once and reuse
+- Step 17 is the quickest health check — paste the whole block for an instant summary
+- `conn.close()` when done to clean up the connection

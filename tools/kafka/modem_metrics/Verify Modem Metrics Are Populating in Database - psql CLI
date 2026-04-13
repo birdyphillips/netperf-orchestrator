@@ -1,0 +1,150 @@
+# Modem Metrics Database Validation Test Case - psql CLI
+
+## Test Case Information
+- **Test Case ID**: TC_MODEM_METRICS_DB_002
+- **Test Case Title**: Verify Modem Metrics Are Populating in Database - psql CLI
+- **Test Type**: Functional/Data Validation
+- **Priority**: High
+- **Component**: Modem Metrics Database (PostgreSQL)
+- **Test Environment**: aa-ap-sandbox (Linux) → PostgreSQL DB at 172.30.80.33:5433
+- **Automatable**: Yes
+
+## Test Objective
+Verify that all modem metrics tables in the PostgreSQL database (modem_metrics) are actively receiving data from the vCMTS and CM collection pipelines using direct psql CLI commands from the sandbox server.
+
+## Preconditions
+**System Configurations**:
+- PostgreSQL database is running and accessible at 172.30.80.33:5433
+- vCMTS is online and actively polling metrics (~15 second intervals)
+- At least one cable modem is registered and online with LLD enabled
+- CM metrics collection pipeline is running
+- postgresql-client is installed on the sandbox
+
+**Access Requirements**:
+- SSH access to aa-ap-sandbox (aphillips@aa-ap-sandbox)
+- Database credentials: user=postgres, password=<password>, dbname=modem_metrics
+
+**Install psql client if needed:**
+```bash
+sudo apt-get install -y postgresql-client
+```
+
+## Test Steps
+
+### Step 1: Verify Database Connectivity
+```bash
+PGPASSWORD=<password> psql -h 172.30.80.33 -p 5433 -U postgres -d modem_metrics -c '\dt'
+```
+Expected Results: All tables listed in the public schema
+Actual Results:
+
+### Step 2: Verify CM Metrics Tables — Data Range (time column)
+```bash
+PGPASSWORD=<password> psql -h 172.30.80.33 -p 5433 -U postgres -d modem_metrics -c "SELECT 'flow_stats' as table_name, MIN(time), MAX(time) FROM flow_stats UNION ALL SELECT 'histogram_stats', MIN(time), MAX(time) FROM histogram_stats UNION ALL SELECT 'agg_flow_stats', MIN(time), MAX(time) FROM agg_flow_stats UNION ALL SELECT 'congestion_stats', MIN(time), MAX(time) FROM congestion_stats UNION ALL SELECT 'vcmts_sfid_info', MIN(time), MAX(time) FROM vcmts_sfid_info ORDER BY table_name;"
+```
+Expected Results:
+- All 5 CM tables return MIN and MAX timestamps
+- MAX(time) should be within the last 5 minutes if the pipeline is healthy
+- If MAX(time) is stale (e.g. weeks old), the CM metrics collection pipeline has stopped
+
+Actual Results:
+
+### Step 3: Verify vCMTS Metrics Tables — Data Range (timestamp column)
+```bash
+PGPASSWORD=<password> psql -h 172.30.80.33 -p 5433 -U postgres -d modem_metrics -c "SELECT 'channel_utilization' as table_name, MIN(\"timestamp\"), MAX(\"timestamp\") FROM channel_utilization UNION ALL SELECT 'cm_reg_status_config', MIN(\"timestamp\"), MAX(\"timestamp\") FROM cm_reg_status_config UNION ALL SELECT 'dp_flow_aqm_dropped_packets', MIN(\"timestamp\"), MAX(\"timestamp\") FROM dp_flow_aqm_dropped_packets UNION ALL SELECT 'dp_flow_aqm_marked_congested_packets', MIN(\"timestamp\"), MAX(\"timestamp\") FROM dp_flow_aqm_marked_congested_packets UNION ALL SELECT 'dp_flow_queue_latency_bin_pkt_count', MIN(\"timestamp\"), MAX(\"timestamp\") FROM dp_flow_queue_latency_bin_pkt_count UNION ALL SELECT 'dp_flow_queue_latency_max_usec', MIN(\"timestamp\"), MAX(\"timestamp\") FROM dp_flow_queue_latency_max_usec UNION ALL SELECT 'dp_flow_sanctioned_packets', MIN(\"timestamp\"), MAX(\"timestamp\") FROM dp_flow_sanctioned_packets UNION ALL SELECT 'ksamis1_delta_packets_dropped', MIN(\"timestamp\"), MAX(\"timestamp\") FROM ksamis1_delta_packets_dropped UNION ALL SELECT 'ksamis1_service_time_created', MIN(\"timestamp\"), MAX(\"timestamp\") FROM ksamis1_service_time_created UNION ALL SELECT 'qos_service_flow_packets', MIN(\"timestamp\"), MAX(\"timestamp\") FROM qos_service_flow_packets ORDER BY table_name;"
+```
+Expected Results:
+- All 10 vCMTS tables return MIN and MAX timestamps
+- MAX(timestamp) should be within the last 5 minutes if the pipeline is healthy
+- Data range should span at least several days of collection
+
+Actual Results:
+
+### Step 4: Verify Row Counts for All Tables
+```bash
+PGPASSWORD=<password> psql -h 172.30.80.33 -p 5433 -U postgres -d modem_metrics -c "SELECT 'flow_stats' as table_name, COUNT(*) FROM flow_stats UNION ALL SELECT 'histogram_stats', COUNT(*) FROM histogram_stats UNION ALL SELECT 'agg_flow_stats', COUNT(*) FROM agg_flow_stats UNION ALL SELECT 'congestion_stats', COUNT(*) FROM congestion_stats UNION ALL SELECT 'vcmts_sfid_info', COUNT(*) FROM vcmts_sfid_info UNION ALL SELECT 'dp_flow_aqm_dropped_packets', COUNT(*) FROM dp_flow_aqm_dropped_packets UNION ALL SELECT 'dp_flow_aqm_marked_congested_packets', COUNT(*) FROM dp_flow_aqm_marked_congested_packets UNION ALL SELECT 'dp_flow_queue_latency_bin_pkt_count', COUNT(*) FROM dp_flow_queue_latency_bin_pkt_count UNION ALL SELECT 'dp_flow_queue_latency_max_usec', COUNT(*) FROM dp_flow_queue_latency_max_usec UNION ALL SELECT 'dp_flow_sanctioned_packets', COUNT(*) FROM dp_flow_sanctioned_packets UNION ALL SELECT 'qos_service_flow_packets', COUNT(*) FROM qos_service_flow_packets UNION ALL SELECT 'qos_service_flow_octets', COUNT(*) FROM qos_service_flow_octets UNION ALL SELECT 'channel_utilization', COUNT(*) FROM channel_utilization UNION ALL SELECT 'cm_reg_status_config', COUNT(*) FROM cm_reg_status_config UNION ALL SELECT 'ksamis1_delta_packets_dropped', COUNT(*) FROM ksamis1_delta_packets_dropped UNION ALL SELECT 'ksamis1_service_time_created', COUNT(*) FROM ksamis1_service_time_created ORDER BY table_name;"
+```
+Expected Results: All tables have count > 0
+Actual Results:
+
+### Step 5: Verify SFID Mapping for a Known Cable Modem
+```bash
+PGPASSWORD=<password> psql -h 172.30.80.33 -p 5433 -U postgres -d modem_metrics -c "SELECT DISTINCT sfid, name FROM vcmts_sfid_info WHERE mac = '<cm_mac_colon_format>' ORDER BY name;"
+```
+Expected Results: Returns SFID-to-name mappings (e.g. usHSI039, dsHSI039, usHSI039-AQP, dsHSI039-AQP)
+Actual Results:
+
+### Step 6: Verify Latency Histogram Data for a Known Cable Modem
+```bash
+PGPASSWORD=<password> psql -h 172.30.80.33 -p 5433 -U postgres -d modem_metrics -c "SELECT direction, sf_index, bin_num, lower_edge_msec, upper_edge_msec, \"timestamp\", value FROM dp_flow_queue_latency_bin_pkt_count WHERE cm_mac_addr = '<cm_mac_colon_format>' ORDER BY \"timestamp\" DESC, direction, sf_index, bin_num LIMIT 32;"
+```
+Expected Results: Returns rows with 16 bins (0-15) per direction/sf_index with recent timestamps and incrementing values
+Actual Results:
+
+### Step 7: Verify AQM Drops for a Known Cable Modem
+```bash
+PGPASSWORD=<password> psql -h 172.30.80.33 -p 5433 -U postgres -d modem_metrics -c "SELECT direction, sf_index, \"timestamp\", value FROM dp_flow_aqm_dropped_packets WHERE cm_mac_addr = '<cm_mac_colon_format>' ORDER BY \"timestamp\" DESC LIMIT 10;"
+```
+Expected Results: Returns rows with cumulative AQM drop counter values per direction/sf_index
+Actual Results:
+
+### Step 8: Verify Max Latency for a Known Cable Modem
+```bash
+PGPASSWORD=<password> psql -h 172.30.80.33 -p 5433 -U postgres -d modem_metrics -c "SELECT direction, sf_index, \"timestamp\", value as max_latency_usec FROM dp_flow_queue_latency_max_usec WHERE cm_mac_addr = '<cm_mac_colon_format>' ORDER BY \"timestamp\" DESC LIMIT 10;"
+```
+Expected Results: Returns rows with max latency values in microseconds
+Actual Results:
+
+### Step 9: Verify Sanctioned Packets for a Known Cable Modem
+```bash
+PGPASSWORD=<password> psql -h 172.30.80.33 -p 5433 -U postgres -d modem_metrics -c "SELECT direction, sf_index, \"timestamp\", value FROM dp_flow_sanctioned_packets WHERE cm_mac_addr = '<cm_mac_colon_format>' ORDER BY \"timestamp\" DESC LIMIT 10;"
+```
+Expected Results: Returns rows with sanctioned packet counter values
+Actual Results:
+
+### Step 10: Verify Polling Interval Consistency
+```bash
+PGPASSWORD=<password> psql -h 172.30.80.33 -p 5433 -U postgres -d modem_metrics -c "SELECT \"timestamp\", value, \"timestamp\" - LAG(\"timestamp\") OVER (ORDER BY \"timestamp\") as interval FROM dp_flow_aqm_dropped_packets WHERE cm_mac_addr = '<cm_mac_colon_format>' AND direction = 'upstream' AND sf_index = 0 ORDER BY \"timestamp\" DESC LIMIT 20;"
+```
+Expected Results: Intervals between rows should be approximately 15-30 seconds (consistent polling). Large gaps (> 2 minutes) indicate collection interruptions.
+Actual Results:
+
+### Step 11: Quick Health Check — Run Steps 2 and 3 Back-to-Back
+This is the fastest way to check if both pipelines are alive. Run both commands and compare MAX timestamps to current time:
+```bash
+echo "=== CM Metrics (time column) ===" && \
+PGPASSWORD=<password> psql -h 172.30.80.33 -p 5433 -U postgres -d modem_metrics -c "SELECT 'flow_stats' as table_name, MIN(time), MAX(time) FROM flow_stats UNION ALL SELECT 'histogram_stats', MIN(time), MAX(time) FROM histogram_stats UNION ALL SELECT 'agg_flow_stats', MIN(time), MAX(time) FROM agg_flow_stats UNION ALL SELECT 'congestion_stats', MIN(time), MAX(time) FROM congestion_stats UNION ALL SELECT 'vcmts_sfid_info', MIN(time), MAX(time) FROM vcmts_sfid_info ORDER BY table_name;" && \
+echo "=== vCMTS Metrics (timestamp column) ===" && \
+PGPASSWORD=<password> psql -h 172.30.80.33 -p 5433 -U postgres -d modem_metrics -c "SELECT 'channel_utilization' as table_name, MIN(\"timestamp\"), MAX(\"timestamp\") FROM channel_utilization UNION ALL SELECT 'cm_reg_status_config', MIN(\"timestamp\"), MAX(\"timestamp\") FROM cm_reg_status_config UNION ALL SELECT 'dp_flow_aqm_dropped_packets', MIN(\"timestamp\"), MAX(\"timestamp\") FROM dp_flow_aqm_dropped_packets UNION ALL SELECT 'dp_flow_aqm_marked_congested_packets', MIN(\"timestamp\"), MAX(\"timestamp\") FROM dp_flow_aqm_marked_congested_packets UNION ALL SELECT 'dp_flow_queue_latency_bin_pkt_count', MIN(\"timestamp\"), MAX(\"timestamp\") FROM dp_flow_queue_latency_bin_pkt_count UNION ALL SELECT 'dp_flow_queue_latency_max_usec', MIN(\"timestamp\"), MAX(\"timestamp\") FROM dp_flow_queue_latency_max_usec UNION ALL SELECT 'dp_flow_sanctioned_packets', MIN(\"timestamp\"), MAX(\"timestamp\") FROM dp_flow_sanctioned_packets UNION ALL SELECT 'ksamis1_delta_packets_dropped', MIN(\"timestamp\"), MAX(\"timestamp\") FROM ksamis1_delta_packets_dropped UNION ALL SELECT 'ksamis1_service_time_created', MIN(\"timestamp\"), MAX(\"timestamp\") FROM ksamis1_service_time_created UNION ALL SELECT 'qos_service_flow_packets', MIN(\"timestamp\"), MAX(\"timestamp\") FROM qos_service_flow_packets ORDER BY table_name;" && \
+echo "=== Current Time ===" && date
+```
+Expected Results: MAX timestamps for all tables are close to the current time shown by `date`
+Actual Results:
+
+## Pass/Fail Criteria
+
+**PASS — All pipelines healthy:**
+- All CM tables (flow_stats, histogram_stats, agg_flow_stats, congestion_stats, vcmts_sfid_info) have MAX(time) within the last 5 minutes
+- All vCMTS tables have MAX(timestamp) within the last 5 minutes
+- All tables have row counts > 0
+- SFID mapping returns valid us/ds service flow names for a known modem
+- Latency, AQM drops, and sanctioned packet tables show data per modem/direction/sf_index
+- Polling intervals are consistent (~15-30 seconds)
+
+**FAIL — Pipeline issue detected:**
+- Any table has 0 rows
+- Any vCMTS table MAX(timestamp) is older than 5 minutes
+- Any CM table MAX(time) is older than 24 hours (known issue — CM pipeline may have stopped)
+- SFID mapping returns no results for a registered modem
+- Polling intervals show large gaps (> 2 minutes between samples)
+
+## Known Issues
+- **CM metrics pipeline stoppage**: The CM metrics tables have previously stopped collecting around March 24th. If Step 2 shows stale MAX(time), escalate to investigate the collection pipeline.
+- **qos_service_flow_packets/octets are NOT data-plane**: These counters only show management traffic (~28KB during a 421Mbps test). Do not use for throughput validation.
+- **MAC format**: Raw psql queries require colon-separated lowercase MAC (e.g. 0c:b9:37:64:3a:b0). Convert from Cisco notation (0cb9.3764.3ab0) manually.
+- **Polling interval**: vCMTS metrics poll every ~15 seconds. Samples appear at ~30s intervals in the DB.
+
+## Notes
+- Replace `<cm_mac_colon_format>` with the actual cable modem MAC in colon-separated lowercase format (e.g. 0c:b9:37:64:3a:b0)
+- All commands are run from aa-ap-sandbox: `ssh aphillips@aa-ap-sandbox`
+- Step 11 is the quickest way to check pipeline health — run it first, then drill into specific tables if something looks stale

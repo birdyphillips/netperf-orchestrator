@@ -35,3 +35,4 @@ SECURITY.md
 # OS
 .DS_Store
 Thumbs.db
+tools/kafka/modem_metrics/vcmts_snapshot/
