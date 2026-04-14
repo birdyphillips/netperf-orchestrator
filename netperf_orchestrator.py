@@ -10,6 +10,11 @@ from datetime import datetime
 import csv
 
 try:
+    import readline  # enables arrow-key editing in input() prompts
+except ImportError:
+    pass
+
+try:
     import pandas as pd
     HAS_PANDAS = True
 except ImportError:
@@ -62,6 +67,16 @@ class ByteBlowerCLI:
         except Exception as e:
             self.logger.warning(f"CMTS collection unavailable: {e} — test will continue without it")
             self.cmts_collector = None
+            return False
+
+    def wait_for_cmts_poll(self, timeout=45):
+        """Wait for next Kafka polling interval. Safe to call if collector not started."""
+        if not self.cmts_collector:
+            return False
+        try:
+            return self.cmts_collector.wait_for_poll(timeout=timeout)
+        except Exception as e:
+            self.logger.warning(f"wait_for_cmts_poll failed: {e}")
             return False
 
     def stop_cmts_collection(self, output_dir, test_name):
@@ -213,15 +228,16 @@ class ByteBlowerCLI:
                 
                 # Determine CMTS collection direction from scenario name
                 cmts_dir = "upstream" if scenario_name.lower().startswith("us") else "downstream"
-                self.start_cmts_collection(direction=cmts_dir)
                 
                 for i in range(iterations):
                     self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "before", snmp_dir, "")
+                    self.start_cmts_collection(direction=cmts_dir)
+                    self.wait_for_cmts_poll()
                     if not bb.run_scenario(i, iterations, test_output_dir):
                         success = False
+                    self.wait_for_cmts_poll()
+                    self.stop_cmts_collection(snmp_dir, scenario_name)
                     self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", snmp_dir, "")
-                
-                self.stop_cmts_collection(snmp_dir, scenario_name)
                 self._run_latency_report(snmp_dir)
             elif iperf3_only or iperf3_darwin:
                 platform_override = 'macos' if iperf3_darwin else None
@@ -244,15 +260,16 @@ class ByteBlowerCLI:
                 
                 # Determine CMTS collection direction from scenario name
                 cmts_dir = "upstream" if scenario_name.lower().startswith("us") else "downstream"
-                self.start_cmts_collection(direction=cmts_dir)
                 
                 for i in range(iterations):
                     self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "before", snmp_dir, "")
+                    self.start_cmts_collection(direction=cmts_dir)
+                    self.wait_for_cmts_poll()
                     if not iperf3.run_scenario(i, iterations):
                         success = False
+                    self.wait_for_cmts_poll()
+                    self.stop_cmts_collection(snmp_dir, scenario_name)
                     self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", snmp_dir, "")
-                
-                self.stop_cmts_collection(snmp_dir, scenario_name)
                 self._run_latency_report(snmp_dir)
                 iperf3.stop_iperf3_servers()
             else:
@@ -278,15 +295,16 @@ class ByteBlowerCLI:
                         os.makedirs(snmp_dir, exist_ok=True)
                         
                         cmts_dir = "upstream" if scenario_name.lower().startswith("us") else "downstream"
-                        self.start_cmts_collection(direction=cmts_dir)
                         
                         for i in range(iterations):
                             self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "before", snmp_dir, "")
+                            self.start_cmts_collection(direction=cmts_dir)
+                            self.wait_for_cmts_poll()
                             if not iperf3.run_scenario(i, iterations):
                                 success = False
+                            self.wait_for_cmts_poll()
+                            self.stop_cmts_collection(snmp_dir, scenario_name)
                             self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", snmp_dir, "")
-                        
-                        self.stop_cmts_collection(snmp_dir, scenario_name)
                         self._run_latency_report(snmp_dir)
                         iperf3.stop_iperf3_servers()
                         success = success and ps.stop_config()
@@ -300,15 +318,16 @@ class ByteBlowerCLI:
                         os.makedirs(snmp_dir, exist_ok=True)
                         
                         cmts_dir = "upstream" if scenario_name.lower().startswith("us") else "downstream"
-                        self.start_cmts_collection(direction=cmts_dir)
                         
                         for i in range(iterations):
                             self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "before", snmp_dir, "")
+                            self.start_cmts_collection(direction=cmts_dir)
+                            self.wait_for_cmts_poll()
                             if not bb.run_scenario(i, iterations, test_output_dir):
                                 success = False
+                            self.wait_for_cmts_poll()
+                            self.stop_cmts_collection(snmp_dir, scenario_name)
                             self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", snmp_dir, "")
-                        
-                        self.stop_cmts_collection(snmp_dir, scenario_name)
                         self._run_latency_report(snmp_dir)
                         success = success and ps.stop_config()
             
