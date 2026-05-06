@@ -1,0 +1,2028 @@
+4/9/2026, 2:42:04 PM
+INFO
+DBWrapper
+Database connection established.
+4/9/2026, 2:42:04 PM
+INFO
+DBWrapper
+Database connection closed.
+4/9/2026, 2:42:04 PM
+INFO
+OrchestrationAPI
+Submitting orchestration task with config keys: ['Steps', 'Test Info', 'CMTS Environment']
+4/9/2026, 2:42:04 PM
+INFO
+SerialTaskQueue
+Task 7138e805-3002-4fc8-8c4b-c2434278dacf queued
+4/9/2026, 2:42:04 PM
+INFO
+OrchestrationAPI
+Task submitted with ID: 7138e805-3002-4fc8-8c4b-c2434278dacf
+4/9/2026, 2:42:04 PM
+INFO
+SerialTaskQueue
+Starting task 7138e805-3002-4fc8-8c4b-c2434278dacf with function run_orchestration_task
+4/9/2026, 2:42:04 PM
+INFO
+SerialTaskQueue
+Task 7138e805-3002-4fc8-8c4b-c2434278dacf executing...
+4/9/2026, 2:42:04 PM
+INFO
+SerialTaskQueue
+Task 7138e805-3002-4fc8-8c4b-c2434278dacf status updated to: executing
+4/9/2026, 2:42:04 PM
+INFO
+OrchestrationTask
+Starting orchestration task
+4/9/2026, 2:42:04 PM
+INFO
+Orchestrator
+Module 'Orchestrator' started.
+4/9/2026, 2:42:04 PM
+INFO
+DBWrapper
+Database connection established.
+4/9/2026, 2:42:04 PM
+INFO
+SerialTaskQueue
+Task 7138e805-3002-4fc8-8c4b-c2434278dacf status updated to: executing
+4/9/2026, 2:42:04 PM
+INFO
+Orchestrator
+Starting run_e2e execution
+4/9/2026, 2:42:04 PM
+INFO
+Orchestrator
+Step 1: Reading configuration
+4/9/2026, 2:42:04 PM
+INFO
+Orchestrator
+Using CMTS environment: apc01k1dccc
+4/9/2026, 2:42:04 PM
+INFO
+Orchestrator
+Test ID 172 - Starting orchestration
+4/9/2026, 2:42:04 PM
+INFO
+Authenticator
+Stored credentials: {'username': {}}
+4/9/2026, 2:42:04 PM
+INFO
+Orchestrator
+Registered steps: Latency Analyzer, iPerf, SamKnows, ByteBlower, Screen Recorder, Screen Recorder BB, Configure SCN
+4/9/2026, 2:42:04 PM
+INFO
+Orchestrator
+Found Steps ByteBlower
+4/9/2026, 2:42:04 PM
+INFO
+Orchestrator
+Adding configured step: ByteBlower
+4/9/2026, 2:42:04 PM
+INFO
+Orchestrator
+Total steps generated: 1
+4/9/2026, 2:42:04 PM
+INFO
+Orchestrator
+Configuration read completed
+4/9/2026, 2:42:04 PM
+INFO
+Orchestrator
+Step 2: Connecting to CMTS
+4/9/2026, 2:42:04 PM
+DEBUG
+Orchestrator
+Connecting to CMTS 71.85.92.206 as user aphillips
+4/9/2026, 2:42:05 PM
+ERROR
+Orchestrator
+Exception: Authentication to device failed. Common causes of this problem are: 1. Invalid username and password 2. Incorrect SSH-key file 3. Connecting to the wrong device Device settings: arris_cer 71.85.92.206:22 Authentication failed.
+4/9/2026, 2:42:05 PM
+INFO
+Orchestrator
+CMTS connection completed
+4/9/2026, 2:42:05 PM
+INFO
+Orchestrator
+Step 3: Creating database entry
+4/9/2026, 2:42:05 PM
+INFO
+Orchestrator
+Environment: apc01k1dccc, Type: vcmts, IP: 71.85.92.206
+4/9/2026, 2:42:05 PM
+INFO
+DBWrapper
+DataFrame inserted into TEST_RUNS successfully.
+4/9/2026, 2:42:05 PM
+INFO
+Orchestrator
+Database entry created
+4/9/2026, 2:42:05 PM
+INFO
+Orchestrator
+Step 4: Executing test steps
+4/9/2026, 2:42:05 PM
+INFO
+Orchestrator
+Total steps to execute: 1
+4/9/2026, 2:42:05 PM
+INFO
+Orchestrator
+====================
+4/9/2026, 2:42:05 PM
+INFO
+Orchestrator
+EXECUTING STEP 1/1: ByteBlower Scenario Execution (Index: 0)...
+4/9/2026, 2:42:05 PM
+INFO
+Orchestrator
+====================
+4/9/2026, 2:42:05 PM
+INFO
+ByteBlowerStep
+Starting ByteBlower step execution
+4/9/2026, 2:42:05 PM
+INFO
+ByteBlowerStep
+Found PacketStorm config in ByteBlower step: [{'RTT': 0, 'config': 'None'}]
+4/9/2026, 2:42:05 PM
+INFO
+ByteBlowerStep
+Processing PacketStorm Latency: 0
+4/9/2026, 2:42:05 PM
+INFO
+ByteBlowerStep
+PacketStorm Configuration: Port=A, Link=1, Continuous=True
+4/9/2026, 2:42:05 PM
+INFO
+ByteBlowerStep
+PacketStorm Config File: None
+4/9/2026, 2:42:05 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 2:42:05 PM
+INFO
+PacketStorm
+PACKETSTORM STOP EMULATION
+4/9/2026, 2:42:05 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 2:42:05 PM
+INFO
+PacketStorm
+Sending login request to PacketStorm...
+4/9/2026, 2:42:05 PM
+INFO
+PacketStorm
+[Step 1/2] Sending stop request to PacketStorm:
+4/9/2026, 2:42:05 PM
+INFO
+PacketStorm
+Request payload: {"op": "login", "user": "automation", "args": {"password": "automation"}}
+4/9/2026, 2:42:05 PM
+INFO
+PacketStorm
+Response status: 200
+4/9/2026, 2:42:05 PM
+INFO
+PacketStorm
+Response body: {"status":true}
+4/9/2026, 2:42:05 PM
+INFO
+PacketStorm
+Sending request to stop the emulation
+4/9/2026, 2:42:05 PM
+INFO
+PacketStorm
+[Step 2/2] Sending stop request to PacketStorm:
+4/9/2026, 2:42:05 PM
+INFO
+PacketStorm
+Request payload: {"op": "stop", "user": "automation"}
+4/9/2026, 2:42:06 PM
+INFO
+PacketStorm
+Response status: 200
+4/9/2026, 2:42:06 PM
+INFO
+PacketStorm
+Response body: {"status":true}
+4/9/2026, 2:42:06 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 2:42:06 PM
+INFO
+PacketStorm
+PACKETSTORM STOP COMPLETE
+4/9/2026, 2:42:06 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 2:42:06 PM
+INFO
+ByteBlowerStep
+Using configured iterations: 1
+4/9/2026, 2:42:06 PM
+INFO
+ByteBlowerStep
+Starting iteration 1/1
+4/9/2026, 2:42:06 PM
+INFO
+DBWrapper
+Database connection established.
+4/9/2026, 2:42:06 PM
+INFO
+DBWrapper
+DataFrame inserted into BB_INFO successfully.
+4/9/2026, 2:42:06 PM
+INFO
+DBWrapper
+Database connection closed.
+4/9/2026, 2:42:06 PM
+INFO
+ByteBlowerStep
+Using specified cable modem MAC: 0cb9.3764.3ab0
+4/9/2026, 2:42:06 PM
+INFO
+ByteBlowerStep
+Resolved CM IP: {'cm_mac': '0cb9.3764.3ab0', 'cm_ipv6': '2605:1c00:50f2:203:5503:2f0:489a:cd09', 'cm_ipv4': None}
+4/9/2026, 2:42:06 PM
+INFO
+ByteBlowerStep
+Starting SNMP polling for {'cm_mac': '0cb9.3764.3ab0', 'cm_ipv6': '2605:1c00:50f2:203:5503:2f0:489a:cd09', 'cm_ipv4': None}
+4/9/2026, 2:42:06 PM
+INFO
+ByteBlowerStep
+Running SNMP script with IP: 2605:1c00:50f2:203:5503:2f0:489a:cd09
+4/9/2026, 2:42:08 PM
+INFO
+ByteBlowerStep
+SNMP script return code: 0
+4/9/2026, 2:42:08 PM
+INFO
+ByteBlowerStep
+SNMP script succeeded
+4/9/2026, 2:42:16 PM
+INFO
+ByteBlowerStep
+--------------------
+4/9/2026, 2:42:26 PM
+INFO
+ByteBlowerStep
+Created output directory: /app/BBResults/172_0_0/
+4/9/2026, 2:42:26 PM
+INFO
+ByteBlowerStep
+Current working directory: /app
+4/9/2026, 2:42:26 PM
+INFO
+ByteBlowerStep
+ByteBlower CLT path: /opt/byteblower/ByteBlower-CLT
+4/9/2026, 2:42:26 PM
+INFO
+ByteBlowerStep
+Project path: /opt/bb_scenarios/HSI016_P18_vcmts_cme0dbkd1613d18.bbp
+4/9/2026, 2:42:26 PM
+INFO
+ByteBlowerStep
+Output directory: /app/BBResults/172_0_0/
+4/9/2026, 2:43:50 PM
+INFO
+ByteBlowerStep
+ByteBlower CLT stdout: ByteBlower CLT 2.22.6 is running ! API loaded, configuring excentis logger. Configuring excentis logger level to WARNING. Sending excentis logger to console. [EL Info]: 2026-04-09 14:42:29.162--ServerSession(1241153805)--EclipseLink, version: Eclipse Persistence Services - 3.0.0.v202012081001 handling event [EL Warning]: metadata: 2026-04-09 14:42:30.402--ServerSession(1697175372)--The reference column name [snapshot_id] mapped on the element [field rxCounters] does not correspond to a valid id or basic field/column on the mapping reference. Will use referenced column name as provided. [EL Warning]: metadata: 2026-04-09 14:42:30.402--ServerSession(1697175372)--The reference column name [snapshot_id] mapped on the element [field txCounters] does not correspond to a valid id or basic field/column on the mapping reference. Will use referenced column name as provided. [EL Warning]: metadata: 2026-04-09 14:42:30.402--ServerSession(1697175372)--The reference column name [snapshot_id] mapped on the element [field retransCounters] does not correspond to a valid id or basic field/column on the mapping reference. Will use referenced column name as provided. [EL Info]: 2026-04-09 14:42:30.453--ServerSession(1697175372)--EclipseLink, version: Eclipse Persistence Services - 3.0.0.v202012081001 !SESSION 2026-04-09 14:42:26.750 ----------------------------------------------- eclipse.buildId=2.22.6-16357 java.version=11.0.13 java.vendor=Eclipse Adoptium BootLoader constants: OS=linux, ARCH=x86_64, WS=gtk, NL=en Framework arguments: --project /opt/bb_scenarios/HSI016_P18_vcmts_cme0dbkd1613d18.bbp --output /app/BBResults/172_0_0/ --scenario DS_Classic_Only Command-line arguments: -os linux -ws gtk -arch x86_64 -consolelog --project /opt/bb_scenarios/HSI016_P18_vcmts_cme0dbkd1613d18.bbp --output /app/BBResults/172_0_0/ --scenario DS_Classic_Only !ENTRY com.excentis.products.byteblower.model.reader 1 0 2026-04-09 14:42:30.952 !MESSAGE Building docking info: co
+4/9/2026, 2:43:50 PM
+INFO
+ByteBlowerStep
+ByteBlower CLT stderr (informational): Apr 09, 2026 2:42:28 PM com.excentis.products.byteblower.communication.Activator start INFO: Loaded ByteBlower API for Java specification version 'null' Apr 09, 2026 2:42:28 PM com.excentis.products.byteblower.run.objects.RuntimeByteBlower <init> INFO: Running version 2.22.6 of the ByteBlower API Apr 09, 2026 2:42:28 PM com.excentis.products.byteblower.datalibs.DatabaseConfiguration createH2 INFO: Enabling H2 Auto server Apr 09, 2026 2:42:28 PM com.excentis.products.byteblower.results.dataprovider.data.MetaDataPersistenceController getInstance INFO: creating Metadatabase Apr 09, 2026 2:42:29 PM com.excentis.products.byteblower.datalibs.DatabaseConfiguration createH2 INFO: Enabling H2 Auto server Apr 09, 2026 2:42:30 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl FINEST: invoking action: Initialize scenario [InitializeScenario] Apr 09, 2026 2:42:30 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$1 onScenarioInitializeStarting INFO: action callback: scenario initialization starting! Apr 09, 2026 2:42:30 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl FINEST: invoking action: Create ports [CreatePorts] Apr 09, 2026 2:42:30 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl FINEST: invoking action: Create servers [CreateServers] Apr 09, 2026 2:42:30 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl FINEST: invoking action: Create server 10.241.0.66 [CreateServer] Apr 09, 2026 2:42:30 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$2 onServerCreated FINER: action callback: server '10.241.0.66' created (version 2.23.0) Apr 09, 2026 2:42:30 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl FINEST: invoking action: Estimate the time diff
+4/9/2026, 2:43:50 PM
+INFO
+ByteBlowerStep
+ByteBlower test completed successfully, output: /app/BBResults/172_0_0/
+4/9/2026, 2:43:50 PM
+INFO
+ByteBlowerStep
+Ending SNMP polling for {'cm_mac': '0cb9.3764.3ab0', 'cm_ipv6': '2605:1c00:50f2:203:5503:2f0:489a:cd09', 'cm_ipv4': None}
+4/9/2026, 2:43:50 PM
+INFO
+ByteBlowerStep
+Running SNMP script with IP: 2605:1c00:50f2:203:5503:2f0:489a:cd09
+4/9/2026, 2:43:51 PM
+INFO
+ByteBlowerStep
+SNMP script return code: 0
+4/9/2026, 2:43:51 PM
+INFO
+ByteBlowerStep
+SNMP stdout length: 4876 chars
+4/9/2026, 2:43:51 PM
+INFO
+ByteBlowerStep
+SNMP stderr length: 0 chars
+4/9/2026, 2:43:51 PM
+INFO
+ByteBlowerStep
+SNMP stdout (first 500 chars): Flow Stats Table: iso.3.6.1.4.1.4491.2.1.21.1.4.1.1.2.4348 = Counter64: 137752 iso.3.6.1.4.1.4491.2.1.21.1.4.1.1.2.4349 = Counter64: 0 iso.3.6.1.4.1.4491.2.1.21.1.4.1.1.2.12298 = Counter64: 0 iso.3.6.1.4.1.4491.2.1.21.1.4.1.1.2.12299 = Counter64: 0 iso.3.6.1.4.1.4491.2.1.21.1.4.1.1.2.12300 = Counter64: 0 iso.3.6.1.4.1.4491.2.1.21.1.4.1.2.2.4348 = Counter64: 24617904 iso.3.6.1.4.1.4491.2.1.21.1.4.1.2.2.4349 = Counter64: 0 iso.3.6.1.4.1.4491.2.1.21.1.4.1.2.2.12298 = Counter64: 0 iso.3.6.1.4.1.4491
+4/9/2026, 2:43:51 PM
+INFO
+ByteBlowerStep
+SNMP script succeeded
+4/9/2026, 2:44:04 PM
+INFO
+DBWrapper
+Database connection established.
+4/9/2026, 2:44:04 PM
+INFO
+ByteBlowerStep
+Got speedID: [(26,)]
+4/9/2026, 2:44:04 PM
+INFO
+DBWrapper
+DataFrame inserted into BB_FlowStats successfully.
+4/9/2026, 2:44:04 PM
+INFO
+DBWrapper
+DataFrame inserted into BB_LatencyStats successfully.
+4/9/2026, 2:44:04 PM
+INFO
+DBWrapper
+DataFrame inserted into BB_FlowStats successfully.
+4/9/2026, 2:44:04 PM
+INFO
+DBWrapper
+DataFrame inserted into BB_LatencyStats successfully.
+4/9/2026, 2:44:04 PM
+INFO
+DBWrapper
+Database connection closed.
+4/9/2026, 2:44:04 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 2:44:04 PM
+INFO
+PacketStorm
+PACKETSTORM STOP EMULATION
+4/9/2026, 2:44:04 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 2:44:04 PM
+INFO
+PacketStorm
+Sending login request to PacketStorm...
+4/9/2026, 2:44:04 PM
+INFO
+PacketStorm
+[Step 1/2] Sending stop request to PacketStorm:
+4/9/2026, 2:44:04 PM
+INFO
+PacketStorm
+Request payload: {"op": "login", "user": "automation", "args": {"password": "automation"}}
+4/9/2026, 2:44:05 PM
+INFO
+PacketStorm
+Response status: 200
+4/9/2026, 2:44:05 PM
+INFO
+PacketStorm
+Response body: {"status":true}
+4/9/2026, 2:44:05 PM
+INFO
+PacketStorm
+Sending request to stop the emulation
+4/9/2026, 2:44:05 PM
+INFO
+PacketStorm
+[Step 2/2] Sending stop request to PacketStorm:
+4/9/2026, 2:44:05 PM
+INFO
+PacketStorm
+Request payload: {"op": "stop", "user": "automation"}
+4/9/2026, 2:44:05 PM
+INFO
+PacketStorm
+Response status: 200
+4/9/2026, 2:44:05 PM
+INFO
+PacketStorm
+Response body: {"status":true}
+4/9/2026, 2:44:05 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 2:44:05 PM
+INFO
+PacketStorm
+PACKETSTORM STOP COMPLETE
+4/9/2026, 2:44:05 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 2:44:05 PM
+INFO
+ByteBlowerStep
+ByteBlower step execution completed
+4/9/2026, 2:44:05 PM
+INFO
+Orchestrator
+STEP 1/1 (ByteBlower Scenario Execution) COMPLETED
+4/9/2026, 2:44:05 PM
+INFO
+Orchestrator
+All steps execution completed
+4/9/2026, 2:44:05 PM
+INFO
+Orchestrator
+All test steps completed
+4/9/2026, 2:44:05 PM
+INFO
+Orchestrator
+Step 5: Saving logs for test ID 172
+4/9/2026, 2:44:05 PM
+INFO
+DBWrapper
+DataFrame inserted into TEST_LOGS successfully.
+4/9/2026, 2:44:05 PM
+INFO
+Orchestrator
+Logs saved successfully
+4/9/2026, 2:44:05 PM
+INFO
+DBWrapper
+Test 172 status updated to: Completed
+4/9/2026, 2:44:05 PM
+INFO
+Orchestrator
+run_e2e execution completed successfully
+4/9/2026, 2:44:05 PM
+INFO
+Orchestrator
+run_e2e cleanup starting
+4/9/2026, 2:44:05 PM
+INFO
+Orchestrator
+run_e2e cleanup completed
+4/9/2026, 2:44:05 PM
+INFO
+SerialTaskQueue
+Task 7138e805-3002-4fc8-8c4b-c2434278dacf status updated to: executing
+4/9/2026, 2:44:05 PM
+INFO
+OrchestrationTask
+orch.run_e2e() completed successfully
+4/9/2026, 2:44:05 PM
+INFO
+SerialTaskQueue
+Task 7138e805-3002-4fc8-8c4b-c2434278dacf status updated to: completed
+4/9/2026, 2:44:05 PM
+INFO
+OrchestrationTask
+Orchestration task completed, test_id: 172
+4/9/2026, 2:44:05 PM
+INFO
+SerialTaskQueue
+Task 7138e805-3002-4fc8-8c4b-c2434278dacf function returned: {'test_id': 172}
+4/9/2026, 2:44:05 PM
+INFO
+SerialTaskQueue
+Task 7138e805-3002-4fc8-8c4b-c2434278dacf worker cleanup completed
+4/9/2026, 2:50:49 PM
+INFO
+DBWrapper
+Database connection established.
+4/9/2026, 2:50:49 PM
+INFO
+dblistResultsApi2
+Trying query with Status column
+4/9/2026, 2:50:49 PM
+INFO
+dblistResultsApi2
+Status query successful, got 165 rows
+4/9/2026, 2:50:49 PM
+INFO
+DBWrapper
+Database connection closed.
+4/9/2026, 2:52:06 PM
+INFO
+DBWrapper
+Database connection established.
+4/9/2026, 2:52:06 PM
+INFO
+DBWrapper
+Database connection closed.
+4/9/2026, 2:53:19 PM
+INFO
+DBWrapper
+Database connection established.
+4/9/2026, 2:53:19 PM
+INFO
+dblistResultsApi2
+Trying query with Status column
+4/9/2026, 2:53:19 PM
+INFO
+dblistResultsApi2
+Status query successful, got 164 rows
+4/9/2026, 2:53:19 PM
+INFO
+DBWrapper
+Database connection closed.
+4/9/2026, 3:00:52 PM
+INFO
+DBWrapper
+Database connection established.
+4/9/2026, 3:00:52 PM
+INFO
+dblistResultsApi2
+Trying query with Status column
+4/9/2026, 3:00:53 PM
+INFO
+dblistResultsApi2
+Status query successful, got 164 rows
+4/9/2026, 3:00:53 PM
+INFO
+DBWrapper
+Database connection closed.
+4/9/2026, 3:01:20 PM
+INFO
+DBWrapper
+Database connection established.
+4/9/2026, 3:01:20 PM
+INFO
+DBWrapper
+Database connection closed.
+4/9/2026, 3:01:20 PM
+INFO
+OrchestrationAPI
+Submitting orchestration task with config keys: ['Steps', 'Test Info', 'CMTS Environment']
+4/9/2026, 3:01:20 PM
+INFO
+SerialTaskQueue
+Task 5af18032-2145-45db-8c82-cb6bf1b85c32 queued
+4/9/2026, 3:01:20 PM
+INFO
+OrchestrationAPI
+Task submitted with ID: 5af18032-2145-45db-8c82-cb6bf1b85c32
+4/9/2026, 3:01:20 PM
+INFO
+SerialTaskQueue
+Starting task 5af18032-2145-45db-8c82-cb6bf1b85c32 with function run_orchestration_task
+4/9/2026, 3:01:20 PM
+INFO
+SerialTaskQueue
+Task 5af18032-2145-45db-8c82-cb6bf1b85c32 executing...
+4/9/2026, 3:01:20 PM
+INFO
+SerialTaskQueue
+Task 5af18032-2145-45db-8c82-cb6bf1b85c32 status updated to: executing
+4/9/2026, 3:01:20 PM
+INFO
+OrchestrationTask
+Starting orchestration task
+4/9/2026, 3:01:20 PM
+INFO
+Orchestrator
+Module 'Orchestrator' started.
+4/9/2026, 3:01:20 PM
+INFO
+DBWrapper
+Database connection established.
+4/9/2026, 3:01:20 PM
+INFO
+SerialTaskQueue
+Task 5af18032-2145-45db-8c82-cb6bf1b85c32 status updated to: executing
+4/9/2026, 3:01:20 PM
+INFO
+Orchestrator
+Starting run_e2e execution
+4/9/2026, 3:01:20 PM
+INFO
+Orchestrator
+Step 1: Reading configuration
+4/9/2026, 3:01:20 PM
+INFO
+Orchestrator
+Using CMTS environment: apc01k1dccc
+4/9/2026, 3:01:20 PM
+INFO
+Orchestrator
+Test ID 172 - Starting orchestration
+4/9/2026, 3:01:20 PM
+INFO
+Authenticator
+Stored credentials: {'username': {}}
+4/9/2026, 3:01:20 PM
+INFO
+Orchestrator
+Registered steps: Latency Analyzer, iPerf, SamKnows, ByteBlower, Screen Recorder, Screen Recorder BB, Configure SCN
+4/9/2026, 3:01:20 PM
+INFO
+Orchestrator
+Found Steps ByteBlower
+4/9/2026, 3:01:20 PM
+INFO
+Orchestrator
+Adding configured step: ByteBlower
+4/9/2026, 3:01:20 PM
+INFO
+Orchestrator
+Total steps generated: 1
+4/9/2026, 3:01:20 PM
+INFO
+Orchestrator
+Configuration read completed
+4/9/2026, 3:01:20 PM
+INFO
+Orchestrator
+Step 2: Connecting to CMTS
+4/9/2026, 3:01:20 PM
+DEBUG
+Orchestrator
+Connecting to CMTS 71.85.92.206 as user aphillips
+4/9/2026, 3:01:21 PM
+ERROR
+Orchestrator
+Exception: Authentication to device failed. Common causes of this problem are: 1. Invalid username and password 2. Incorrect SSH-key file 3. Connecting to the wrong device Device settings: arris_cer 71.85.92.206:22 Authentication failed.
+4/9/2026, 3:01:21 PM
+INFO
+Orchestrator
+CMTS connection completed
+4/9/2026, 3:01:21 PM
+INFO
+Orchestrator
+Step 3: Creating database entry
+4/9/2026, 3:01:21 PM
+INFO
+Orchestrator
+Environment: apc01k1dccc, Type: vcmts, IP: 71.85.92.206
+4/9/2026, 3:01:21 PM
+INFO
+DBWrapper
+DataFrame inserted into TEST_RUNS successfully.
+4/9/2026, 3:01:21 PM
+INFO
+Orchestrator
+Database entry created
+4/9/2026, 3:01:21 PM
+INFO
+Orchestrator
+Step 4: Executing test steps
+4/9/2026, 3:01:21 PM
+INFO
+Orchestrator
+Total steps to execute: 1
+4/9/2026, 3:01:21 PM
+INFO
+Orchestrator
+====================
+4/9/2026, 3:01:21 PM
+INFO
+Orchestrator
+EXECUTING STEP 1/1: ByteBlower Scenario Execution (Index: 0)...
+4/9/2026, 3:01:21 PM
+INFO
+Orchestrator
+====================
+4/9/2026, 3:01:21 PM
+INFO
+ByteBlowerStep
+Starting ByteBlower step execution
+4/9/2026, 3:01:21 PM
+INFO
+ByteBlowerStep
+Found PacketStorm config in ByteBlower step: [{'RTT': 0, 'config': 'None'}]
+4/9/2026, 3:01:21 PM
+INFO
+ByteBlowerStep
+Processing PacketStorm Latency: 0
+4/9/2026, 3:01:21 PM
+INFO
+ByteBlowerStep
+PacketStorm Configuration: Port=A, Link=1, Continuous=True
+4/9/2026, 3:01:21 PM
+INFO
+ByteBlowerStep
+PacketStorm Config File: None
+4/9/2026, 3:01:21 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 3:01:21 PM
+INFO
+PacketStorm
+PACKETSTORM STOP EMULATION
+4/9/2026, 3:01:21 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 3:01:21 PM
+INFO
+PacketStorm
+Sending login request to PacketStorm...
+4/9/2026, 3:01:21 PM
+INFO
+PacketStorm
+[Step 1/2] Sending stop request to PacketStorm:
+4/9/2026, 3:01:21 PM
+INFO
+PacketStorm
+Request payload: {"op": "login", "user": "automation", "args": {"password": "automation"}}
+4/9/2026, 3:01:21 PM
+INFO
+PacketStorm
+Response status: 200
+4/9/2026, 3:01:21 PM
+INFO
+PacketStorm
+Response body: {"status":true}
+4/9/2026, 3:01:21 PM
+INFO
+PacketStorm
+Sending request to stop the emulation
+4/9/2026, 3:01:21 PM
+INFO
+PacketStorm
+[Step 2/2] Sending stop request to PacketStorm:
+4/9/2026, 3:01:21 PM
+INFO
+PacketStorm
+Request payload: {"op": "stop", "user": "automation"}
+4/9/2026, 3:01:22 PM
+INFO
+PacketStorm
+Response status: 200
+4/9/2026, 3:01:22 PM
+INFO
+PacketStorm
+Response body: {"status":true}
+4/9/2026, 3:01:22 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 3:01:22 PM
+INFO
+PacketStorm
+PACKETSTORM STOP COMPLETE
+4/9/2026, 3:01:22 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 3:01:22 PM
+INFO
+ByteBlowerStep
+Using configured iterations: 1
+4/9/2026, 3:01:22 PM
+INFO
+ByteBlowerStep
+Starting iteration 1/1
+4/9/2026, 3:01:22 PM
+INFO
+DBWrapper
+Database connection established.
+4/9/2026, 3:01:22 PM
+INFO
+DBWrapper
+DataFrame inserted into BB_INFO successfully.
+4/9/2026, 3:01:22 PM
+INFO
+DBWrapper
+Database connection closed.
+4/9/2026, 3:01:22 PM
+INFO
+ByteBlowerStep
+Using specified cable modem MAC: 0cb9.3764.3ab0
+4/9/2026, 3:01:22 PM
+INFO
+ByteBlowerStep
+Resolved CM IP: {'cm_mac': '0cb9.3764.3ab0', 'cm_ipv6': '2605:1c00:50f2:203:5503:2f0:489a:cd09', 'cm_ipv4': None}
+4/9/2026, 3:01:22 PM
+INFO
+ByteBlowerStep
+Starting SNMP polling for {'cm_mac': '0cb9.3764.3ab0', 'cm_ipv6': '2605:1c00:50f2:203:5503:2f0:489a:cd09', 'cm_ipv4': None}
+4/9/2026, 3:01:22 PM
+INFO
+ByteBlowerStep
+Running SNMP script with IP: 2605:1c00:50f2:203:5503:2f0:489a:cd09
+4/9/2026, 3:01:28 PM
+INFO
+ByteBlowerStep
+SNMP script return code: 0
+4/9/2026, 3:01:28 PM
+INFO
+ByteBlowerStep
+SNMP script succeeded
+4/9/2026, 3:01:33 PM
+INFO
+DBWrapper
+Database connection established.
+4/9/2026, 3:01:33 PM
+INFO
+DBWrapper
+Database connection closed.
+4/9/2026, 3:01:34 PM
+INFO
+OrchestrationAPI
+Submitting orchestration task with config keys: ['Steps', 'Test Info', 'CMTS Environment']
+4/9/2026, 3:01:34 PM
+INFO
+SerialTaskQueue
+Task 2bf1f1df-a1c4-475b-9c7c-c76f92839954 queued
+4/9/2026, 3:01:34 PM
+INFO
+OrchestrationAPI
+Task submitted with ID: 2bf1f1df-a1c4-475b-9c7c-c76f92839954
+4/9/2026, 3:01:45 PM
+INFO
+DBWrapper
+Database connection established.
+4/9/2026, 3:01:45 PM
+INFO
+DBWrapper
+Database connection closed.
+4/9/2026, 3:01:46 PM
+INFO
+OrchestrationAPI
+Submitting orchestration task with config keys: ['Steps', 'Test Info', 'CMTS Environment']
+4/9/2026, 3:01:46 PM
+INFO
+SerialTaskQueue
+Task 90317940-c1bf-4429-a882-b10503c5e224 queued
+4/9/2026, 3:01:46 PM
+INFO
+OrchestrationAPI
+Task submitted with ID: 90317940-c1bf-4429-a882-b10503c5e224
+4/9/2026, 3:01:55 PM
+INFO
+ByteBlowerStep
+--------------------
+4/9/2026, 3:01:57 PM
+INFO
+DBWrapper
+Database connection established.
+4/9/2026, 3:01:57 PM
+INFO
+DBWrapper
+Database connection closed.
+4/9/2026, 3:01:57 PM
+INFO
+OrchestrationAPI
+Submitting orchestration task with config keys: ['Steps', 'Test Info', 'CMTS Environment']
+4/9/2026, 3:01:57 PM
+INFO
+SerialTaskQueue
+Task 24981c6d-dfbe-42e4-86f1-3e134c974921 queued
+4/9/2026, 3:01:57 PM
+INFO
+OrchestrationAPI
+Task submitted with ID: 24981c6d-dfbe-42e4-86f1-3e134c974921
+4/9/2026, 3:02:01 PM
+INFO
+DBWrapper
+Database connection established.
+4/9/2026, 3:02:01 PM
+INFO
+dblistResultsApi2
+Trying query with Status column
+4/9/2026, 3:02:01 PM
+INFO
+dblistResultsApi2
+Status query successful, got 165 rows
+4/9/2026, 3:02:01 PM
+INFO
+DBWrapper
+Database connection closed.
+4/9/2026, 3:02:05 PM
+INFO
+ByteBlowerStep
+Created output directory: /app/BBResults/172_0_0/
+4/9/2026, 3:02:05 PM
+INFO
+ByteBlowerStep
+Current working directory: /app
+4/9/2026, 3:02:05 PM
+INFO
+ByteBlowerStep
+ByteBlower CLT path: /opt/byteblower/ByteBlower-CLT
+4/9/2026, 3:02:05 PM
+INFO
+ByteBlowerStep
+Project path: /opt/bb_scenarios/HSI016_P18_vcmts_cme0dbkd1613d18.bbp
+4/9/2026, 3:02:05 PM
+INFO
+ByteBlowerStep
+Output directory: /app/BBResults/172_0_0/
+4/9/2026, 3:02:09 PM
+INFO
+DBWrapper
+Database connection established.
+4/9/2026, 3:02:09 PM
+INFO
+dblistResultsApi2
+Trying query with Status column
+4/9/2026, 3:02:09 PM
+INFO
+dblistResultsApi2
+Status query successful, got 165 rows
+4/9/2026, 3:02:09 PM
+INFO
+DBWrapper
+Database connection closed.
+4/9/2026, 3:03:25 PM
+INFO
+ByteBlowerStep
+ByteBlower CLT stdout: ByteBlower CLT 2.22.6 is running ! API loaded, configuring excentis logger. Configuring excentis logger level to WARNING. Sending excentis logger to console. [EL Info]: 2026-04-09 15:02:06.558--ServerSession(737840531)--EclipseLink, version: Eclipse Persistence Services - 3.0.0.v202012081001 [EL Warning]: metadata: 2026-04-09 15:02:07.451--ServerSession(866613496)--The reference column name [snapshot_id] mapped on the element [field rxCounters] does not correspond to a valid id or basic field/column on the mapping reference. Will use referenced column name as provided. [EL Warning]: metadata: 2026-04-09 15:02:07.452--ServerSession(866613496)--The reference column name [snapshot_id] mapped on the element [field txCounters] does not correspond to a valid id or basic field/column on the mapping reference. Will use referenced column name as provided. [EL Warning]: metadata: 2026-04-09 15:02:07.452--ServerSession(866613496)--The reference column name [snapshot_id] mapped on the element [field retransCounters] does not correspond to a valid id or basic field/column on the mapping reference. Will use referenced column name as provided. handling event [EL Info]: 2026-04-09 15:02:07.495--ServerSession(866613496)--EclipseLink, version: Eclipse Persistence Services - 3.0.0.v202012081001 !SESSION 2026-04-09 15:02:04.720 ----------------------------------------------- eclipse.buildId=2.22.6-16357 java.version=11.0.13 java.vendor=Eclipse Adoptium BootLoader constants: OS=linux, ARCH=x86_64, WS=gtk, NL=en Framework arguments: --project /opt/bb_scenarios/HSI016_P18_vcmts_cme0dbkd1613d18.bbp --output /app/BBResults/172_0_0/ --scenario US_Classic_Only Command-line arguments: -os linux -ws gtk -arch x86_64 -consolelog --project /opt/bb_scenarios/HSI016_P18_vcmts_cme0dbkd1613d18.bbp --output /app/BBResults/172_0_0/ --scenario US_Classic_Only !ENTRY com.excentis.products.byteblower.model.reader 1 0 2026-04-09 15:02:07.879 !MESSAGE Building docking info: com.exc
+4/9/2026, 3:03:25 PM
+INFO
+ByteBlowerStep
+ByteBlower CLT stderr (informational): Apr 09, 2026 3:02:05 PM com.excentis.products.byteblower.communication.Activator start INFO: Loaded ByteBlower API for Java specification version 'null' Apr 09, 2026 3:02:05 PM com.excentis.products.byteblower.run.objects.RuntimeByteBlower <init> INFO: Running version 2.22.6 of the ByteBlower API Apr 09, 2026 3:02:06 PM com.excentis.products.byteblower.datalibs.DatabaseConfiguration createH2 INFO: Enabling H2 Auto server Apr 09, 2026 3:02:06 PM com.excentis.products.byteblower.results.dataprovider.data.MetaDataPersistenceController getInstance INFO: creating Metadatabase Apr 09, 2026 3:02:06 PM com.excentis.products.byteblower.datalibs.DatabaseConfiguration createH2 INFO: Enabling H2 Auto server Apr 09, 2026 3:02:07 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl FINEST: invoking action: Initialize scenario [InitializeScenario] Apr 09, 2026 3:02:07 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$1 onScenarioInitializeStarting INFO: action callback: scenario initialization starting! Apr 09, 2026 3:02:07 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl FINEST: invoking action: Create ports [CreatePorts] Apr 09, 2026 3:02:07 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl FINEST: invoking action: Create servers [CreateServers] Apr 09, 2026 3:02:07 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl FINEST: invoking action: Create server 10.241.0.66 [CreateServer] Apr 09, 2026 3:02:07 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$2 onServerCreated FINER: action callback: server '10.241.0.66' created (version 2.23.0) Apr 09, 2026 3:02:07 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl FINEST: invoking action: Estimate the time diff
+4/9/2026, 3:03:25 PM
+INFO
+ByteBlowerStep
+ByteBlower test completed successfully, output: /app/BBResults/172_0_0/
+4/9/2026, 3:03:25 PM
+INFO
+ByteBlowerStep
+Ending SNMP polling for {'cm_mac': '0cb9.3764.3ab0', 'cm_ipv6': '2605:1c00:50f2:203:5503:2f0:489a:cd09', 'cm_ipv4': None}
+4/9/2026, 3:03:25 PM
+INFO
+ByteBlowerStep
+Running SNMP script with IP: 2605:1c00:50f2:203:5503:2f0:489a:cd09
+4/9/2026, 3:03:26 PM
+INFO
+ByteBlowerStep
+SNMP script return code: 0
+4/9/2026, 3:03:26 PM
+INFO
+ByteBlowerStep
+SNMP stdout length: 4876 chars
+4/9/2026, 3:03:26 PM
+INFO
+ByteBlowerStep
+SNMP stderr length: 0 chars
+4/9/2026, 3:03:26 PM
+INFO
+ByteBlowerStep
+SNMP stdout (first 500 chars): Flow Stats Table: iso.3.6.1.4.1.4491.2.1.21.1.4.1.1.2.4348 = Counter64: 139928 iso.3.6.1.4.1.4491.2.1.21.1.4.1.1.2.4349 = Counter64: 0 iso.3.6.1.4.1.4491.2.1.21.1.4.1.1.2.12298 = Counter64: 0 iso.3.6.1.4.1.4491.2.1.21.1.4.1.1.2.12299 = Counter64: 0 iso.3.6.1.4.1.4491.2.1.21.1.4.1.1.2.12300 = Counter64: 0 iso.3.6.1.4.1.4491.2.1.21.1.4.1.2.2.4348 = Counter64: 24996788 iso.3.6.1.4.1.4491.2.1.21.1.4.1.2.2.4349 = Counter64: 0 iso.3.6.1.4.1.4491.2.1.21.1.4.1.2.2.12298 = Counter64: 0 iso.3.6.1.4.1.4491
+4/9/2026, 3:03:26 PM
+INFO
+ByteBlowerStep
+SNMP script succeeded
+4/9/2026, 3:03:42 PM
+INFO
+DBWrapper
+Database connection established.
+4/9/2026, 3:03:42 PM
+INFO
+ByteBlowerStep
+Got speedID: [(27,)]
+4/9/2026, 3:03:42 PM
+INFO
+DBWrapper
+DataFrame inserted into BB_FlowStats successfully.
+4/9/2026, 3:03:42 PM
+INFO
+DBWrapper
+DataFrame inserted into BB_LatencyStats successfully.
+4/9/2026, 3:03:42 PM
+INFO
+DBWrapper
+DataFrame inserted into BB_FlowStats successfully.
+4/9/2026, 3:03:42 PM
+INFO
+DBWrapper
+DataFrame inserted into BB_LatencyStats successfully.
+4/9/2026, 3:03:42 PM
+INFO
+DBWrapper
+Database connection closed.
+4/9/2026, 3:03:42 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 3:03:42 PM
+INFO
+PacketStorm
+PACKETSTORM STOP EMULATION
+4/9/2026, 3:03:42 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 3:03:42 PM
+INFO
+PacketStorm
+Sending login request to PacketStorm...
+4/9/2026, 3:03:42 PM
+INFO
+PacketStorm
+[Step 1/2] Sending stop request to PacketStorm:
+4/9/2026, 3:03:42 PM
+INFO
+PacketStorm
+Request payload: {"op": "login", "user": "automation", "args": {"password": "automation"}}
+4/9/2026, 3:03:43 PM
+INFO
+PacketStorm
+Response status: 200
+4/9/2026, 3:03:43 PM
+INFO
+PacketStorm
+Response body: {"status":true}
+4/9/2026, 3:03:43 PM
+INFO
+PacketStorm
+Sending request to stop the emulation
+4/9/2026, 3:03:43 PM
+INFO
+PacketStorm
+[Step 2/2] Sending stop request to PacketStorm:
+4/9/2026, 3:03:43 PM
+INFO
+PacketStorm
+Request payload: {"op": "stop", "user": "automation"}
+4/9/2026, 3:03:44 PM
+INFO
+PacketStorm
+Response status: 200
+4/9/2026, 3:03:44 PM
+INFO
+PacketStorm
+Response body: {"status":true}
+4/9/2026, 3:03:44 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 3:03:44 PM
+INFO
+PacketStorm
+PACKETSTORM STOP COMPLETE
+4/9/2026, 3:03:44 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 3:03:44 PM
+INFO
+ByteBlowerStep
+ByteBlower step execution completed
+4/9/2026, 3:03:44 PM
+INFO
+Orchestrator
+STEP 1/1 (ByteBlower Scenario Execution) COMPLETED
+4/9/2026, 3:03:44 PM
+INFO
+Orchestrator
+All steps execution completed
+4/9/2026, 3:03:44 PM
+INFO
+Orchestrator
+All test steps completed
+4/9/2026, 3:03:44 PM
+INFO
+Orchestrator
+Step 5: Saving logs for test ID 172
+4/9/2026, 3:03:44 PM
+INFO
+DBWrapper
+DataFrame inserted into TEST_LOGS successfully.
+4/9/2026, 3:03:44 PM
+INFO
+Orchestrator
+Logs saved successfully
+4/9/2026, 3:03:44 PM
+INFO
+DBWrapper
+Test 172 status updated to: Completed
+4/9/2026, 3:03:44 PM
+INFO
+Orchestrator
+run_e2e execution completed successfully
+4/9/2026, 3:03:44 PM
+INFO
+Orchestrator
+run_e2e cleanup starting
+4/9/2026, 3:03:44 PM
+INFO
+Orchestrator
+run_e2e cleanup completed
+4/9/2026, 3:03:44 PM
+INFO
+SerialTaskQueue
+Task 5af18032-2145-45db-8c82-cb6bf1b85c32 status updated to: executing
+4/9/2026, 3:03:44 PM
+INFO
+OrchestrationTask
+orch.run_e2e() completed successfully
+4/9/2026, 3:03:44 PM
+INFO
+SerialTaskQueue
+Task 5af18032-2145-45db-8c82-cb6bf1b85c32 status updated to: completed
+4/9/2026, 3:03:44 PM
+INFO
+OrchestrationTask
+Orchestration task completed, test_id: 172
+4/9/2026, 3:03:44 PM
+INFO
+SerialTaskQueue
+Task 5af18032-2145-45db-8c82-cb6bf1b85c32 function returned: {'test_id': 172}
+4/9/2026, 3:03:44 PM
+INFO
+SerialTaskQueue
+Task 5af18032-2145-45db-8c82-cb6bf1b85c32 worker cleanup completed
+4/9/2026, 3:03:44 PM
+INFO
+SerialTaskQueue
+Starting task 2bf1f1df-a1c4-475b-9c7c-c76f92839954 with function run_orchestration_task
+4/9/2026, 3:03:44 PM
+INFO
+SerialTaskQueue
+Task 2bf1f1df-a1c4-475b-9c7c-c76f92839954 executing...
+4/9/2026, 3:03:44 PM
+INFO
+SerialTaskQueue
+Task 2bf1f1df-a1c4-475b-9c7c-c76f92839954 status updated to: executing
+4/9/2026, 3:03:44 PM
+INFO
+OrchestrationTask
+Starting orchestration task
+4/9/2026, 3:03:44 PM
+INFO
+Orchestrator
+Module 'Orchestrator' started.
+4/9/2026, 3:03:44 PM
+INFO
+DBWrapper
+Database connection established.
+4/9/2026, 3:03:44 PM
+INFO
+SerialTaskQueue
+Task 2bf1f1df-a1c4-475b-9c7c-c76f92839954 status updated to: executing
+4/9/2026, 3:03:44 PM
+INFO
+Orchestrator
+Starting run_e2e execution
+4/9/2026, 3:03:44 PM
+INFO
+Orchestrator
+Step 1: Reading configuration
+4/9/2026, 3:03:44 PM
+INFO
+Orchestrator
+Using CMTS environment: apc01k1dccc
+4/9/2026, 3:03:44 PM
+INFO
+Orchestrator
+Test ID 173 - Starting orchestration
+4/9/2026, 3:03:44 PM
+INFO
+Authenticator
+Stored credentials: {'username': {}}
+4/9/2026, 3:03:44 PM
+INFO
+Orchestrator
+Registered steps: Latency Analyzer, iPerf, SamKnows, ByteBlower, Screen Recorder, Screen Recorder BB, Configure SCN
+4/9/2026, 3:03:44 PM
+INFO
+Orchestrator
+Found Steps ByteBlower
+4/9/2026, 3:03:44 PM
+INFO
+Orchestrator
+Adding configured step: ByteBlower
+4/9/2026, 3:03:44 PM
+INFO
+Orchestrator
+Total steps generated: 1
+4/9/2026, 3:03:44 PM
+INFO
+Orchestrator
+Configuration read completed
+4/9/2026, 3:03:44 PM
+INFO
+Orchestrator
+Step 2: Connecting to CMTS
+4/9/2026, 3:03:44 PM
+DEBUG
+Orchestrator
+Connecting to CMTS 71.85.92.206 as user aphillips
+4/9/2026, 3:03:46 PM
+INFO
+Orchestrator
+CMTS connection completed
+4/9/2026, 3:03:46 PM
+INFO
+Orchestrator
+Step 3: Creating database entry
+4/9/2026, 3:03:46 PM
+INFO
+Orchestrator
+Environment: apc01k1dccc, Type: vcmts, IP: 71.85.92.206
+4/9/2026, 3:03:47 PM
+INFO
+DBWrapper
+DataFrame inserted into TEST_RUNS successfully.
+4/9/2026, 3:03:47 PM
+INFO
+Orchestrator
+Database entry created
+4/9/2026, 3:03:47 PM
+INFO
+Orchestrator
+Step 4: Executing test steps
+4/9/2026, 3:03:47 PM
+INFO
+Orchestrator
+Total steps to execute: 1
+4/9/2026, 3:03:47 PM
+INFO
+Orchestrator
+====================
+4/9/2026, 3:03:47 PM
+INFO
+Orchestrator
+EXECUTING STEP 1/1: ByteBlower Scenario Execution (Index: 0)...
+4/9/2026, 3:03:47 PM
+INFO
+Orchestrator
+====================
+4/9/2026, 3:03:47 PM
+INFO
+ByteBlowerStep
+Starting ByteBlower step execution
+4/9/2026, 3:03:47 PM
+INFO
+ByteBlowerStep
+Found PacketStorm config in ByteBlower step: [{'RTT': 0, 'config': 'None'}]
+4/9/2026, 3:03:47 PM
+INFO
+ByteBlowerStep
+Processing PacketStorm Latency: 0
+4/9/2026, 3:03:47 PM
+INFO
+ByteBlowerStep
+PacketStorm Configuration: Port=A, Link=1, Continuous=True
+4/9/2026, 3:03:47 PM
+INFO
+ByteBlowerStep
+PacketStorm Config File: None
+4/9/2026, 3:03:47 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 3:03:47 PM
+INFO
+PacketStorm
+PACKETSTORM STOP EMULATION
+4/9/2026, 3:03:47 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 3:03:47 PM
+INFO
+PacketStorm
+Sending login request to PacketStorm...
+4/9/2026, 3:03:47 PM
+INFO
+PacketStorm
+[Step 1/2] Sending stop request to PacketStorm:
+4/9/2026, 3:03:47 PM
+INFO
+PacketStorm
+Request payload: {"op": "login", "user": "automation", "args": {"password": "automation"}}
+4/9/2026, 3:03:47 PM
+INFO
+PacketStorm
+Response status: 200
+4/9/2026, 3:03:47 PM
+INFO
+PacketStorm
+Response body: {"status":true}
+4/9/2026, 3:03:47 PM
+INFO
+PacketStorm
+Sending request to stop the emulation
+4/9/2026, 3:03:47 PM
+INFO
+PacketStorm
+[Step 2/2] Sending stop request to PacketStorm:
+4/9/2026, 3:03:47 PM
+INFO
+PacketStorm
+Request payload: {"op": "stop", "user": "automation"}
+4/9/2026, 3:03:48 PM
+INFO
+PacketStorm
+Response status: 200
+4/9/2026, 3:03:48 PM
+INFO
+PacketStorm
+Response body: {"status":true}
+4/9/2026, 3:03:48 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 3:03:48 PM
+INFO
+PacketStorm
+PACKETSTORM STOP COMPLETE
+4/9/2026, 3:03:48 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 3:03:48 PM
+INFO
+ByteBlowerStep
+Using configured iterations: 1
+4/9/2026, 3:03:48 PM
+INFO
+ByteBlowerStep
+Starting iteration 1/1
+4/9/2026, 3:03:48 PM
+INFO
+DBWrapper
+Database connection established.
+4/9/2026, 3:03:48 PM
+INFO
+DBWrapper
+DataFrame inserted into BB_INFO successfully.
+4/9/2026, 3:03:48 PM
+INFO
+DBWrapper
+Database connection closed.
+4/9/2026, 3:03:48 PM
+INFO
+ByteBlowerStep
+Using specified cable modem MAC: 0cb9.3764.3ab0
+4/9/2026, 3:03:48 PM
+INFO
+ByteBlowerStep
+Resolved CM IP: {'cm_mac': '0cb9.3764.3ab0', 'cm_ipv6': '2605:1c00:50f2:203:5503:2f0:489a:cd09', 'cm_ipv4': None}
+4/9/2026, 3:03:48 PM
+INFO
+ByteBlowerStep
+Starting SNMP polling for {'cm_mac': '0cb9.3764.3ab0', 'cm_ipv6': '2605:1c00:50f2:203:5503:2f0:489a:cd09', 'cm_ipv4': None}
+4/9/2026, 3:03:48 PM
+INFO
+ByteBlowerStep
+Running SNMP script with IP: 2605:1c00:50f2:203:5503:2f0:489a:cd09
+4/9/2026, 3:03:50 PM
+INFO
+ByteBlowerStep
+SNMP script return code: 0
+4/9/2026, 3:03:50 PM
+INFO
+ByteBlowerStep
+SNMP script succeeded
+4/9/2026, 3:03:58 PM
+INFO
+ByteBlowerStep
+--------------------
+4/9/2026, 3:04:08 PM
+INFO
+ByteBlowerStep
+Created output directory: /app/BBResults/173_0_0/
+4/9/2026, 3:04:08 PM
+INFO
+ByteBlowerStep
+Current working directory: /app
+4/9/2026, 3:04:08 PM
+INFO
+ByteBlowerStep
+ByteBlower CLT path: /opt/byteblower/ByteBlower-CLT
+4/9/2026, 3:04:08 PM
+INFO
+ByteBlowerStep
+Project path: /opt/bb_scenarios/HSI016_P18_vcmts_cme0dbkd1613d18.bbp
+4/9/2026, 3:04:08 PM
+INFO
+ByteBlowerStep
+Output directory: /app/BBResults/173_0_0/
+4/9/2026, 3:05:29 PM
+INFO
+ByteBlowerStep
+ByteBlower CLT stdout: ByteBlower CLT 2.22.6 is running ! API loaded, configuring excentis logger. Configuring excentis logger level to WARNING. Sending excentis logger to console. [EL Info]: 2026-04-09 15:04:10.65--ServerSession(1247665569)--EclipseLink, version: Eclipse Persistence Services - 3.0.0.v202012081001 [EL Warning]: metadata: 2026-04-09 15:04:11.544--ServerSession(1283439345)--The reference column name [snapshot_id] mapped on the element [field rxCounters] does not correspond to a valid id or basic field/column on the mapping reference. Will use referenced column name as provided. [EL Warning]: metadata: 2026-04-09 15:04:11.545--ServerSession(1283439345)--The reference column name [snapshot_id] mapped on the element [field txCounters] does not correspond to a valid id or basic field/column on the mapping reference. Will use referenced column name as provided. [EL Warning]: metadata: 2026-04-09 15:04:11.545--ServerSession(1283439345)--The reference column name [snapshot_id] mapped on the element [field retransCounters] does not correspond to a valid id or basic field/column on the mapping reference. Will use referenced column name as provided. [EL Info]: 2026-04-09 15:04:11.587--ServerSession(1283439345)--EclipseLink, version: Eclipse Persistence Services - 3.0.0.v202012081001 handling event !SESSION 2026-04-09 15:04:08.561 ----------------------------------------------- eclipse.buildId=2.22.6-16357 java.version=11.0.13 java.vendor=Eclipse Adoptium BootLoader constants: OS=linux, ARCH=x86_64, WS=gtk, NL=en Framework arguments: --project /opt/bb_scenarios/HSI016_P18_vcmts_cme0dbkd1613d18.bbp --output /app/BBResults/173_0_0/ --scenario DS_Classic_Only Command-line arguments: -os linux -ws gtk -arch x86_64 -consolelog --project /opt/bb_scenarios/HSI016_P18_vcmts_cme0dbkd1613d18.bbp --output /app/BBResults/173_0_0/ --scenario DS_Classic_Only !ENTRY com.excentis.products.byteblower.model.reader 1 0 2026-04-09 15:04:11.873 !MESSAGE Building docking info: com
+4/9/2026, 3:05:29 PM
+INFO
+ByteBlowerStep
+ByteBlower CLT stderr (informational): Apr 09, 2026 3:04:09 PM com.excentis.products.byteblower.communication.Activator start INFO: Loaded ByteBlower API for Java specification version 'null' Apr 09, 2026 3:04:09 PM com.excentis.products.byteblower.run.objects.RuntimeByteBlower <init> INFO: Running version 2.22.6 of the ByteBlower API Apr 09, 2026 3:04:09 PM com.excentis.products.byteblower.datalibs.DatabaseConfiguration createH2 INFO: Enabling H2 Auto server Apr 09, 2026 3:04:09 PM com.excentis.products.byteblower.results.dataprovider.data.MetaDataPersistenceController getInstance INFO: creating Metadatabase Apr 09, 2026 3:04:11 PM com.excentis.products.byteblower.datalibs.DatabaseConfiguration createH2 INFO: Enabling H2 Auto server Apr 09, 2026 3:04:11 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl FINEST: invoking action: Initialize scenario [InitializeScenario] Apr 09, 2026 3:04:11 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$1 onScenarioInitializeStarting INFO: action callback: scenario initialization starting! Apr 09, 2026 3:04:11 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl FINEST: invoking action: Create ports [CreatePorts] Apr 09, 2026 3:04:11 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl FINEST: invoking action: Create servers [CreateServers] Apr 09, 2026 3:04:11 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl FINEST: invoking action: Create server 10.241.0.66 [CreateServer] Apr 09, 2026 3:04:11 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$2 onServerCreated FINER: action callback: server '10.241.0.66' created (version 2.23.0) Apr 09, 2026 3:04:11 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl FINEST: invoking action: Estimate the time diff
+4/9/2026, 3:05:29 PM
+INFO
+ByteBlowerStep
+ByteBlower test completed successfully, output: /app/BBResults/173_0_0/
+4/9/2026, 3:05:29 PM
+INFO
+ByteBlowerStep
+Ending SNMP polling for {'cm_mac': '0cb9.3764.3ab0', 'cm_ipv6': '2605:1c00:50f2:203:5503:2f0:489a:cd09', 'cm_ipv4': None}
+4/9/2026, 3:05:29 PM
+INFO
+ByteBlowerStep
+Running SNMP script with IP: 2605:1c00:50f2:203:5503:2f0:489a:cd09
+4/9/2026, 3:05:32 PM
+INFO
+ByteBlowerStep
+SNMP script return code: 0
+4/9/2026, 3:05:32 PM
+INFO
+ByteBlowerStep
+SNMP stdout length: 4876 chars
+4/9/2026, 3:05:32 PM
+INFO
+ByteBlowerStep
+SNMP stderr length: 0 chars
+4/9/2026, 3:05:32 PM
+INFO
+ByteBlowerStep
+SNMP stdout (first 500 chars): Flow Stats Table: iso.3.6.1.4.1.4491.2.1.21.1.4.1.1.2.4348 = Counter64: 140290 iso.3.6.1.4.1.4491.2.1.21.1.4.1.1.2.4349 = Counter64: 0 iso.3.6.1.4.1.4491.2.1.21.1.4.1.1.2.12298 = Counter64: 0 iso.3.6.1.4.1.4491.2.1.21.1.4.1.1.2.12299 = Counter64: 0 iso.3.6.1.4.1.4491.2.1.21.1.4.1.1.2.12300 = Counter64: 0 iso.3.6.1.4.1.4491.2.1.21.1.4.1.2.2.4348 = Counter64: 25053039 iso.3.6.1.4.1.4491.2.1.21.1.4.1.2.2.4349 = Counter64: 0 iso.3.6.1.4.1.4491.2.1.21.1.4.1.2.2.12298 = Counter64: 0 iso.3.6.1.4.1.4491
+4/9/2026, 3:05:32 PM
+INFO
+ByteBlowerStep
+SNMP script succeeded
+4/9/2026, 3:05:43 PM
+INFO
+DBWrapper
+Database connection established.
+4/9/2026, 3:05:43 PM
+INFO
+ByteBlowerStep
+Got speedID: [(28,)]
+4/9/2026, 3:05:43 PM
+INFO
+DBWrapper
+DataFrame inserted into BB_FlowStats successfully.
+4/9/2026, 3:05:43 PM
+INFO
+DBWrapper
+DataFrame inserted into BB_LatencyStats successfully.
+4/9/2026, 3:05:43 PM
+INFO
+DBWrapper
+DataFrame inserted into BB_FlowStats successfully.
+4/9/2026, 3:05:43 PM
+INFO
+DBWrapper
+DataFrame inserted into BB_LatencyStats successfully.
+4/9/2026, 3:05:43 PM
+INFO
+DBWrapper
+Database connection closed.
+4/9/2026, 3:05:43 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 3:05:43 PM
+INFO
+PacketStorm
+PACKETSTORM STOP EMULATION
+4/9/2026, 3:05:43 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 3:05:43 PM
+INFO
+PacketStorm
+Sending login request to PacketStorm...
+4/9/2026, 3:05:43 PM
+INFO
+PacketStorm
+[Step 1/2] Sending stop request to PacketStorm:
+4/9/2026, 3:05:43 PM
+INFO
+PacketStorm
+Request payload: {"op": "login", "user": "automation", "args": {"password": "automation"}}
+4/9/2026, 3:05:44 PM
+INFO
+PacketStorm
+Response status: 200
+4/9/2026, 3:05:44 PM
+INFO
+PacketStorm
+Response body: {"status":true}
+4/9/2026, 3:05:44 PM
+INFO
+PacketStorm
+Sending request to stop the emulation
+4/9/2026, 3:05:44 PM
+INFO
+PacketStorm
+[Step 2/2] Sending stop request to PacketStorm:
+4/9/2026, 3:05:44 PM
+INFO
+PacketStorm
+Request payload: {"op": "stop", "user": "automation"}
+4/9/2026, 3:05:44 PM
+INFO
+PacketStorm
+Response status: 200
+4/9/2026, 3:05:44 PM
+INFO
+PacketStorm
+Response body: {"status":true}
+4/9/2026, 3:05:44 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 3:05:44 PM
+INFO
+PacketStorm
+PACKETSTORM STOP COMPLETE
+4/9/2026, 3:05:44 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 3:05:44 PM
+INFO
+ByteBlowerStep
+ByteBlower step execution completed
+4/9/2026, 3:05:44 PM
+INFO
+Orchestrator
+STEP 1/1 (ByteBlower Scenario Execution) COMPLETED
+4/9/2026, 3:05:44 PM
+INFO
+Orchestrator
+All steps execution completed
+4/9/2026, 3:05:44 PM
+INFO
+Orchestrator
+All test steps completed
+4/9/2026, 3:05:44 PM
+INFO
+Orchestrator
+Step 5: Saving logs for test ID 173
+4/9/2026, 3:05:44 PM
+INFO
+DBWrapper
+DataFrame inserted into TEST_LOGS successfully.
+4/9/2026, 3:05:44 PM
+INFO
+Orchestrator
+Logs saved successfully
+4/9/2026, 3:05:44 PM
+INFO
+DBWrapper
+Test 173 status updated to: Completed
+4/9/2026, 3:05:44 PM
+INFO
+Orchestrator
+run_e2e execution completed successfully
+4/9/2026, 3:05:44 PM
+INFO
+Orchestrator
+run_e2e cleanup starting
+4/9/2026, 3:05:44 PM
+INFO
+Orchestrator
+Disconnecting from CMTS
+4/9/2026, 3:05:46 PM
+INFO
+Orchestrator
+CMTS disconnection completed
+4/9/2026, 3:05:46 PM
+INFO
+Orchestrator
+run_e2e cleanup completed
+4/9/2026, 3:05:46 PM
+INFO
+SerialTaskQueue
+Task 2bf1f1df-a1c4-475b-9c7c-c76f92839954 status updated to: executing
+4/9/2026, 3:05:46 PM
+INFO
+OrchestrationTask
+orch.run_e2e() completed successfully
+4/9/2026, 3:05:46 PM
+INFO
+SerialTaskQueue
+Task 2bf1f1df-a1c4-475b-9c7c-c76f92839954 status updated to: completed
+4/9/2026, 3:05:46 PM
+INFO
+OrchestrationTask
+Orchestration task completed, test_id: 173
+4/9/2026, 3:05:46 PM
+INFO
+SerialTaskQueue
+Task 2bf1f1df-a1c4-475b-9c7c-c76f92839954 function returned: {'test_id': 173}
+4/9/2026, 3:05:46 PM
+INFO
+SerialTaskQueue
+Task 2bf1f1df-a1c4-475b-9c7c-c76f92839954 worker cleanup completed
+4/9/2026, 3:05:46 PM
+INFO
+SerialTaskQueue
+Starting task 90317940-c1bf-4429-a882-b10503c5e224 with function run_orchestration_task
+4/9/2026, 3:05:46 PM
+INFO
+SerialTaskQueue
+Task 90317940-c1bf-4429-a882-b10503c5e224 executing...
+4/9/2026, 3:05:46 PM
+INFO
+SerialTaskQueue
+Task 90317940-c1bf-4429-a882-b10503c5e224 status updated to: executing
+4/9/2026, 3:05:46 PM
+INFO
+OrchestrationTask
+Starting orchestration task
+4/9/2026, 3:05:46 PM
+INFO
+Orchestrator
+Module 'Orchestrator' started.
+4/9/2026, 3:05:46 PM
+INFO
+DBWrapper
+Database connection established.
+4/9/2026, 3:05:46 PM
+INFO
+SerialTaskQueue
+Task 90317940-c1bf-4429-a882-b10503c5e224 status updated to: executing
+4/9/2026, 3:05:46 PM
+INFO
+Orchestrator
+Starting run_e2e execution
+4/9/2026, 3:05:46 PM
+INFO
+Orchestrator
+Step 1: Reading configuration
+4/9/2026, 3:05:46 PM
+INFO
+Orchestrator
+Using CMTS environment: apc01k1dccc
+4/9/2026, 3:05:46 PM
+INFO
+Orchestrator
+Test ID 174 - Starting orchestration
+4/9/2026, 3:05:46 PM
+INFO
+Authenticator
+Stored credentials: {'username': {}}
+4/9/2026, 3:05:46 PM
+INFO
+Orchestrator
+Registered steps: Latency Analyzer, iPerf, SamKnows, ByteBlower, Screen Recorder, Screen Recorder BB, Configure SCN
+4/9/2026, 3:05:46 PM
+INFO
+Orchestrator
+Found Steps ByteBlower
+4/9/2026, 3:05:46 PM
+INFO
+Orchestrator
+Adding configured step: ByteBlower
+4/9/2026, 3:05:46 PM
+INFO
+Orchestrator
+Total steps generated: 1
+4/9/2026, 3:05:46 PM
+INFO
+Orchestrator
+Configuration read completed
+4/9/2026, 3:05:46 PM
+INFO
+Orchestrator
+Step 2: Connecting to CMTS
+4/9/2026, 3:05:46 PM
+DEBUG
+Orchestrator
+Connecting to CMTS 71.85.92.206 as user aphillips
+4/9/2026, 3:05:49 PM
+INFO
+Orchestrator
+CMTS connection completed
+4/9/2026, 3:05:49 PM
+INFO
+Orchestrator
+Step 3: Creating database entry
+4/9/2026, 3:05:49 PM
+INFO
+Orchestrator
+Environment: apc01k1dccc, Type: vcmts, IP: 71.85.92.206
+4/9/2026, 3:05:49 PM
+INFO
+DBWrapper
+DataFrame inserted into TEST_RUNS successfully.
+4/9/2026, 3:05:49 PM
+INFO
+Orchestrator
+Database entry created
+4/9/2026, 3:05:49 PM
+INFO
+Orchestrator
+Step 4: Executing test steps
+4/9/2026, 3:05:49 PM
+INFO
+Orchestrator
+Total steps to execute: 1
+4/9/2026, 3:05:49 PM
+INFO
+Orchestrator
+====================
+4/9/2026, 3:05:49 PM
+INFO
+Orchestrator
+EXECUTING STEP 1/1: ByteBlower Scenario Execution (Index: 0)...
+4/9/2026, 3:05:49 PM
+INFO
+Orchestrator
+====================
+4/9/2026, 3:05:49 PM
+INFO
+ByteBlowerStep
+Starting ByteBlower step execution
+4/9/2026, 3:05:49 PM
+INFO
+ByteBlowerStep
+Found PacketStorm config in ByteBlower step: [{'RTT': 0, 'config': 'None'}]
+4/9/2026, 3:05:49 PM
+INFO
+ByteBlowerStep
+Processing PacketStorm Latency: 0
+4/9/2026, 3:05:49 PM
+INFO
+ByteBlowerStep
+PacketStorm Configuration: Port=A, Link=1, Continuous=True
+4/9/2026, 3:05:49 PM
+INFO
+ByteBlowerStep
+PacketStorm Config File: None
+4/9/2026, 3:05:49 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 3:05:49 PM
+INFO
+PacketStorm
+PACKETSTORM STOP EMULATION
+4/9/2026, 3:05:49 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 3:05:49 PM
+INFO
+PacketStorm
+Sending login request to PacketStorm...
+4/9/2026, 3:05:49 PM
+INFO
+PacketStorm
+[Step 1/2] Sending stop request to PacketStorm:
+4/9/2026, 3:05:49 PM
+INFO
+PacketStorm
+Request payload: {"op": "login", "user": "automation", "args": {"password": "automation"}}
+4/9/2026, 3:05:50 PM
+INFO
+PacketStorm
+Response status: 200
+4/9/2026, 3:05:50 PM
+INFO
+PacketStorm
+Response body: {"status":true}
+4/9/2026, 3:05:50 PM
+INFO
+PacketStorm
+Sending request to stop the emulation
+4/9/2026, 3:05:50 PM
+INFO
+PacketStorm
+[Step 2/2] Sending stop request to PacketStorm:
+4/9/2026, 3:05:50 PM
+INFO
+PacketStorm
+Request payload: {"op": "stop", "user": "automation"}
+4/9/2026, 3:05:50 PM
+INFO
+PacketStorm
+Response status: 200
+4/9/2026, 3:05:50 PM
+INFO
+PacketStorm
+Response body: {"status":true}
+4/9/2026, 3:05:50 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 3:05:50 PM
+INFO
+PacketStorm
+PACKETSTORM STOP COMPLETE
+4/9/2026, 3:05:50 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 3:05:50 PM
+INFO
+ByteBlowerStep
+Using configured iterations: 1
+4/9/2026, 3:05:50 PM
+INFO
+ByteBlowerStep
+Starting iteration 1/1
+4/9/2026, 3:05:50 PM
+INFO
+DBWrapper
+Database connection established.
+4/9/2026, 3:05:50 PM
+INFO
+DBWrapper
+DataFrame inserted into BB_INFO successfully.
+4/9/2026, 3:05:50 PM
+INFO
+DBWrapper
+Database connection closed.
+4/9/2026, 3:05:50 PM
+INFO
+ByteBlowerStep
+Using specified cable modem MAC: 0cb9.3764.3ab0
+4/9/2026, 3:05:50 PM
+INFO
+ByteBlowerStep
+Resolved CM IP: {'cm_mac': '0cb9.3764.3ab0', 'cm_ipv6': '2605:1c00:50f2:203:5503:2f0:489a:cd09', 'cm_ipv4': None}
+4/9/2026, 3:05:50 PM
+INFO
+ByteBlowerStep
+Starting SNMP polling for {'cm_mac': '0cb9.3764.3ab0', 'cm_ipv6': '2605:1c00:50f2:203:5503:2f0:489a:cd09', 'cm_ipv4': None}
+4/9/2026, 3:05:50 PM
+INFO
+ByteBlowerStep
+Running SNMP script with IP: 2605:1c00:50f2:203:5503:2f0:489a:cd09
+4/9/2026, 3:05:52 PM
+INFO
+ByteBlowerStep
+SNMP script return code: 0
+4/9/2026, 3:05:52 PM
+INFO
+ByteBlowerStep
+SNMP script succeeded
+4/9/2026, 3:06:13 PM
+INFO
+ByteBlowerStep
+--------------------
+4/9/2026, 3:06:23 PM
+INFO
+ByteBlowerStep
+Created output directory: /app/BBResults/174_0_0/
+4/9/2026, 3:06:23 PM
+INFO
+ByteBlowerStep
+Current working directory: /app
+4/9/2026, 3:06:23 PM
+INFO
+ByteBlowerStep
+ByteBlower CLT path: /opt/byteblower/ByteBlower-CLT
+4/9/2026, 3:06:23 PM
+INFO
+ByteBlowerStep
+Project path: /opt/bb_scenarios/HSI021_P16_vcmts_cm2068949223b8.bbp
+4/9/2026, 3:06:23 PM
+INFO
+ByteBlowerStep
+Output directory: /app/BBResults/174_0_0/
+4/9/2026, 3:07:46 PM
+INFO
+ByteBlowerStep
+ByteBlower CLT stdout: ByteBlower CLT 2.22.6 is running ! API loaded, configuring excentis logger. Configuring excentis logger level to WARNING. Sending excentis logger to console. [EL Info]: 2026-04-09 15:06:25.419--ServerSession(894655903)--EclipseLink, version: Eclipse Persistence Services - 3.0.0.v202012081001 [EL Warning]: metadata: 2026-04-09 15:06:26.223--ServerSession(85908379)--The reference column name [snapshot_id] mapped on the element [field rxCounters] does not correspond to a valid id or basic field/column on the mapping reference. Will use referenced column name as provided. [EL Warning]: metadata: 2026-04-09 15:06:26.224--ServerSession(85908379)--The reference column name [snapshot_id] mapped on the element [field txCounters] does not correspond to a valid id or basic field/column on the mapping reference. Will use referenced column name as provided. [EL Warning]: metadata: 2026-04-09 15:06:26.224--ServerSession(85908379)--The reference column name [snapshot_id] mapped on the element [field retransCounters] does not correspond to a valid id or basic field/column on the mapping reference. Will use referenced column name as provided. [EL Info]: 2026-04-09 15:06:26.267--ServerSession(85908379)--EclipseLink, version: Eclipse Persistence Services - 3.0.0.v202012081001 !SESSION 2026-04-09 15:06:23.258 ----------------------------------------------- eclipse.buildId=2.22.6-16357 java.version=11.0.13 java.vendor=Eclipse Adoptium BootLoader constants: OS=linux, ARCH=x86_64, WS=gtk, NL=en Framework arguments: --project /opt/bb_scenarios/HSI021_P16_vcmts_cm2068949223b8.bbp --output /app/BBResults/174_0_0/ --scenario US_Classic_Only Command-line arguments: -os linux -ws gtk -arch x86_64 -consolelog --project /opt/bb_scenarios/HSI021_P16_vcmts_cm2068949223b8.bbp --output /app/BBResults/174_0_0/ --scenario US_Classic_Only !ENTRY com.excentis.products.byteblower.model.reader 1 0 2026-04-09 15:06:26.589 !MESSAGE Building docking info: com.excentis.products.bytebl
+4/9/2026, 3:07:46 PM
+INFO
+ByteBlowerStep
+ByteBlower CLT stderr (informational): Apr 09, 2026 3:06:24 PM com.excentis.products.byteblower.communication.Activator start INFO: Loaded ByteBlower API for Java specification version 'null' Apr 09, 2026 3:06:24 PM com.excentis.products.byteblower.run.objects.RuntimeByteBlower <init> INFO: Running version 2.22.6 of the ByteBlower API Apr 09, 2026 3:06:24 PM com.excentis.products.byteblower.datalibs.DatabaseConfiguration createH2 INFO: Enabling H2 Auto server Apr 09, 2026 3:06:24 PM com.excentis.products.byteblower.results.dataprovider.data.MetaDataPersistenceController getInstance INFO: creating Metadatabase Apr 09, 2026 3:06:25 PM com.excentis.products.byteblower.datalibs.DatabaseConfiguration createH2 INFO: Enabling H2 Auto server Apr 09, 2026 3:06:26 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl FINEST: invoking action: Initialize scenario [InitializeScenario] Apr 09, 2026 3:06:26 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$1 onScenarioInitializeStarting INFO: action callback: scenario initialization starting! Apr 09, 2026 3:06:26 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl FINEST: invoking action: Create ports [CreatePorts] Apr 09, 2026 3:06:26 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl FINEST: invoking action: Create servers [CreateServers] Apr 09, 2026 3:06:26 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl FINEST: invoking action: Create server 10.241.0.66 [CreateServer] Apr 09, 2026 3:06:26 PM com.excentis.products.byteblower.datapersistence.hook.impl.RuntimeConsoleLoggingHook$2 onServerCreated FINER: action callback: server '10.241.0.66' created (version 2.23.0) Apr 09, 2026 3:06:26 PM com.excentis.products.byteblower.datapersistence.actions.ActionLoggingDecorator invokeImpl FINEST: invoking action: Estimate the time diff
+4/9/2026, 3:07:46 PM
+INFO
+ByteBlowerStep
+ByteBlower test completed successfully, output: /app/BBResults/174_0_0/
+4/9/2026, 3:07:46 PM
+INFO
+ByteBlowerStep
+Ending SNMP polling for {'cm_mac': '0cb9.3764.3ab0', 'cm_ipv6': '2605:1c00:50f2:203:5503:2f0:489a:cd09', 'cm_ipv4': None}
+4/9/2026, 3:07:46 PM
+INFO
+ByteBlowerStep
+Running SNMP script with IP: 2605:1c00:50f2:203:5503:2f0:489a:cd09
+4/9/2026, 3:07:49 PM
+INFO
+ByteBlowerStep
+SNMP script return code: 0
+4/9/2026, 3:07:49 PM
+INFO
+ByteBlowerStep
+SNMP stdout length: 4876 chars
+4/9/2026, 3:07:49 PM
+INFO
+ByteBlowerStep
+SNMP stderr length: 0 chars
+4/9/2026, 3:07:49 PM
+INFO
+ByteBlowerStep
+SNMP stdout (first 500 chars): Flow Stats Table: iso.3.6.1.4.1.4491.2.1.21.1.4.1.1.2.4348 = Counter64: 140686 iso.3.6.1.4.1.4491.2.1.21.1.4.1.1.2.4349 = Counter64: 0 iso.3.6.1.4.1.4491.2.1.21.1.4.1.1.2.12298 = Counter64: 0 iso.3.6.1.4.1.4491.2.1.21.1.4.1.1.2.12299 = Counter64: 0 iso.3.6.1.4.1.4491.2.1.21.1.4.1.1.2.12300 = Counter64: 0 iso.3.6.1.4.1.4491.2.1.21.1.4.1.2.2.4348 = Counter64: 25121392 iso.3.6.1.4.1.4491.2.1.21.1.4.1.2.2.4349 = Counter64: 0 iso.3.6.1.4.1.4491.2.1.21.1.4.1.2.2.12298 = Counter64: 0 iso.3.6.1.4.1.4491
+4/9/2026, 3:07:49 PM
+INFO
+ByteBlowerStep
+SNMP script succeeded
+4/9/2026, 3:07:57 PM
+INFO
+DBWrapper
+Database connection established.
+4/9/2026, 3:07:57 PM
+INFO
+ByteBlowerStep
+Got speedID: [(29,)]
+4/9/2026, 3:07:57 PM
+INFO
+DBWrapper
+DataFrame inserted into BB_FlowStats successfully.
+4/9/2026, 3:07:57 PM
+INFO
+DBWrapper
+DataFrame inserted into BB_LatencyStats successfully.
+4/9/2026, 3:07:57 PM
+INFO
+DBWrapper
+DataFrame inserted into BB_FlowStats successfully.
+4/9/2026, 3:07:57 PM
+INFO
+DBWrapper
+DataFrame inserted into BB_LatencyStats successfully.
+4/9/2026, 3:07:57 PM
+INFO
+DBWrapper
+Database connection closed.
+4/9/2026, 3:07:57 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 3:07:57 PM
+INFO
+PacketStorm
+PACKETSTORM STOP EMULATION
+4/9/2026, 3:07:57 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 3:07:57 PM
+INFO
+PacketStorm
+Sending login request to PacketStorm...
+4/9/2026, 3:07:57 PM
+INFO
+PacketStorm
+[Step 1/2] Sending stop request to PacketStorm:
+4/9/2026, 3:07:57 PM
+INFO
+PacketStorm
+Request payload: {"op": "login", "user": "automation", "args": {"password": "automation"}}
+4/9/2026, 3:07:58 PM
+INFO
+PacketStorm
+Response status: 200
+4/9/2026, 3:07:58 PM
+INFO
+PacketStorm
+Response body: {"status":true}
+4/9/2026, 3:07:58 PM
+INFO
+PacketStorm
+Sending request to stop the emulation
+4/9/2026, 3:07:58 PM
+INFO
+PacketStorm
+[Step 2/2] Sending stop request to PacketStorm:
+4/9/2026, 3:07:58 PM
+INFO
+PacketStorm
+Request payload: {"op": "stop", "user": "automation"}
+4/9/2026, 3:07:59 PM
+INFO
+PacketStorm
+Response status: 200
+4/9/2026, 3:07:59 PM
+INFO
+PacketStorm
+Response body: {"status":true}
+4/9/2026, 3:07:59 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 3:07:59 PM
+INFO
+PacketStorm
+PACKETSTORM STOP COMPLETE
+4/9/2026, 3:07:59 PM
+INFO
+PacketStorm
+============================================================
+4/9/2026, 3:07:59 PM
+INFO
+ByteBlowerStep
+ByteBlower step execution completed
+4/9/2026, 3:07:59 PM
+INFO
+Orchestrator
+STEP 1/1 (ByteBlower Scenario Execution) COMPLETED
+4/9/2026, 3:07:59 PM
+INFO
+Orchestrator
+All steps execution completed
+4/9/2026, 3:07:59 PM
+INFO
+Orchestrator
+All test steps completed
+4/9/2026, 3:07:59 PM
+INFO
+Orchestrator
+Step 5: Saving logs for test ID 174
