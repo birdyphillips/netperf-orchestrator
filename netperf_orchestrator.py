@@ -36,27 +36,31 @@ except ImportError:
 class ByteBlowerCLI:
     def __init__(self):
         self.logger = Logger("ByteBlowerCLI")
-        # Prompt for modem IPv6 address
+        # Prompt for modem IPv6 address (upstream SNMP collection)
         user_input = input("Enter modem IPv6 address (or press Enter to skip SNMP): ")
         self.target_ip = user_input.strip() if user_input.strip() else None
         if self.target_ip:
             self.logger.info(f"Using modem IPv6: {self.target_ip}")
         else:
-            self.logger.warning("No modem IPv6 — SNMP collection will be skipped")
+            self.logger.warning("No modem IPv6 — upstream SNMP collection will be skipped")
         
-        # Prompt for CM MAC (used by CMTS Kafka collector)
-        mac_input = input("Enter CM MAC address (or press Enter to use config.yaml): ")
+        # Prompt for CM MAC (downstream CMTS Kafka collector)
+        mac_input = input("Enter CM MAC address (or press Enter to skip CMTS collection): ")
         self.cm_mac = mac_input.strip() if mac_input.strip() else None
         if self.cm_mac:
             from cmts_modem_info import normalize_mac
             self.cm_mac = normalize_mac(self.cm_mac)
             self.logger.info(f"Using CM MAC: {self.cm_mac}")
+        else:
+            self.logger.warning("No CM MAC — downstream CMTS collection will be skipped")
         
         self.output_dir = None
         self.cmts_collector = None
     
     def start_cmts_collection(self, direction="downstream"):
         """Start CMTS Kafka metrics collection in background. Non-blocking — test runs regardless."""
+        if not self.cm_mac:
+            return False
         if not CMTS_AVAILABLE:
             self.logger.warning("CMTS collector not available (kafka-python not installed) — skipping")
             return False
