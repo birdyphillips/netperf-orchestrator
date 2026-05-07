@@ -178,6 +178,12 @@ python3 netperf_orchestrator.py -byteblower --bbp Port_20_example.bbp --scenario
 ./netperf -iperf3-darwin --clientIP <CLIENT_IP> --scenario DS_LL_Only -test-group-name TEST_SCN --output txt
 ```
 
+### iPerf3 STVA (Set Top Video Analyzer)
+```bash
+# DS_STVA with 3 iterations
+./netperf -iperf3 --clientIP 71.85.92.213 --scenario DS_STVA -test-group-name STVA_TEST -iteration 3
+```
+
 ### iPerf3 + PacketStorm
 ```bash
 # TXT output with RTT (default)

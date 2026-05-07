@@ -168,7 +168,7 @@ def ssh_snmp_collector(username, jumpserver, target_ip, output_file=None, snmp_c
     # Modem information command
     modem_info_cmd = f"snmpwalk -v 2c -c {snmp_community} -t {snmp_timeout} -r {snmp_retries} {target_ip} sysDescr"
     
-    # SNMP commands from your notes
+    # SNMP commands from your notes (target = cable modem)
     commands = [
         f"snmpwalk -v 2c -c {snmp_community} -t {snmp_timeout} -r {snmp_retries} {target_ip} 1.3.6.1.4.1.4491.2.1.21.1.4",
         f"snmpwalk -v 2c -c {snmp_community} -t {snmp_timeout} -r {snmp_retries} {target_ip} 1.3.6.1.4.1.4491.2.1.21.1.27", 
@@ -177,6 +177,28 @@ def ssh_snmp_collector(username, jumpserver, target_ip, output_file=None, snmp_c
         f"snmpbulkget -v 2c -c {snmp_community} -t {snmp_timeout} -r {snmp_retries} {target_ip} .1.3.6.1.4.1.4998.1.1.15.10.2",
         f"snmpbulkget -v 2c -c {snmp_community} -t {snmp_timeout} -r {snmp_retries} {target_ip} .1.3.6.1.4.1.4998.1.1.15.10.8"
     ]
+    
+    # -------------------------------------------------------------------------
+    # iCMTS Downstream Commands (target = iCMTS e.g. 172.31.17.66)
+    # These collect DS latency/congestion from the CMTS side, not the modem.
+    # The modem doesn't support latency/congestion MIBs — only the CMTS has them.
+    #
+    # For modems on iCMTS: EXPECT data (latency bins, congestion stats)
+    # For modems on vCMTS: will return 0/empty (DS data comes from Prometheus/DB instead)
+    #
+    # Usage: set target_ip to iCMTS IP and snmp_community to iCMTS community (e.g. NMISread)
+    #
+    # # Service Flow ID mapping
+    # snmpwalk -v 2c -c NMISread <iCMTS_IP> 1.3.6.1.4.1.4491.2.1.21.1.11.1.3
+    # # Flow Stats Table (packets, octets, drops per SFID — both US and DS)
+    # snmpwalk -v 2c -c NMISread <iCMTS_IP> 1.3.6.1.4.1.4491.2.1.21.1.4
+    # # Aggregate Flow Stats Table
+    # snmpwalk -v 2c -c NMISread <iCMTS_IP> 1.3.6.1.4.1.4491.2.1.21.1.27
+    # # Latency Stats Table (histogram bins — DS latency data lives here)
+    # snmpwalk -v 2c -c NMISread <iCMTS_IP> 1.3.6.1.4.1.4491.2.1.21.1.29
+    # # Congestion Stats Table (AQM drops, congestion marked, sanctioned)
+    # snmpwalk -v 2c -c NMISread <iCMTS_IP> 1.3.6.1.4.1.4491.2.1.21.1.30
+    # -------------------------------------------------------------------------
     
     labels = [
         "Flow Stats Table (Entry Qos Service Flow Octets)",
@@ -865,7 +887,8 @@ def generate_latency_report(before_file, after_file, output_file=None, direction
     after_bins = parse_latency_bins(after_file)
 
     if not before_bins or not after_bins:
-        print("WARNING: No latency stats found in one or both SNMP files.")
+        print("INFO: No latency stats found in SNMP files (expected for vCMTS modems — DS latency comes from DB).")
+        print("      For iCMTS modems, this indicates missing data.")
         return None
 
     all_deltas = compute_deltas(before_bins, after_bins)
