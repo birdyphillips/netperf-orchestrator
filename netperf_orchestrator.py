@@ -83,15 +83,21 @@ class ByteBlowerCLI:
             self.logger.warning(f"wait_for_cmts_poll failed: {e}")
             return False
 
-    def stop_cmts_collection(self, output_dir, test_name):
-        """Stop CMTS Kafka collection and generate report. Safe to call even if collection never started."""
+    def stop_cmts_collection(self, output_dir, test_name, post_test_polls=2):
+        """Stop CMTS Kafka collection and generate report.
+        
+        Waits for post_test_polls additional poll cycles after test ends
+        to capture delayed bin reporting data.
+        """
         if not self.cmts_collector:
             return None
         try:
-            # Wait one extra poll cycle (35s) to capture final delta after test ends
-            import time
-            self.logger.info("Waiting 35s for final CMTS poll cycle...")
-            time.sleep(35)
+            # Wait for additional polls to capture delayed bin data
+            for i in range(post_test_polls):
+                self.logger.info(f"Waiting for post-test poll {i+1}/{post_test_polls}...")
+                if not self.cmts_collector.wait_for_poll(timeout=45):
+                    self.logger.warning(f"Post-test poll {i+1} timed out")
+                    break
             self.cmts_collector.stop()
             report = self.cmts_collector.generate_report(output_dir, test_name)
             self.cmts_collector = None
