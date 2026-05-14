@@ -306,6 +306,9 @@ class CmtsCollector:
         wb = openpyxl.Workbook()
         wb.remove(wb.active)
 
+        # Write editable Bin_Edges sheet first (other sheets reference it)
+        self._write_bin_edges_sheet(wb)
+
         # Raw time-series sheet (tab 1)
         self._write_timeseries(wb)
 
@@ -338,6 +341,8 @@ class CmtsCollector:
     _CENTER = Alignment(horizontal="center", vertical="center")
     _BOLD = Font(bold=True, size=11)
 
+    _INPUT_FILL = PatternFill("solid", fgColor="FFF2CC")
+
     def _cell(self, ws, row, col, value, font=None, fill=None, fmt=None):
         cell = ws.cell(row=row, column=col, value=value)
         cell.alignment = self._CENTER
@@ -349,6 +354,29 @@ class CmtsCollector:
         if fmt:
             cell.number_format = fmt
         return cell
+
+    def _write_bin_edges_sheet(self, wb):
+        """Write editable Bin_Edges sheet. Other sheets reference it via formulas."""
+        ws = wb.create_sheet(title="Bin_Edges")
+        ws.sheet_properties.tabColor = "FFC000"
+
+        ws.merge_cells("A1:C1")
+        ws["A1"] = "EDITABLE BIN EDGES (ms) \u2014 Change values below to recalculate all sheets"
+        ws["A1"].font = Font(bold=True, size=12)
+        ws["A1"].alignment = self._CENTER
+
+        self._cell(ws, 3, 1, "Bin #", font=self._HEADER_FONT, fill=self._HEADER_FILL)
+        self._cell(ws, 3, 2, "Lower Edge (ms)", font=self._HEADER_FONT, fill=self._HEADER_FILL)
+        self._cell(ws, 3, 3, "Upper Edge (ms)", font=self._HEADER_FONT, fill=self._HEADER_FILL)
+
+        for i in range(NUM_BINS):
+            row = 4 + i
+            self._cell(ws, row, 1, i + 1)
+            self._cell(ws, row, 2, BIN_EDGES_MS[i], fill=self._INPUT_FILL, fmt="0.00")
+            self._cell(ws, row, 3, BIN_EDGES_MS[i + 1], fill=self._INPUT_FILL, fmt="0.00")
+
+        for i, w in enumerate([8, 18, 18], 1):
+            ws.column_dimensions[get_column_letter(i)].width = w
 
     def _write_summary(self, wb, sf_indices):
         ws = wb.create_sheet(title="Summary")
@@ -446,12 +474,13 @@ class CmtsCollector:
             ws.column_dimensions[get_column_letter(i)].width = w
 
     def _write_sf_sheet(self, wb, sf_index):
+        """Write per-SF sheet with Excel formulas referencing Bin_Edges sheet."""
         ws = wb.create_sheet(title=f"sfIndex_{sf_index}")
         bin_deltas = self._get_bin_deltas(sf_index)
         total = sum(bin_deltas)
 
-        ws.merge_cells("A1:J1")
-        ws["A1"] = f"CMTS {self.direction.upper()} LATENCY — sfIndex {sf_index}"
+        ws.merge_cells("A1:H1")
+        ws["A1"] = f"CMTS {self.direction.upper()} LATENCY \u2014 sfIndex {sf_index}"
         ws["A1"].font = Font(bold=True, size=14)
         ws["A1"].alignment = self._CENTER
 
@@ -462,79 +491,111 @@ class CmtsCollector:
         for col, h in enumerate(headers, 1):
             self._cell(ws, 3, col, h, font=self._HEADER_FONT, fill=self._HEADER_FILL)
 
-        cumulative = 0
+        first_data = 4
+        last_data = 4 + NUM_BINS - 1
+
         for i in range(NUM_BINS):
             row = 4 + i
-            low = BIN_EDGES_MS[i]
-            high = BIN_EDGES_MS[i + 1]
-            avg = (low + high) / 2
-            delta = bin_deltas[i]
-            cumulative += delta
-            cum_pct = (cumulative / total * 100) if total else 0
-            bin_pct = (delta / total * 100) if total else 0
+            be_row = 4 + i  # corresponding row in Bin_Edges sheet
 
             self._cell(ws, row, 1, i + 1)
-            self._cell(ws, row, 2, low, fmt="0.00")
-            self._cell(ws, row, 3, high if i < 15 else "200.00+", fmt="0.00")
-            self._cell(ws, row, 4, avg, fill=self._CALC_FILL, fmt="0.0000")
-            self._cell(ws, row, 5, int(delta), fill=self._CALC_FILL)
-            self._cell(ws, row, 6, int(cumulative), fill=self._CALC_FILL)
-            self._cell(ws, row, 7, cum_pct, fill=self._CALC_FILL, fmt="0.00")
-            self._cell(ws, row, 8, bin_pct, fill=self._CALC_FILL, fmt="0.00")
+            # Col B: LOWER from Bin_Edges
+            c = self._cell(ws, row, 2, None, fmt="0.00")
+            c.value = f"=Bin_Edges!B{be_row}"
+            # Col C: UPPER from Bin_Edges
+            c = self._cell(ws, row, 3, None, fmt="0.00")
+            c.value = f"=Bin_Edges!C{be_row}"
+            # Col D: AVG = (LOWER + UPPER) / 2
+            c = self._cell(ws, row, 4, None, fill=self._CALC_FILL, fmt="0.0000")
+            c.value = f"=(B{row}+C{row})/2"
+            # Col E: DELTA (raw data)
+            self._cell(ws, row, 5, int(bin_deltas[i]), fill=self._CALC_FILL)
+            # Col F: CUMULATIVE
+            if i == 0:
+                c = self._cell(ws, row, 6, None, fill=self._CALC_FILL)
+                c.value = f"=E{row}"
+            else:
+                c = self._cell(ws, row, 6, None, fill=self._CALC_FILL)
+                c.value = f"=F{row-1}+E{row}"
+            # Col G: CUMULATIVE %
+            total_cell = f"E{4 + NUM_BINS + 1}"
+            c = self._cell(ws, row, 7, None, fill=self._CALC_FILL, fmt="0.00")
+            c.value = f"=IF({total_cell}=0,0,F{row}/{total_cell}*100)"
+            # Col H: BIN %
+            c = self._cell(ws, row, 8, None, fill=self._CALC_FILL, fmt="0.00")
+            c.value = f"=IF({total_cell}=0,0,E{row}/{total_cell}*100)"
 
         total_row = 4 + NUM_BINS + 1
         self._cell(ws, total_row, 1, "TOTAL", font=self._BOLD)
-        self._cell(ws, total_row, 5, int(total), font=self._BOLD, fill=self._CALC_FILL)
-        self._cell(ws, total_row, 7, 100.00 if total else 0, font=self._BOLD, fill=self._CALC_FILL, fmt="0.00")
+        c = self._cell(ws, total_row, 5, None, font=self._BOLD, fill=self._CALC_FILL)
+        c.value = f"=SUM(E{first_data}:E{last_data})"
+        c = self._cell(ws, total_row, 7, None, font=self._BOLD, fill=self._CALC_FILL, fmt="0.00")
+        c.value = f"=IF(E{total_row}=0,0,100)"
 
-        # Percentiles (Linear Interpolation)
+        # Percentiles (Linear Interpolation) with formulas
         pct_row = total_row + 2
         ws.merge_cells(f"A{pct_row}:H{pct_row}")
         ws.cell(row=pct_row, column=1, value="PERCENTILE RESULTS (LINEAR INTERPOLATION)").font = Font(bold=True, size=12)
 
         for label, pct in [("P50", 0.50), ("P99", 0.99), ("P99.9", 0.999)]:
             pct_row += 1
-            target = total * pct
-            result = self._calc_percentile(bin_deltas, pct)
             self._cell(ws, pct_row, 1, f"{label} TARGET", font=self._BOLD)
-            self._cell(ws, pct_row, 2, round(target, 2), fill=self._RESULT_FILL, fmt="0.00")
+            c = self._cell(ws, pct_row, 2, None, fill=self._RESULT_FILL, fmt="0.00")
+            c.value = f"=E{total_row}*{pct}"
             self._cell(ws, pct_row, 3, f"{label} (ms)", font=self._BOLD)
-            self._cell(ws, pct_row, 4, round(result, 4), fill=self._RESULT_FILL, fmt="0.0000")
+            tgt = f"B{pct_row}"
+            fd = first_data
+            ld = last_data
+            idx_expr = f"MATCH({tgt},F{fd}:F{ld},1)+1"
+            c = self._cell(ws, pct_row, 4, None, fill=self._RESULT_FILL, fmt="0.0000")
+            c.value = (
+                f'=IF(E{total_row}=0,0,'
+                f'INDEX(B{fd}:B{ld},{idx_expr})'
+                f'+IF(INDEX(E{fd}:E{ld},{idx_expr})=0,0,'
+                f'({tgt}-IF({idx_expr}=1,0,INDEX(F{fd}:F{ld},{idx_expr}-1)))'
+                f'/INDEX(E{fd}:E{ld},{idx_expr})'
+                f'*(INDEX(C{fd}:C{ld},{idx_expr})-INDEX(B{fd}:B{ld},{idx_expr}))))'
+            )
 
-        # Formula legend
         legend_row = pct_row + 2
         ws.cell(row=legend_row, column=1, value="FORMULA:").font = self._BOLD
         ws.merge_cells(f"B{legend_row}:H{legend_row}")
-        ws.cell(row=legend_row, column=2, value="P = BIN_LOW + ((TARGET − PREV_CUMULATIVE) / BIN_COUNT) × (BIN_HIGH − BIN_LOW)").font = Font(italic=True, size=10)
+        ws.cell(row=legend_row, column=2, value="P = BIN_LOW + ((TARGET \u2212 PREV_CUMULATIVE) / BIN_COUNT) \u00d7 (BIN_HIGH \u2212 BIN_LOW)").font = Font(italic=True, size=10)
 
-        # Percentiles (AVG Method)
+        # Percentiles (AVG Method) with formulas
         avg_row = legend_row + 2
         ws.merge_cells(f"A{avg_row}:H{avg_row}")
         ws.cell(row=avg_row, column=1, value="PERCENTILE RESULTS (AVG METHOD)").font = Font(bold=True, size=12)
 
         for label, pct in [("P50", 0.50), ("P99", 0.99), ("P99.9", 0.999)]:
             avg_row += 1
-            target = total * pct
-            result = self._calc_percentile_avg(bin_deltas, pct)
             self._cell(ws, avg_row, 1, f"{label} TARGET", font=self._BOLD)
-            self._cell(ws, avg_row, 2, round(target, 2), fill=self._RESULT_FILL, fmt="0.00")
+            c = self._cell(ws, avg_row, 2, None, fill=self._RESULT_FILL, fmt="0.00")
+            c.value = f"=E{total_row}*{pct}"
             self._cell(ws, avg_row, 3, f"{label} AVG (ms)", font=self._BOLD)
-            self._cell(ws, avg_row, 4, round(result, 4), fill=self._RESULT_FILL, fmt="0.0000")
+            tgt = f"B{avg_row}"
+            fd = first_data
+            ld = last_data
+            idx_expr = f"MATCH({tgt},F{fd}:F{ld},1)+1"
+            c = self._cell(ws, avg_row, 4, None, fill=self._RESULT_FILL, fmt="0.0000")
+            c.value = (
+                f'=IF(E{total_row}=0,0,'
+                f'INDEX(D{fd}:D{ld},{idx_expr}))'
+            )
 
-        # AVG method formula legend
         legend_row2 = avg_row + 2
         ws.cell(row=legend_row2, column=1, value="FORMULA:").font = self._BOLD
         ws.merge_cells(f"B{legend_row2}:H{legend_row2}")
         ws.cell(row=legend_row2, column=2, value="P = AVG (col D) of first bin where cumulative count >= percentile target").font = Font(italic=True, size=10)
 
-        # Weighted Average
+        # Weighted Average formula
         wavg_row = legend_row2 + 2
-        weighted_avg = self._calc_weighted_avg(bin_deltas)
         self._cell(ws, wavg_row, 1, "Weighted Avg (ms)", font=self._BOLD)
-        self._cell(ws, wavg_row, 2, round(weighted_avg, 4), fill=self._RESULT_FILL, fmt="0.0000")
+        c = self._cell(ws, wavg_row, 2, None, fill=self._RESULT_FILL, fmt="0.0000")
+        c.value = f"=IF(E{total_row}=0,0,SUMPRODUCT(E{first_data}:E{last_data},D{first_data}:D{last_data})/E{total_row})"
         ws.cell(row=wavg_row + 1, column=1, value="FORMULA:").font = self._BOLD
         ws.merge_cells(f"B{wavg_row + 1}:H{wavg_row + 1}")
-        ws.cell(row=wavg_row + 1, column=2, value="Weighted Avg = SUM(delta_i × bin_avg_i) / total_packets").font = Font(italic=True, size=10)
+        ws.cell(row=wavg_row + 1, column=2, value="Weighted Avg = SUM(delta_i \u00d7 bin_avg_i) / total_packets").font = Font(italic=True, size=10)
 
         for i, w in enumerate([8, 14, 14, 14, 14, 16, 16, 12], 1):
             ws.column_dimensions[get_column_letter(i)].width = w

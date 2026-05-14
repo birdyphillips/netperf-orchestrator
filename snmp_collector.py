@@ -535,8 +535,35 @@ def _styled_cell(ws, row, col, value, font=None, fill=None, fmt=None):
     return cell
 
 
+def write_bin_edges_sheet(wb, bin_edges):
+    """Write a Bin_Edges sheet with editable bin edge values.
+    Other sheets reference this so users can change edges and recalculate."""
+    ws = wb.create_sheet(title="Bin_Edges")
+    ws.sheet_properties.tabColor = "FFC000"
+
+    ws.merge_cells("A1:C1")
+    ws["A1"] = "EDITABLE BIN EDGES (ms) — Change values below to recalculate all sheets"
+    ws["A1"].font = Font(bold=True, size=12)
+    ws["A1"].alignment = _CENTER
+
+    _styled_cell(ws, 3, 1, "Bin #", font=_HEADER_FONT, fill=_HEADER_FILL)
+    _styled_cell(ws, 3, 2, "Lower Edge (ms)", font=_HEADER_FONT, fill=_HEADER_FILL)
+    _styled_cell(ws, 3, 3, "Upper Edge (ms)", font=_HEADER_FONT, fill=_HEADER_FILL)
+
+    for i in range(NUM_BINS):
+        row = 4 + i
+        _styled_cell(ws, row, 1, i + 1)
+        _styled_cell(ws, row, 2, bin_edges[i], fill=_INPUT_FILL, fmt="0.00")
+        _styled_cell(ws, row, 3, bin_edges[i + 1], fill=_INPUT_FILL, fmt="0.00")
+
+    for i, w in enumerate([8, 18, 18], 1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+
+
 def write_sf_sheet(wb, sheet_name, sf_data, tp_data=None, bin_edges=None, direction="US"):
-    """Write one worksheet for a service flow's latency bin data."""
+    """Write one worksheet for a service flow's latency bin data.
+    Uses Excel formulas referencing the Bin_Edges sheet so users can
+    change bin edges and have all calculations update automatically."""
     edges = _get_edges(bin_edges)
     deltas = sf_data["deltas"]
     before = sf_data["before"]
@@ -565,53 +592,91 @@ def write_sf_sheet(wb, sheet_name, sf_data, tp_data=None, bin_edges=None, direct
         _styled_cell(ws, 3, col, h, font=_HEADER_FONT, fill=_HEADER_FILL)
 
     total = sum(deltas)
-    cumulative = 0
-    last_upper = edges[-2]  # second-to-last edge for overflow label
-
+    # Data rows start at row 4; Bin_Edges sheet has lower in B4:B19, upper in C4:C19
     for i in range(NUM_BINS):
         row = 4 + i
-        low = edges[i]
-        high = edges[i + 1]
-        avg = (low + high) / 2
-        delta = deltas[i]
-        cumulative += delta
-        cum_pct = (cumulative / total * 100) if total else 0
-        bin_pct = (delta / total * 100) if total else 0
+        be_row = 4 + i  # corresponding row in Bin_Edges sheet
 
+        # Col A: bin number
         _styled_cell(ws, row, 1, i + 1)
-        _styled_cell(ws, row, 2, low, fmt="0.00")
-        _styled_cell(ws, row, 3, high if i < NUM_BINS - 1 else f"{last_upper:.2f}+", fmt="0.00")
-        _styled_cell(ws, row, 4, avg, fill=_CALC_FILL, fmt="0.0000")
+        # Col B: LOWER — formula from Bin_Edges
+        c = _styled_cell(ws, row, 2, None, fmt="0.00")
+        c.value = f"=Bin_Edges!B{be_row}"
+        # Col C: UPPER — formula from Bin_Edges
+        c = _styled_cell(ws, row, 3, None, fmt="0.00")
+        c.value = f"=Bin_Edges!C{be_row}"
+        # Col D: AVG = (LOWER + UPPER) / 2 — formula
+        c = _styled_cell(ws, row, 4, None, fill=_CALC_FILL, fmt="0.0000")
+        c.value = f"=(B{row}+C{row})/2"
+        # Col E: START COUNT (raw data)
         _styled_cell(ws, row, 5, before[i], fill=_INPUT_FILL)
+        # Col F: END COUNT (raw data)
         _styled_cell(ws, row, 6, after[i], fill=_INPUT_FILL)
-        _styled_cell(ws, row, 7, delta, fill=_CALC_FILL)
-        _styled_cell(ws, row, 8, cumulative, fill=_CALC_FILL)
-        _styled_cell(ws, row, 9, cum_pct, fill=_CALC_FILL, fmt="0.00")
-        _styled_cell(ws, row, 10, bin_pct, fill=_CALC_FILL, fmt="0.00")
+        # Col G: DELTA = END - START
+        c = _styled_cell(ws, row, 7, None, fill=_CALC_FILL)
+        c.value = f"=F{row}-E{row}"
+        # Col H: CUMULATIVE
+        if i == 0:
+            c = _styled_cell(ws, row, 8, None, fill=_CALC_FILL)
+            c.value = f"=G{row}"
+        else:
+            c = _styled_cell(ws, row, 8, None, fill=_CALC_FILL)
+            c.value = f"=H{row-1}+G{row}"
+        # Col I: CUMULATIVE % = CUMULATIVE / TOTAL * 100
+        c = _styled_cell(ws, row, 9, None, fill=_CALC_FILL, fmt="0.00")
+        total_cell = f"G{4 + NUM_BINS + 1}"  # total row delta
+        c.value = f"=IF({total_cell}=0,0,H{row}/{total_cell}*100)"
+        # Col J: BIN % = DELTA / TOTAL * 100
+        c = _styled_cell(ws, row, 10, None, fill=_CALC_FILL, fmt="0.00")
+        c.value = f"=IF({total_cell}=0,0,G{row}/{total_cell}*100)"
 
     total_row = 4 + NUM_BINS + 1
     _styled_cell(ws, total_row, 1, "TOTAL", font=_BOLD)
-    _styled_cell(ws, total_row, 5, sum(before), font=_BOLD, fill=_INPUT_FILL)
-    _styled_cell(ws, total_row, 6, sum(after), font=_BOLD, fill=_INPUT_FILL)
-    _styled_cell(ws, total_row, 7, total, font=_BOLD, fill=_CALC_FILL)
-    _styled_cell(ws, total_row, 9, 100.00 if total else 0, font=_BOLD, fill=_CALC_FILL, fmt="0.00")
+    c = _styled_cell(ws, total_row, 5, None, font=_BOLD, fill=_INPUT_FILL)
+    c.value = f"=SUM(E4:E{4+NUM_BINS-1})"
+    c = _styled_cell(ws, total_row, 6, None, font=_BOLD, fill=_INPUT_FILL)
+    c.value = f"=SUM(F4:F{4+NUM_BINS-1})"
+    c = _styled_cell(ws, total_row, 7, None, font=_BOLD, fill=_CALC_FILL)
+    c.value = f"=SUM(G4:G{4+NUM_BINS-1})"
+    c = _styled_cell(ws, total_row, 9, None, font=_BOLD, fill=_CALC_FILL, fmt="0.00")
+    c.value = f"=IF(G{total_row}=0,0,100)"
 
+    # --- Percentile section (Linear Interpolation) using STATIC values ---
+    # Excel array formulas for percentile interpolation from histogram bins
+    # are extremely complex; we use a helper approach: write the formula
+    # that does the lookup against the cumulative column.
     pct_row = total_row + 2
     ws.merge_cells(f"A{pct_row}:J{pct_row}")
     ws.cell(row=pct_row, column=1, value="PERCENTILE RESULTS (LINEAR INTERPOLATION)").font = Font(bold=True, size=12)
 
+    first_data = 4
+    last_data = 4 + NUM_BINS - 1
     for label, pct in [("P50", 0.50), ("P99", 0.99), ("P99.9", 0.999)]:
         pct_row += 1
         _styled_cell(ws, pct_row, 1, f"{label} TARGET", font=_BOLD)
-        _styled_cell(ws, pct_row, 2, round(total * pct, 2), fill=_RESULT_FILL, fmt="0.00")
+        c = _styled_cell(ws, pct_row, 2, None, fill=_RESULT_FILL, fmt="0.00")
+        c.value = f"=G{total_row}*{pct}"
         _styled_cell(ws, pct_row, 3, f"{label} (ms)", font=_BOLD)
-        _styled_cell(ws, pct_row, 4, round(calc_percentile(deltas, pct, edges), 4), fill=_RESULT_FILL, fmt="0.0000")
+        tgt = f"B{pct_row}"
+        fd = first_data
+        ld = last_data
+        idx_expr = f"MATCH({tgt},H{fd}:H{ld},1)+1"
+        c = _styled_cell(ws, pct_row, 4, None, fill=_RESULT_FILL, fmt="0.0000")
+        c.value = (
+            f'=IF(G{total_row}=0,0,'
+            f'INDEX(B{fd}:B{ld},{idx_expr})'
+            f'+IF(INDEX(G{fd}:G{ld},{idx_expr})=0,0,'
+            f'({tgt}-IF({idx_expr}=1,0,INDEX(H{fd}:H{ld},{idx_expr}-1)))'
+            f'/INDEX(G{fd}:G{ld},{idx_expr})'
+            f'*(INDEX(C{fd}:C{ld},{idx_expr})-INDEX(B{fd}:B{ld},{idx_expr}))))'
+        )
 
     legend_row = pct_row + 2
     ws.cell(row=legend_row, column=1, value="FORMULA:").font = _BOLD
     ws.merge_cells(f"B{legend_row}:J{legend_row}")
     ws.cell(row=legend_row, column=2, value="P = BIN_LOW + ((TARGET \u2212 PREV_CUMULATIVE) / BIN_COUNT) \u00d7 (BIN_HIGH \u2212 BIN_LOW)").font = Font(italic=True, size=10)
 
+    # --- Percentile section (AVG Method) ---
     avg_row = legend_row + 2
     ws.merge_cells(f"A{avg_row}:J{avg_row}")
     ws.cell(row=avg_row, column=1, value="PERCENTILE RESULTS (AVG METHOD)").font = Font(bold=True, size=12)
@@ -619,9 +684,18 @@ def write_sf_sheet(wb, sheet_name, sf_data, tp_data=None, bin_edges=None, direct
     for label, pct in [("P50", 0.50), ("P99", 0.99), ("P99.9", 0.999)]:
         avg_row += 1
         _styled_cell(ws, avg_row, 1, f"{label} TARGET", font=_BOLD)
-        _styled_cell(ws, avg_row, 2, round(total * pct, 2), fill=_RESULT_FILL, fmt="0.00")
+        c = _styled_cell(ws, avg_row, 2, None, fill=_RESULT_FILL, fmt="0.00")
+        c.value = f"=G{total_row}*{pct}"
         _styled_cell(ws, avg_row, 3, f"{label} AVG (ms)", font=_BOLD)
-        _styled_cell(ws, avg_row, 4, round(calc_percentile_avg(deltas, pct, edges), 4), fill=_RESULT_FILL, fmt="0.0000")
+        tgt = f"B{avg_row}"
+        fd = first_data
+        ld = last_data
+        idx_expr = f"MATCH({tgt},H{fd}:H{ld},1)+1"
+        c = _styled_cell(ws, avg_row, 4, None, fill=_RESULT_FILL, fmt="0.0000")
+        c.value = (
+            f'=IF(G{total_row}=0,0,'
+            f'INDEX(D{fd}:D{ld},{idx_expr}))'
+        )
 
     legend_row2 = avg_row + 2
     ws.cell(row=legend_row2, column=1, value="FORMULA:").font = _BOLD
@@ -911,6 +985,9 @@ def generate_latency_report(before_file, after_file, output_file=None, direction
 
     wb = openpyxl.Workbook()
     wb.remove(wb.active)
+
+    # Write editable Bin_Edges sheet first (other sheets reference it)
+    write_bin_edges_sheet(wb, edges)
 
     write_timeseries_sheet(wb, before_file, after_file, fs_before, fs_after,
                            cong_before, cong_after, before_bins, after_bins)
