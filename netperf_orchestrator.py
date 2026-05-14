@@ -36,14 +36,6 @@ except ImportError:
 class ByteBlowerCLI:
     def __init__(self):
         self.logger = Logger("ByteBlowerCLI")
-        # Prompt for modem IPv6 address (upstream SNMP collection)
-        user_input = input("Enter modem IPv6 address (or press Enter to skip SNMP): ")
-        self.target_ip = user_input.strip() if user_input.strip() else None
-        if self.target_ip:
-            self.logger.info(f"Using modem IPv6: {self.target_ip}")
-        else:
-            self.logger.warning("No modem IPv6 — upstream SNMP collection will be skipped")
-        
         # Prompt for CM MAC (downstream CMTS Kafka collector)
         mac_input = input("Enter CM MAC address (or press Enter to skip CMTS collection): ")
         self.cm_mac = mac_input.strip() if mac_input.strip() else None
@@ -53,6 +45,14 @@ class ByteBlowerCLI:
             self.logger.info(f"Using CM MAC: {self.cm_mac}")
         else:
             self.logger.warning("No CM MAC — downstream CMTS collection will be skipped")
+        
+        # Prompt for modem IPv6 address (upstream SNMP collection)
+        user_input = input("Enter modem IPv6 address (or press Enter to skip SNMP): ")
+        self.target_ip = user_input.strip() if user_input.strip() else None
+        if self.target_ip:
+            self.logger.info(f"Using modem IPv6: {self.target_ip}")
+        else:
+            self.logger.warning("No modem IPv6 — upstream SNMP collection will be skipped")
         
         self.output_dir = None
         self.cmts_collector = None
@@ -88,6 +88,10 @@ class ByteBlowerCLI:
         if not self.cmts_collector:
             return None
         try:
+            # Wait one extra poll cycle (35s) to capture final delta after test ends
+            import time
+            self.logger.info("Waiting 35s for final CMTS poll cycle...")
+            time.sleep(35)
             self.cmts_collector.stop()
             report = self.cmts_collector.generate_report(output_dir, test_name)
             self.cmts_collector = None
