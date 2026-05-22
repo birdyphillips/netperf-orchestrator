@@ -173,6 +173,7 @@ def ssh_snmp_collector(username, jumpserver, target_ip, output_file=None, snmp_c
         f"snmpwalk -v 2c -c {snmp_community} -t {snmp_timeout} -r {snmp_retries} {target_ip} 1.3.6.1.4.1.4491.2.1.21.1.4",
         f"snmpwalk -v 2c -c {snmp_community} -t {snmp_timeout} -r {snmp_retries} {target_ip} 1.3.6.1.4.1.4491.2.1.21.1.27", 
         f"snmpwalk -v 2c -c {snmp_community} -t {snmp_timeout} -r {snmp_retries} {target_ip} 1.3.6.1.4.1.4491.2.1.21.1.29.2",
+        f"snmpwalk -v 2c -c {snmp_community} -t {snmp_timeout} -r {snmp_retries} {target_ip} 1.3.6.1.4.1.4491.2.1.21.1.29.1",
         f"snmpwalk -v 2c -c {snmp_community} -t {snmp_timeout} -r {snmp_retries} {target_ip} 1.3.6.1.4.1.4491.2.1.21.1.30",
         f"snmpbulkget -v 2c -c {snmp_community} -t {snmp_timeout} -r {snmp_retries} {target_ip} .1.3.6.1.4.1.4998.1.1.15.10.2",
         f"snmpbulkget -v 2c -c {snmp_community} -t {snmp_timeout} -r {snmp_retries} {target_ip} .1.3.6.1.4.1.4998.1.1.15.10.8"
@@ -203,7 +204,8 @@ def ssh_snmp_collector(username, jumpserver, target_ip, output_file=None, snmp_c
     labels = [
         "Flow Stats Table (Entry Qos Service Flow Octets)",
         "Aggregate Service Flow Stats Table", 
-        "Latency Stats Table",
+        "US Latency Stats Table",
+        "DS Latency Stats Table",
         "Congestion Stats Table",
         "Cadant Map Stats Mib",
         "Map Stats Pages Flows"
@@ -412,17 +414,25 @@ def compute_throughput_and_loss(before_file, after_file, duration_s=None):
     return results
 
 
-def parse_latency_bins(filepath):
-    """Parse Latency Stats Table from an SNMP text file."""
+def parse_latency_bins(filepath, direction="US"):
+    """Parse Latency Stats Table from an SNMP text file.
+    direction: 'US' matches .29.2, 'DS' matches .29.1
+    """
     with open(filepath, "r") as f:
         content = f.read()
-    match = re.search(r"Latency Stats Table\n=+\n(.*?)(?:\n\n|\Z)", content, re.DOTALL)
+    if direction == "DS":
+        pattern = r"DS Latency Stats Table\n=+\n(.*?)(?:\n\n|\Z)"
+        oid_dir = "1"
+    else:
+        pattern = r"(?:US )?Latency Stats Table\n=+\n(.*?)(?:\n\n|\Z)"
+        oid_dir = "2"
+    match = re.search(pattern, content, re.DOTALL)
     if not match:
         return {}
     section = match.group(1)
     bins = {}
     for line in section.splitlines():
-        m = re.search(r"\.29\.2\.1\.(\d+)\.2\.(\d+)\s*=\s*(?:Counter64|Gauge32):\s*(\d+)", line)
+        m = re.search(r'\.29\.' + oid_dir + r'\.1\.(\d+)\.2\.(\d+)\s*=\s*(?:Counter64|Gauge32):\s*(\d+)', line)
         if m:
             sub_oid = int(m.group(1))
             sfid = int(m.group(2))
@@ -957,8 +967,8 @@ def generate_latency_report(before_file, after_file, output_file=None, direction
     edges = US_BIN_EDGES_MS if direction == "US" else DS_BIN_EDGES_MS
     print(f"Direction detected: {direction} — using {'upstream' if direction == 'US' else 'downstream'} bin edges")
 
-    before_bins = parse_latency_bins(before_file)
-    after_bins = parse_latency_bins(after_file)
+    before_bins = parse_latency_bins(before_file, direction)
+    after_bins = parse_latency_bins(after_file, direction)
 
     if not before_bins or not after_bins:
         print("INFO: No latency stats found in SNMP files (expected for vCMTS modems — DS latency comes from DB).")

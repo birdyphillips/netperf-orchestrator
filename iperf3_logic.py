@@ -138,6 +138,7 @@ class IPerf3Logic:
                     "wait"
                 ],
                 "DS_STVA_ECT1": [
+                    f"iperf3-darwin -c {self.client_ip} -p 5201 -C cubic -t 30 -J > DS_{group_name}_STVA_ECT1_1TCP_CL.json &",
                     f"iperf3-darwin -c {self.client_ip} -p 5202 -S 0x81 -t 30 -J > DS_{group_name}_STVA_ECT1_1TCP_LL.json &",
                     "wait"
                 ]
@@ -211,6 +212,7 @@ class IPerf3Logic:
                     "wait"
                 ],
                 "DS_STVA_ECT1": [
+                    f"iperf3 -c {self.client_ip} -p 5201 -C cubic -t 30 -J > DS_{group_name}_STVA_ECT1_1TCP_CL.json &",
                     f"iperf3 -c {self.client_ip} -p 5202 -S 0x81 -t 30 -J > DS_{group_name}_STVA_ECT1_1TCP_LL.json &",
                     "wait"
                 ]
