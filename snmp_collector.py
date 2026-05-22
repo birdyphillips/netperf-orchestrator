@@ -173,43 +173,36 @@ def ssh_snmp_collector(username, jumpserver, target_ip, output_file=None, snmp_c
         f"snmpwalk -v 2c -c {snmp_community} -t {snmp_timeout} -r {snmp_retries} {target_ip} 1.3.6.1.4.1.4491.2.1.21.1.4",
         f"snmpwalk -v 2c -c {snmp_community} -t {snmp_timeout} -r {snmp_retries} {target_ip} 1.3.6.1.4.1.4491.2.1.21.1.27", 
         f"snmpwalk -v 2c -c {snmp_community} -t {snmp_timeout} -r {snmp_retries} {target_ip} 1.3.6.1.4.1.4491.2.1.21.1.29.2",
-        f"snmpwalk -v 2c -c {snmp_community} -t {snmp_timeout} -r {snmp_retries} {target_ip} 1.3.6.1.4.1.4491.2.1.21.1.29.1",
         f"snmpwalk -v 2c -c {snmp_community} -t {snmp_timeout} -r {snmp_retries} {target_ip} 1.3.6.1.4.1.4491.2.1.21.1.30",
         f"snmpbulkget -v 2c -c {snmp_community} -t {snmp_timeout} -r {snmp_retries} {target_ip} .1.3.6.1.4.1.4998.1.1.15.10.2",
         f"snmpbulkget -v 2c -c {snmp_community} -t {snmp_timeout} -r {snmp_retries} {target_ip} .1.3.6.1.4.1.4998.1.1.15.10.8"
     ]
     
-    # -------------------------------------------------------------------------
-    # iCMTS Downstream Commands (target = iCMTS e.g. 172.31.17.66)
-    # These collect DS latency/congestion from the CMTS side, not the modem.
-    # The modem doesn't support latency/congestion MIBs — only the CMTS has them.
-    #
-    # For modems on iCMTS: EXPECT data (latency bins, congestion stats)
-    # For modems on vCMTS: will return 0/empty (DS data comes from Prometheus/DB instead)
-    #
-    # Usage: set target_ip to iCMTS IP and snmp_community to iCMTS community (e.g. NMISread)
-    #
-    # # Service Flow ID mapping
-    # snmpwalk -v 2c -c NMISread <iCMTS_IP> 1.3.6.1.4.1.4491.2.1.21.1.11.1.3
-    # # Flow Stats Table (packets, octets, drops per SFID — both US and DS)
-    # snmpwalk -v 2c -c NMISread <iCMTS_IP> 1.3.6.1.4.1.4491.2.1.21.1.4
-    # # Aggregate Flow Stats Table
-    # snmpwalk -v 2c -c NMISread <iCMTS_IP> 1.3.6.1.4.1.4491.2.1.21.1.27
-    # # Latency Stats Table (histogram bins — DS latency data lives here)
-    # snmpwalk -v 2c -c NMISread <iCMTS_IP> 1.3.6.1.4.1.4491.2.1.21.1.29
-    # # Congestion Stats Table (AQM drops, congestion marked, sanctioned)
-    # snmpwalk -v 2c -c NMISread <iCMTS_IP> 1.3.6.1.4.1.4491.2.1.21.1.30
-    # -------------------------------------------------------------------------
+    # iCMTS DS commands — collect DS latency/congestion from CMTS side
+    icmts_ip = config.icmts_ip
+    icmts_community = config.icmts_community
+    if icmts_ip:
+        commands += [
+            f"snmpwalk -v 2c -c {icmts_community} -t {snmp_timeout} -r {snmp_retries} {icmts_ip} 1.3.6.1.4.1.4491.2.1.21.1.4",
+            f"snmpwalk -v 2c -c {icmts_community} -t {snmp_timeout} -r {snmp_retries} {icmts_ip} 1.3.6.1.4.1.4491.2.1.21.1.29.1",
+            f"snmpwalk -v 2c -c {icmts_community} -t {snmp_timeout} -r {snmp_retries} {icmts_ip} 1.3.6.1.4.1.4491.2.1.21.1.30",
+        ]
     
+
     labels = [
         "Flow Stats Table (Entry Qos Service Flow Octets)",
         "Aggregate Service Flow Stats Table", 
         "US Latency Stats Table",
-        "DS Latency Stats Table",
         "Congestion Stats Table",
         "Cadant Map Stats Mib",
         "Map Stats Pages Flows"
     ]
+    if icmts_ip:
+        labels += [
+            "DS Flow Stats Table",
+            "DS Latency Stats Table",
+            "DS Congestion Stats Table",
+        ]
     
     try:
         # Create SSH client
@@ -991,7 +984,7 @@ def generate_latency_report(before_file, after_file, output_file=None, direction
         output_dir = os.path.dirname(after_file) or "."
         dir_name = os.path.basename(os.path.abspath(output_dir))
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_file = os.path.join(output_dir, f"Latency_Bin_Report_{dir_name}_{timestamp}.xlsx")
+        output_file = os.path.join(output_dir, f"SNMP_{direction}_Latency_Report_{dir_name}_{timestamp}.xlsx")
 
     wb = openpyxl.Workbook()
     wb.remove(wb.active)

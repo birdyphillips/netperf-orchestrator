@@ -366,11 +366,18 @@ class ByteBlowerCLI:
         try:
             before_file, after_file = find_snmp_files(snmp_dir)
             if before_file and after_file:
-                result = generate_latency_report(before_file, after_file)
+                # US report (from modem)
+                result = generate_latency_report(before_file, after_file, direction="US")
                 if result:
-                    self.logger.info(f"✓ Latency report: {os.path.basename(result)}")
+                    self.logger.info(f"✓ US Latency report: {os.path.basename(result)}")
                 else:
-                    self.logger.warning("Latency report skipped (no latency data in SNMP)")
+                    self.logger.warning("US Latency report skipped (no US latency data)")
+                # DS report (from iCMTS)
+                result_ds = generate_latency_report(before_file, after_file, direction="DS")
+                if result_ds:
+                    self.logger.info(f"✓ DS Latency report: {os.path.basename(result_ds)}")
+                else:
+                    self.logger.info("DS Latency report skipped (no DS data — expected for vCMTS)")
             else:
                 self.logger.warning("Latency report skipped (SNMP files not found)")
         except Exception as e:
