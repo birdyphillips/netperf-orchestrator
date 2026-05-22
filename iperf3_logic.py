@@ -136,6 +136,10 @@ class IPerf3Logic:
                     f"iperf3-darwin -c {self.client_ip} -p 5201 --dscp 32 -C cubic -t 30 -J > DS_{group_name}_STVA_1TCP_CL.json &",
                     f"iperf3-darwin -c {self.client_ip} -p 5202 -S 0x81 -t 30 -J > DS_{group_name}_STVA_1TCP_LL.json &",
                     "wait"
+                ],
+                "DS_STVA_ECT1": [
+                    f"iperf3-darwin -c {self.client_ip} -p 5202 -S 0x81 -t 30 -J > DS_{group_name}_STVA_ECT1_1TCP_LL.json &",
+                    "wait"
                 ]
             }
             # macOS uses different server ports - add STVA ports
@@ -204,6 +208,10 @@ class IPerf3Logic:
                 "DS_STVA": [
                     f"iperf3 -c {self.client_ip} -p 5201 --dscp 32 -C cubic -t 30 -J > DS_{group_name}_STVA_1TCP_CL.json &",
                     f"iperf3 -c {self.client_ip} -p 5202 -S 0x81 -t 30 -J > DS_{group_name}_STVA_1TCP_LL.json &",
+                    "wait"
+                ],
+                "DS_STVA_ECT1": [
+                    f"iperf3 -c {self.client_ip} -p 5202 -S 0x81 -t 30 -J > DS_{group_name}_STVA_ECT1_1TCP_LL.json &",
                     "wait"
                 ]
             }
