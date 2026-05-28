@@ -44,11 +44,16 @@ try:
 except ImportError:
     EXCEL_AVAILABLE = False
 
-# Bin edges matching latency_calculator.py (16 bins)
-BIN_EDGES_MS = [
+# Bin edges (16 bins) — upstream and downstream differ in bins 13-16
+US_BIN_EDGES_MS = [
     0, 0.05, 0.10, 0.25, 0.50, 1.00, 2.00, 5.00, 10.00,
     20.00, 30.00, 40.00, 50.00, 100.00, 150.00, 200.00, 500.00,
 ]
+DS_BIN_EDGES_MS = [
+    0, 0.05, 0.10, 0.25, 0.50, 1.00, 2.00, 5.00, 10.00,
+    20.00, 30.00, 40.00, 50.00, 60.00, 70.00, 80.00, 500.00,
+]
+BIN_EDGES_MS = US_BIN_EDGES_MS  # default; overridden by direction
 NUM_BINS = len(BIN_EDGES_MS) - 1
 
 # Metrics we collect per service flow
@@ -89,6 +94,7 @@ class CmtsCollector:
         self.broker = broker or config.get('kafka', 'broker', default='65.185.232.139:11203')
         self.topic = topic or config.get('kafka', 'topic', default='cmts_metrics_apc01k1dccc')
         self.direction = direction
+        self.bin_edges = DS_BIN_EDGES_MS if direction == "downstream" else US_BIN_EDGES_MS
         self.enabled = KAFKA_AVAILABLE
 
         if not KAFKA_AVAILABLE:
@@ -349,8 +355,8 @@ class CmtsCollector:
         for i in range(NUM_BINS):
             row = 4 + i
             self._cell(ws, row, 1, i + 1)
-            self._cell(ws, row, 2, BIN_EDGES_MS[i], fill=self._INPUT_FILL, fmt="0.00")
-            self._cell(ws, row, 3, BIN_EDGES_MS[i + 1], fill=self._INPUT_FILL, fmt="0.00")
+            self._cell(ws, row, 2, self.bin_edges[i], fill=self._INPUT_FILL, fmt="0.00")
+            self._cell(ws, row, 3, self.bin_edges[i + 1], fill=self._INPUT_FILL, fmt="0.00")
 
         for i, w in enumerate([8, 18, 18], 1):
             ws.column_dimensions[get_column_letter(i)].width = w
@@ -760,8 +766,7 @@ class CmtsCollector:
                     totals[idx] += int(count)
         return totals
 
-    @staticmethod
-    def _calc_percentile(deltas, percentile):
+    def _calc_percentile(self, deltas, percentile):
         total = sum(deltas)
         if total == 0:
             return 0.0
@@ -771,14 +776,13 @@ class CmtsCollector:
             cumulative += count
             if cumulative >= target:
                 prev_cum = cumulative - count
-                low = BIN_EDGES_MS[i]
-                high = BIN_EDGES_MS[i + 1]
+                low = self.bin_edges[i]
+                high = self.bin_edges[i + 1]
                 denom = count if count > 0 else 1
                 return low + ((target - prev_cum) / denom) * (high - low)
-        return BIN_EDGES_MS[-1]
+        return self.bin_edges[-1]
 
-    @staticmethod
-    def _calc_percentile_avg(deltas, percentile):
+    def _calc_percentile_avg(self, deltas, percentile):
         """AVG method: return the bin midpoint of the first bin where
         cumulative count >= percentile target."""
         total = sum(deltas)
@@ -789,17 +793,16 @@ class CmtsCollector:
         for i, count in enumerate(deltas):
             cumulative += count
             if cumulative >= target:
-                return (BIN_EDGES_MS[i] + BIN_EDGES_MS[i + 1]) / 2
-        return (BIN_EDGES_MS[-2] + BIN_EDGES_MS[-1]) / 2
+                return (self.bin_edges[i] + self.bin_edges[i + 1]) / 2
+        return (self.bin_edges[-2] + self.bin_edges[-1]) / 2
 
-    @staticmethod
-    def _calc_weighted_avg(deltas):
+    def _calc_weighted_avg(self, deltas):
         """Weighted average latency: sum(delta_i × bin_avg_i) / total."""
         total = sum(deltas)
         if total == 0:
             return 0.0
         weighted = sum(
-            deltas[i] * (BIN_EDGES_MS[i] + BIN_EDGES_MS[i + 1]) / 2
+            deltas[i] * (self.bin_edges[i] + self.bin_edges[i + 1]) / 2
             for i in range(NUM_BINS)
         )
         return weighted / total
