@@ -34,17 +34,23 @@ except ImportError:
     CMTS_AVAILABLE = False
 
 class ByteBlowerCLI:
-    def __init__(self):
+    def __init__(self, cmts_type="vcmts"):
         self.logger = Logger("ByteBlowerCLI")
-        # Prompt for CM MAC (downstream CMTS Kafka collector)
-        mac_input = input("Enter CM MAC address (or press Enter to skip CMTS collection): ")
-        self.cm_mac = mac_input.strip() if mac_input.strip() else None
-        if self.cm_mac:
-            from cmts_modem_info import normalize_mac
-            self.cm_mac = normalize_mac(self.cm_mac)
-            self.logger.info(f"Using CM MAC: {self.cm_mac}")
+        self.cmts_type = cmts_type
+        self.logger.info(f"CMTS type: {cmts_type} ({'Kafka for DS latency' if cmts_type == 'vcmts' else 'SNMP for DS latency'})")
+
+        # Prompt for CM MAC (downstream CMTS Kafka collector — vcmts only)
+        if cmts_type == "vcmts":
+            mac_input = input("Enter CM MAC address (or press Enter to skip CMTS collection): ")
+            self.cm_mac = mac_input.strip() if mac_input.strip() else None
+            if self.cm_mac:
+                from cmts_modem_info import normalize_mac
+                self.cm_mac = normalize_mac(self.cm_mac)
+                self.logger.info(f"Using CM MAC: {self.cm_mac}")
+            else:
+                self.logger.warning("No CM MAC — downstream CMTS Kafka collection will be skipped")
         else:
-            self.logger.warning("No CM MAC — downstream CMTS collection will be skipped")
+            self.cm_mac = None
         
         # Prompt for modem IPv6 address (upstream SNMP collection)
         user_input = input("Enter modem IPv6 address (or press Enter to skip SNMP): ")
@@ -58,7 +64,11 @@ class ByteBlowerCLI:
         self.cmts_collector = None
     
     def start_cmts_collection(self, direction="downstream"):
-        """Start CMTS Kafka metrics collection in background. Non-blocking — test runs regardless."""
+        """Start CMTS Kafka metrics collection in background.
+        Only used for vCMTS downstream. For iCMTS downstream, SNMP handles it."""
+        if self.cmts_type == "icmts" and direction == "downstream":
+            self.logger.info("iCMTS mode — DS latency collected via SNMP (skipping Kafka)")
+            return False
         if not self.cm_mac:
             return False
         if not CMTS_AVAILABLE:
@@ -227,7 +237,10 @@ class ByteBlowerCLI:
                 self.logger.info(f"SpeedTest mode - clients: {speedtest_clients}")
                 st = SpeedTestLogic(speedtest_clients, test_group_name)
                 self.output_dir = test_output_dir
-                success = st.run_iterations(iterations)
+                if not st.run_iterations(iterations):
+                    self.logger.error("SpeedTest failed — stopping test")
+                    return False, []
+                success = True
             elif packetstorm_only:
                 self.logger.info(f"PacketStorm only mode - config: {rtt_file}")
                 ps = PacketStormLogic(rtt_file)
@@ -248,7 +261,9 @@ class ByteBlowerCLI:
                     self.start_cmts_collection(direction=cmts_dir)
                     self.wait_for_cmts_poll()
                     if not bb.run_scenario(i, iterations, test_output_dir):
-                        success = False
+                        self.logger.error("ByteBlower failed — stopping test")
+                        self.stop_cmts_collection(snmp_dir, scenario_name)
+                        return False, []
                     self.wait_for_cmts_poll()
                     self.stop_cmts_collection(snmp_dir, scenario_name)
                     self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", snmp_dir, "")
@@ -280,7 +295,10 @@ class ByteBlowerCLI:
                     self.start_cmts_collection(direction=cmts_dir)
                     self.wait_for_cmts_poll()
                     if not iperf3.run_scenario(i, iterations):
-                        success = False
+                        self.logger.error("iPerf3 failed — stopping test")
+                        self.stop_cmts_collection(snmp_dir, scenario_name)
+                        iperf3.stop_iperf3_servers()
+                        return False, []
                     self.wait_for_cmts_poll()
                     self.stop_cmts_collection(snmp_dir, scenario_name)
                     self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", snmp_dir, "")
@@ -315,7 +333,11 @@ class ByteBlowerCLI:
                             self.start_cmts_collection(direction=cmts_dir)
                             self.wait_for_cmts_poll()
                             if not iperf3.run_scenario(i, iterations):
-                                success = False
+                                self.logger.error("iPerf3 failed — stopping test")
+                                self.stop_cmts_collection(snmp_dir, scenario_name)
+                                iperf3.stop_iperf3_servers()
+                                ps.stop_config()
+                                return False, []
                             self.wait_for_cmts_poll()
                             self.stop_cmts_collection(snmp_dir, scenario_name)
                             self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", snmp_dir, "")
@@ -338,7 +360,10 @@ class ByteBlowerCLI:
                             self.start_cmts_collection(direction=cmts_dir)
                             self.wait_for_cmts_poll()
                             if not bb.run_scenario(i, iterations, test_output_dir):
-                                success = False
+                                self.logger.error("ByteBlower failed — stopping test")
+                                self.stop_cmts_collection(snmp_dir, scenario_name)
+                                ps.stop_config()
+                                return False, []
                             self.wait_for_cmts_poll()
                             self.stop_cmts_collection(snmp_dir, scenario_name)
                             self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", snmp_dir, "")
@@ -366,18 +391,21 @@ class ByteBlowerCLI:
         try:
             before_file, after_file = find_snmp_files(snmp_dir)
             if before_file and after_file:
-                # US report (from modem)
+                # US report (from modem) — always generated
                 result = generate_latency_report(before_file, after_file, direction="US")
                 if result:
                     self.logger.info(f"✓ US Latency report: {os.path.basename(result)}")
                 else:
-                    self.logger.warning("US Latency report skipped (no US latency data)")
-                # DS report (from iCMTS)
-                result_ds = generate_latency_report(before_file, after_file, direction="DS")
-                if result_ds:
-                    self.logger.info(f"✓ DS Latency report: {os.path.basename(result_ds)}")
+                    self.logger.info("US Latency report skipped (no US latency OIDs)")
+                # DS report (from iCMTS SNMP) — only for iCMTS mode
+                if self.cmts_type == "icmts":
+                    result_ds = generate_latency_report(before_file, after_file, direction="DS")
+                    if result_ds:
+                        self.logger.info(f"✓ DS Latency report (iCMTS SNMP): {os.path.basename(result_ds)}")
+                    else:
+                        self.logger.info("DS Latency report skipped (no DS latency OIDs found)")
                 else:
-                    self.logger.info("DS Latency report skipped (no DS data — expected for vCMTS)")
+                    self.logger.info("DS latency report from Kafka (vCMTS mode) — see CMTS_Latency_Report_*.xlsx")
             else:
                 self.logger.warning("Latency report skipped (SNMP files not found)")
         except Exception as e:
@@ -413,6 +441,9 @@ class ByteBlowerCLI:
 
 def main():
     parser = argparse.ArgumentParser(description='ByteBlower, PacketStorm, iPerf3, and SpeedTest CLI Tool')
+    # Required: CMTS type must be specified first
+    parser.add_argument('--cmts-type', choices=['vcmts', 'icmts'], required=True, help='CMTS type: vcmts (Kafka for DS latency) or icmts (SNMP for DS latency)')
+    # Traffic generation mode
     parser.add_argument('-byteblower', action='store_true', help='Enable ByteBlower mode')
     parser.add_argument('--bbp', required=False, help='ByteBlower .bbp file path (e.g., bb_flows/US_Classic.bbp)')
     parser.add_argument('--scenario', required=False, help='Scenario name (e.g., US_Classic_Only)')
@@ -442,7 +473,7 @@ def main():
     bb_file = args.bbp or 'default.bbp'
     speedtest_clients = [c.strip() for c in args.client.split(',')] if getattr(args, 'speedtest', False) else None
     
-    tool = ByteBlowerCLI()
+    tool = ByteBlowerCLI(cmts_type=args.cmts_type)
     return tool.execute(
         bb_file, 
         args.rtt or 'default.json', 

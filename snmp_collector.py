@@ -343,24 +343,33 @@ def parse_snmp_timestamp(filepath):
     return None
 
 
-def parse_flow_stats(filepath):
-    """Parse Flow Stats Table for packets, octets, and dropped packets per SFID."""
+def parse_flow_stats(filepath, direction="US"):
+    """Parse Flow Stats Table for packets, octets, and dropped packets per SFID.
+    direction: 'US' reads modem flow stats, 'DS' reads iCMTS DS flow stats.
+    """
     with open(filepath, "r") as f:
         content = f.read()
-    match = re.search(r"Flow Stats Table.*?\n=+\n(.*?)(?:\n\n|\Z)", content, re.DOTALL)
+    if direction == "DS":
+        pattern = r"DS Flow Stats Table\n=+\n(.*?)(?:\n\n|\Z)"
+    else:
+        # Match first "Flow Stats Table" (modem) but not "DS Flow Stats Table"
+        pattern = r"(?<!DS )Flow Stats Table.*?\n=+\n(.*?)(?:\n\n|\Z)"
+    match = re.search(pattern, content, re.DOTALL)
     if not match:
         return {}
     section = match.group(1)
     stats = {}
     sub_map = {"1": "packets", "2": "octets", "8": "dropped"}
     for line in section.splitlines():
-        m = re.search(r"\.4\.1\.(\d+)\.2\.(\d+)\s*=\s*(?:Counter64|Counter32):\s*(\d+)", line)
+        # OID: .4.1.<sub_oid>.<ifIndex>.<sfid> = Counter64: <value>
+        m = re.search(r'\.4\.1\.(\d+)\.(\d+)\.(\d+)\s*=\s*(?:Counter64|Counter32):\s*(\d+)', line)
         if m:
-            sub_oid, sfid_str, val_str = m.group(1), m.group(2), m.group(3)
+            sub_oid = m.group(1)
+            sfid = int(m.group(3))
+            val = int(m.group(4))
             if sub_oid in sub_map:
-                sfid = int(sfid_str)
                 stats.setdefault(sfid, {"packets": 0, "octets": 0, "dropped": 0})
-                stats[sfid][sub_map[sub_oid]] = int(val_str)
+                stats[sfid][sub_map[sub_oid]] = val
     return stats
 
 
@@ -375,10 +384,10 @@ def _infer_duration(filepath):
     return None
 
 
-def compute_throughput_and_loss(before_file, after_file, duration_s=None):
+def compute_throughput_and_loss(before_file, after_file, duration_s=None, direction="US"):
     """Compute per-SFID throughput (Mbps) and packet loss from flow stats deltas."""
-    fs_before = parse_flow_stats(before_file)
-    fs_after = parse_flow_stats(after_file)
+    fs_before = parse_flow_stats(before_file, direction)
+    fs_after = parse_flow_stats(after_file, direction)
     if not fs_before or not fs_after:
         return {}
     if duration_s is None:
@@ -410,6 +419,8 @@ def compute_throughput_and_loss(before_file, after_file, duration_s=None):
 def parse_latency_bins(filepath, direction="US"):
     """Parse Latency Stats Table from an SNMP text file.
     direction: 'US' matches .29.2, 'DS' matches .29.1
+    OID format: .29.<dir>.1.<sub_oid>.<ifIndex>.<sfid>
+    sub_oid 3-18 = bin counts
     """
     with open(filepath, "r") as f:
         content = f.read()
@@ -425,12 +436,14 @@ def parse_latency_bins(filepath, direction="US"):
     section = match.group(1)
     bins = {}
     for line in section.splitlines():
-        m = re.search(r'\.29\.' + oid_dir + r'\.1\.(\d+)\.2\.(\d+)\s*=\s*(?:Counter64|Gauge32):\s*(\d+)', line)
+        m = re.search(r'\.29\.' + oid_dir + r'\.1\.(\d+)\.(\d+)\.(\d+)\s*=\s*(?:Counter64|Gauge32):\s*(\d+)', line)
         if m:
             sub_oid = int(m.group(1))
-            sfid = int(m.group(2))
-            value = int(m.group(3))
-            bins.setdefault(sfid, {})[sub_oid] = value
+            # m.group(2) is ifIndex, m.group(3) is sfid
+            sfid = int(m.group(3))
+            value = int(m.group(4))
+            if 3 <= sub_oid <= 18:
+                bins.setdefault(sfid, {})[sub_oid] = value
     return bins
 
 
@@ -709,25 +722,31 @@ def write_sf_sheet(wb, sheet_name, sf_data, tp_data=None, bin_edges=None, direct
         ws.column_dimensions[get_column_letter(i)].width = w
 
 
-def parse_congestion_stats(filepath):
+def parse_congestion_stats(filepath, direction="US"):
     """Parse Congestion Stats Table for AQM drops, congestion marked, sanctioned per SFID.
-    OID .30.1.1 = AQM dropped, .30.1.3 = congestion marked, .30.1.4 = sanctioned."""
+    OID .30.1.<sub_oid>.<ifIndex>.<sfid>
+    sub_oid: 1=AQM dropped, 3=congestion marked, 4=sanctioned."""
     with open(filepath, "r") as f:
         content = f.read()
-    match = re.search(r"Congestion Stats Table\n=+\n(.*?)(?:\n\n|\Z)", content, re.DOTALL)
+    if direction == "DS":
+        pattern = r"DS Congestion Stats Table\n=+\n(.*?)(?:\n\n|\Z)"
+    else:
+        pattern = r"(?<!DS )Congestion Stats Table\n=+\n(.*?)(?:\n\n|\Z)"
+    match = re.search(pattern, content, re.DOTALL)
     if not match:
         return {}
     section = match.group(1)
     stats = {}
     sub_map = {"1": "aqm_drops", "3": "congestion_marked", "4": "sanctioned"}
     for line in section.splitlines():
-        m = re.search(r"\.30\.1\.(\d+)\.2\.(\d+)\s*=\s*Counter64:\s*(\d+)", line)
+        m = re.search(r'\.30\.1\.(\d+)\.(\d+)\.(\d+)\s*=\s*Counter64:\s*(\d+)', line)
         if m:
-            sub_oid, sfid_str, val_str = m.group(1), m.group(2), m.group(3)
+            sub_oid = m.group(1)
+            sfid = int(m.group(3))
+            val = int(m.group(4))
             if sub_oid in sub_map:
-                sfid = int(sfid_str)
                 stats.setdefault(sfid, {"aqm_drops": 0, "congestion_marked": 0, "sanctioned": 0})
-                stats[sfid][sub_map[sub_oid]] = int(val_str)
+                stats[sfid][sub_map[sub_oid]] = val
     return stats
 
 
@@ -971,14 +990,26 @@ def generate_latency_report(before_file, after_file, output_file=None, direction
     all_deltas = compute_deltas(before_bins, after_bins)
 
     if not all_deltas:
-        print("WARNING: All latency bin deltas are zero \u2014 no traffic detected.")
-        return None
+        # Still generate report with zero deltas — include raw before/after data
+        print("INFO: All latency bin deltas are zero — generating report with raw data anyway.")
+        print("      (If DS direction, this is expected for vCMTS — DS latency comes from Kafka.)")
+        # Build all_deltas with zero deltas so the report still has structure
+        all_sfids = set(before_bins) & set(after_bins)
+        for sfid in sorted(all_sfids):
+            before_vals, after_vals, deltas = [], [], []
+            for sub in range(3, 3 + NUM_BINS):
+                bv = before_bins[sfid].get(sub, 0)
+                av = after_bins[sfid].get(sub, 0)
+                before_vals.append(bv)
+                after_vals.append(av)
+                deltas.append(max(av - bv, 0))
+            all_deltas[sfid] = {"before": before_vals, "after": after_vals, "deltas": deltas}
 
-    tp_stats = compute_throughput_and_loss(before_file, after_file)
-    fs_before = parse_flow_stats(before_file)
-    fs_after = parse_flow_stats(after_file)
-    cong_before = parse_congestion_stats(before_file)
-    cong_after = parse_congestion_stats(after_file)
+    tp_stats = compute_throughput_and_loss(before_file, after_file, direction=direction)
+    fs_before = parse_flow_stats(before_file, direction)
+    fs_after = parse_flow_stats(after_file, direction)
+    cong_before = parse_congestion_stats(before_file, direction)
+    cong_after = parse_congestion_stats(after_file, direction)
 
     if output_file is None:
         output_dir = os.path.dirname(after_file) or "."

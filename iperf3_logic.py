@@ -147,6 +147,14 @@ class IPerf3Logic:
                     f"iperf3-darwin -c {self.client_ip} -p 5201 -C cubic -t 60 {json_ext} > DS_{group_name}_STVA_ECT1_1TCP_CL.{file_ext} &",
                     f"iperf3-darwin -c {self.client_ip} -p 5202 -S 0x01 -t 60 {json_ext} > DS_{group_name}_STVA_ECT1_1TCP_LL.{file_ext} &",
                     "wait"
+                ],
+                "US_1000_Packets": [
+                    f"iperf3-darwin -c {self.server_ip} -u -l 1400 -n 1400000 -b 10M -p 9202 {json_ext} > US_{group_name}_1000pkt_UDP.{file_ext} &",
+                    "wait"
+                ],
+                "DS_1000_Packets": [
+                    f"iperf3-darwin -c {self.client_ip} -u -l 1400 -n 1400000 -b 10M -p 9202 {json_ext} > DS_{group_name}_1000pkt_UDP.{file_ext} &",
+                    "wait"
                 ]
             }
             # macOS uses different server ports - add STVA ports
@@ -220,6 +228,14 @@ class IPerf3Logic:
                 "DS_STVA_ECT1": [
                     f"iperf3 -c {self.client_ip} -p 5201 -C cubic -t 60 {json_ext} > DS_{group_name}_STVA_ECT1_1TCP_CL.{file_ext} &",
                     f"iperf3 -c {self.client_ip} -p 5202 -S 0x01 -t 60 {json_ext} > DS_{group_name}_STVA_ECT1_1TCP_LL.{file_ext} &",
+                    "wait"
+                ],
+                "US_1000_Packets": [
+                    f"iperf3 -c {self.server_ip} -u -l 1400 -n 1400000 -b 10M -p 9202 {json_ext} > US_{group_name}_1000pkt_UDP.{file_ext} &",
+                    "wait"
+                ],
+                "DS_1000_Packets": [
+                    f"iperf3 -c {self.client_ip} -u -l 1400 -n 1400000 -b 10M -p 9202 {json_ext} > DS_{group_name}_1000pkt_UDP.{file_ext} &",
                     "wait"
                 ]
             }

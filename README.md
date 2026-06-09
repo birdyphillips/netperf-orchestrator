@@ -76,11 +76,14 @@ For complete setup instructions including ByteBlower, iPerf3, SpeedTest, SSH key
 Use the `netperf` wrapper script to ensure all dependencies are available:
 
 ```bash
-# Single iteration (default)
-./netperf -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
+# Single iteration — vCMTS (Kafka for DS latency)
+./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
+
+# Single iteration — iCMTS (SNMP for DS latency)
+./netperf --cmts-type icmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
 
 # With RTT configuration
-./netperf -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
+./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
 ```
 
 ### Using Python Directly
@@ -88,61 +91,70 @@ Alternatively, run with the venv Python:
 
 ```bash
 source venv/bin/activate
-python3 netperf_orchestrator.py -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
+python3 netperf_orchestrator.py --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
 ```
 
 ### Run All Service Class Name (SCN) RTT Tests
 ```bash
-./netperf -byteblower --bbp Port_13_example.bbp --scenario US_Classic_Only,DS_Classic_Only,US_Combined,DS_Combined,US_LL_Only,DS_LL_Only -test-group-name TEST_SCN_RTT -packetstorm --rtt vcmts10ms.json,vcmts30ms.json,vcmts50ms.json -iteration 1
+./netperf --cmts-type vcmts -byteblower --bbp Port_16_example.bbp --scenario US_Classic_Only,DS_Classic_Only,US_Combined,DS_Combined -test-group-name HSI008_AQM -iteration 1
+./netperf --cmts-type vcmts -byteblower --bbp Port_16_example.bbp --scenario US_Classic_Only,DS_Classic_Only,US_Combined,DS_Combined,US_LL_Only,DS_LL_Only -test-group-name TEST_SCN_RTT -packetstorm --rtt vcmts10ms.json,vcmts30ms.json,vcmts50ms.json -iteration 1
 ```
 
 ## Usage Examples
 
 ### ByteBlower Only
 ```bash
-# Single iteration (saves to main folder)
-./netperf -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
+# Single iteration — vCMTS
+./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
 
-# Multiple iterations (creates iteration subfolders)
-./netperf -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0 -iteration 3
+# Single iteration — iCMTS
+./netperf --cmts-type icmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
 
-# All ByteBlower scenarios
-./netperf -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
-./netperf -byteblower --bbp Port_20_example.bbp --scenario DS_Classic_Only -test-group-name TEST_SCN_RTT_0
-./netperf -byteblower --bbp Port_20_example.bbp --scenario US_Combined -test-group-name TEST_SCN_RTT_0
-./netperf -byteblower --bbp Port_20_example.bbp --scenario DS_Combined -test-group-name TEST_SCN_RTT_0
-./netperf -byteblower --bbp Port_20_example.bbp --scenario US_LL_Only -test-group-name TEST_SCN_RTT_0
-./netperf -byteblower --bbp Port_20_example.bbp --scenario DS_LL_Only -test-group-name TEST_SCN_RTT_0
+# Multiple iterations
+./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0 -iteration 3
+
+# All ByteBlower scenarios (vCMTS)
+./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
+./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario DS_Classic_Only -test-group-name TEST_SCN_RTT_0
+./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Combined -test-group-name TEST_SCN_RTT_0
+./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario DS_Combined -test-group-name TEST_SCN_RTT_0
+./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_LL_Only -test-group-name TEST_SCN_RTT_0
+./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario DS_LL_Only -test-group-name TEST_SCN_RTT_0
 ```
 
 ### ByteBlower + PacketStorm
 ```bash
-# With RTT configuration
-./netperf -byteblower --bbp HSI --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
+# With RTT configuration (vCMTS)
+./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
 
-# All RTT values
-./netperf -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
-./netperf -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_20 -packetstorm --rtt vcmts20ms.json -iteration 1
-./netperf -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_30 -packetstorm --rtt vcmts30ms.json -iteration 1
-./netperf -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_40 -packetstorm --rtt vcmts40ms.json -iteration 1
-./netperf -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt vcmts50ms.json -iteration 1
+# All RTT values (vCMTS)
+./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
+./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_20 -packetstorm --rtt vcmts20ms.json -iteration 1
+./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_30 -packetstorm --rtt vcmts30ms.json -iteration 1
+./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_40 -packetstorm --rtt vcmts40ms.json -iteration 1
+./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt vcmts50ms.json -iteration 1
+
+# All RTT values (iCMTS)
+./netperf --cmts-type icmts -byteblower --bbp Port_7_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt icmts10ms.json -iteration 1
+./netperf --cmts-type icmts -byteblower --bbp Port_7_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_30 -packetstorm --rtt icmts30ms.json -iteration 1
+./netperf --cmts-type icmts -byteblower --bbp Port_7_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt icmts50ms.json -iteration 1
 ```
 
 ### iPerf3 Linux Client
 ```bash
 # TXT output (default)
-./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN
 
 # JSON output
-./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0 --output json
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0 --output json
 
 # All iPerf3 scenarios (TXT)
-./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
-./netperf -iperf3 --clientIP <CLIENT_IP> --scenario DS_Classic_Only -test-group-name TEST_SCN_RTT_0
-./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_Combined -test-group-name TEST_SCN_RTT_0
-./netperf -iperf3 --clientIP <CLIENT_IP> --scenario DS_Combined -test-group-name TEST_SCN_RTT_0
-./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_LL_Only -test-group-name TEST_SCN_RTT_0
-./netperf -iperf3 --clientIP <CLIENT_IP> --scenario DS_LL_Only -test-group-name TEST_SCN_RTT_0
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario DS_Classic_Only -test-group-name TEST_SCN_RTT_0
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Combined -test-group-name TEST_SCN_RTT_0
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario DS_Combined -test-group-name TEST_SCN_RTT_0
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_LL_Only -test-group-name TEST_SCN_RTT_0
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario DS_LL_Only -test-group-name TEST_SCN_RTT_0
 
 # All iPerf3 scenarios (JSON)
 ./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0 --output json
@@ -156,10 +168,10 @@ python3 netperf_orchestrator.py -byteblower --bbp Port_20_example.bbp --scenario
 ### iPerf3 macOS Client (Apple QUIC/L4S)
 ```bash
 # JSON output (default for macOS)
-./netperf -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN
+./netperf --cmts-type vcmts -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN
 
 # TXT output
-./netperf -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN --output txt
+./netperf --cmts-type vcmts -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN --output txt
 
 # All iPerf3-darwin scenarios (JSON)
 ./netperf -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN
@@ -178,47 +190,56 @@ python3 netperf_orchestrator.py -byteblower --bbp Port_20_example.bbp --scenario
 ./netperf -iperf3-darwin --clientIP <CLIENT_IP> --scenario DS_LL_Only -test-group-name TEST_SCN --output txt
 ```
 
+### iPerf3 1000-Packet Count Test (AQM Validation)
+```bash
+# Upstream — send exactly 1000 UDP packets (1400 byte payload)
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_1000_Packets -test-group-name AQM_iPerf3_packet_count_test
+
+# Downstream — send exactly 1000 UDP packets (1400 byte payload)
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario DS_1000_Packets -test-group-name AQM_iPerf3_packet_count_test
+```
+
 ### iPerf3 STVA (Set Top Video Analyzer)
 ```bash
 # DS_STVA with 3 iterations
-./netperf -iperf3 --clientIP 71.85.92.213 --scenario DS_STVA -test-group-name STVA_TEST -iteration 3
+./netperf --cmts-type vcmts -iperf3 --clientIP 71.85.92.213 --scenario DS_STVA -test-group-name STVA_TEST -iteration 3
 ```
 
 ### iPerf3 + PacketStorm
 ```bash
 # TXT output with RTT (default)
-./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt vcmts40ms.json -iteration 1
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt vcmts40ms.json -iteration 1
 
 # JSON output with RTT
-./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt vcmts40ms.json --output json -iteration 1
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt vcmts40ms.json --output json -iteration 1
 
 # All RTT values with iPerf3
-./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
-./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_20 -packetstorm --rtt vcmts20ms.json -iteration 1
-./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_30 -packetstorm --rtt vcmts30ms.json -iteration 1
-./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_40 -packetstorm --rtt vcmts40ms.json -iteration 1
-./netperf -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt vcmts50ms.json -iteration 1
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_20 -packetstorm --rtt vcmts20ms.json -iteration 1
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_30 -packetstorm --rtt vcmts30ms.json -iteration 1
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_40 -packetstorm --rtt vcmts40ms.json -iteration 1
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt vcmts50ms.json -iteration 1
 ```
 
 ### PacketStorm Only
 ```bash
 # Start and stop RTT configuration
-./netperf -packetstorm --rtt vcmts10ms.json
-./netperf -packetstorm --rtt vcmts20ms.json
-./netperf -packetstorm --rtt vcmts30ms.json
-./netperf -packetstorm --rtt vcmts40ms.json
-./netperf -packetstorm --rtt vcmts50ms.json
+./netperf --cmts-type vcmts -packetstorm --rtt vcmts10ms.json
+./netperf --cmts-type vcmts -packetstorm --rtt vcmts20ms.json
+./netperf --cmts-type vcmts -packetstorm --rtt vcmts30ms.json
+./netperf --cmts-type vcmts -packetstorm --rtt vcmts40ms.json
+./netperf --cmts-type vcmts -packetstorm --rtt vcmts50ms.json
 ```
 
 ### SpeedTest
 ```bash
 # Run on all clients (linux, macos, nvidia)
-./netperf -speedtest -test-group-name TEST_SCN_Ookla_Speedtest
+./netperf --cmts-type vcmts -speedtest -test-group-name TEST_SCN_Ookla_Speedtest
 
 # Run on specific clients
-./netperf -speedtest --client linux -test-group-name TEST_SCN_Ookla_Speedtest
-./netperf -speedtest --client linux,macos -test-group-name TEST_SCN_Ookla_Speedtest
-./netperf -speedtest --client nvidia -test-group-name TEST_SCN_Ookla_Speedtest
+./netperf --cmts-type vcmts -speedtest --client linux -test-group-name TEST_SCN_Ookla_Speedtest
+./netperf --cmts-type vcmts -speedtest --client linux,macos -test-group-name TEST_SCN_Ookla_Speedtest
+./netperf --cmts-type vcmts -speedtest --client nvidia -test-group-name TEST_SCN_Ookla_Speedtest
 ```
 
 ## Workflow
@@ -308,6 +329,7 @@ python3 test_packetstorm_api.py stop
 
 ## Arguments
 
+- `--cmts-type`: **REQUIRED** — CMTS type: `vcmts` (Kafka for DS latency) or `icmts` (SNMP for DS latency)
 - `-byteblower`: Enable ByteBlower mode
 - `--bbp`: .bbp filename from bb_flows/ directory (required with -byteblower)
 - `--scenario`: Scenario name (required with -byteblower or -iperf3)
@@ -330,11 +352,13 @@ All tools support the same 6 test scenarios:
 - **US_Classic_Only**: Upstream Classic service flow only (4 TCP + 1 UDP)
 - **US_Combined**: Upstream Classic + Low Latency combined (4 TCP Classic + 1 TCP LL + 1 UDP Classic + 1 UDP LL)
 - **US_LL_Only**: Upstream Low Latency service flow only (1 TCP + 1 UDP with DSCP 45)
+- **US_1000_Packets**: Upstream exactly 1000 UDP packets (1400B payload, 10Mbps rate)
 
 ### Downstream Tests  
 - **DS_Classic_Only**: Downstream Classic service flow only (4 TCP + 1 UDP)
 - **DS_Combined**: Downstream Classic + Low Latency combined (4 TCP Classic + 1 TCP LL + 1 UDP Classic + 1 UDP LL)
 - **DS_LL_Only**: Downstream Low Latency service flow only (1 TCP + 1 UDP with DSCP 45)
+- **DS_1000_Packets**: Downstream exactly 1000 UDP packets (1400B payload, 10Mbps rate)
 
 ## Linux iPerf3 Integration
 
@@ -627,10 +651,11 @@ netperf-orchestrator/
 
 ### Latency Data Sources
 
-| Direction | Source | Collector | Report |
-|-----------|--------|-----------|--------|
-| Upstream | SNMP (before/after) | `snmp_collector.py` | `Latency_Bin_Report_*.xlsx` |
-| Downstream | Kafka real-time stream | `cmts_collector.py` | `CMTS_Latency_Report_*.xlsx` |
+| Direction | CMTS Type | Source | Collector | Report |
+|-----------|-----------|--------|-----------|--------|
+| Upstream | Both | SNMP (before/after) | `snmp_collector.py` | `SNMP_US_Latency_Report_*.xlsx` |
+| Downstream | vCMTS | Kafka real-time stream | `cmts_collector.py` | `CMTS_Latency_Report_*.xlsx` |
+| Downstream | iCMTS | SNMP (before/after) | `snmp_collector.py` | `SNMP_DS_Latency_Report_*.xlsx` |
 
 The CMTS Kafka collector captures Prometheus-format metrics from the Harmonic vCMTS telemetry stream every 30 seconds, including:
 - `dp_flow_QueueLatencyAvgUsec` / `dp_flow_QueueLatencyMaxUsec` — average and max queue latency

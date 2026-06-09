@@ -114,6 +114,8 @@ class CmtsCollector:
         self.samples = defaultdict(list)
         # Bin counts per sfIndex per timestamp: {(sfIndex, timestamp): {bin_num: count}}
         self.bin_snapshots = defaultdict(lambda: defaultdict(int))
+        # Raw Kafka messages matching our MAC for debugging
+        self._raw_messages = []
         self._started_at = None
         self._stopped_at = None
 
@@ -133,6 +135,7 @@ class CmtsCollector:
         self._poll_count = 0
         self.samples.clear()
         self.bin_snapshots.clear()
+        self._raw_messages.clear()
         self._started_at = time.time()
         self._thread = threading.Thread(target=self._consume_loop, daemon=True)
         self._thread.start()
@@ -221,6 +224,9 @@ class CmtsCollector:
         if labels.get('dir', '') != self.direction:
             return
 
+        # Store raw message for debugging
+        self._raw_messages.append(line)
+
         sf_index = labels.get('sfIndex', '0')
         value = float(value_str)
         ts = int(ts_str)
@@ -307,7 +313,26 @@ class CmtsCollector:
 
         wb.save(filename)
         self.logger.info(f"Report saved: {filename}")
+
+        # Write raw Kafka messages to txt file for verification
+        self._write_raw_messages(output_dir, test_name, timestamp)
+
         return filename
+
+    def _write_raw_messages(self, output_dir, test_name, timestamp):
+        """Write raw Kafka messages to a txt file for parsing verification."""
+        if not self._raw_messages:
+            self.logger.info("No raw Kafka messages to write")
+            return
+        raw_file = os.path.join(output_dir, f"Kafka_Raw_Messages_{test_name}_{timestamp}.txt")
+        with open(raw_file, 'w') as f:
+            f.write(f"# Raw Kafka messages for MAC: {self.mac_colon} direction: {self.direction}\n")
+            f.write(f"# Collected: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"# Total messages: {len(self._raw_messages)}\n")
+            f.write(f"# {'='*80}\n")
+            for msg in self._raw_messages:
+                f.write(msg + '\n')
+        self.logger.info(f"Raw Kafka messages saved: {os.path.basename(raw_file)} ({len(self._raw_messages)} lines)")
 
     # ------------------------------------------------------------------
     # Excel helpers
