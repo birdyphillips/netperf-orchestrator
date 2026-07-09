@@ -430,12 +430,15 @@ class CmtsCollector:
             total_octet_delta = sum(int(r["delta"]) for r in all_intervals)
             total_pkt_delta = self._get_total_pkt_delta(sf)
 
-            # Avg throughput: total octets / known test duration
+            # Detect polling interval and calculate throughput accordingly
+            poll_interval = self._get_polling_interval_s()
             avg_throughput = (total_octet_delta * 8) / (test_duration_s * 1_000_000) if test_duration_s > 0 else 0
 
-            # Peak throughput: highest single-interval rate, or avg if interval >= test duration
-            peak_throughput = max((r["rate_mbps"] for r in all_intervals), default=0)
-            if peak_throughput < avg_throughput:
+            if poll_interval < test_duration_s:
+                # Polling faster than test — per-interval peak is valid
+                peak_throughput = max((r["rate_mbps"] for r in all_intervals), default=0)
+            else:
+                # Polling >= test duration — per-interval rates are diluted
                 peak_throughput = avg_throughput
 
             p50 = self._calc_percentile(bin_deltas, 0.50)
@@ -473,12 +476,14 @@ class CmtsCollector:
         sum_avg = 0
         sum_pkt_delta = 0
         sum_octet_delta = 0
+        poll_interval = self._get_polling_interval_s()
         for sf in sf_indices:
             ai = self._get_all_intervals(sf)
             sf_octet_delta = sum(int(r["delta"]) for r in ai)
             sf_avg = (sf_octet_delta * 8) / (test_duration_s * 1_000_000) if test_duration_s > 0 else 0
-            sf_peak = max((r["rate_mbps"] for r in ai), default=0)
-            if sf_peak < sf_avg:
+            if poll_interval < test_duration_s:
+                sf_peak = max((r["rate_mbps"] for r in ai), default=0)
+            else:
                 sf_peak = sf_avg
             sum_peak += sf_peak
             sum_avg += sf_avg
@@ -670,8 +675,10 @@ class CmtsCollector:
             # SF total row with peak and average
             sf_octet_total = sum(int(r["delta"]) for r in all_rows)
             sf_avg_rate = (sf_octet_total * 8) / (test_duration_s * 1_000_000) if test_duration_s > 0 else 0
-            sf_peak_rate = max(r["rate_mbps"] for r in all_rows)
-            if sf_peak_rate < sf_avg_rate:
+            poll_interval = self._get_polling_interval_s()
+            if poll_interval < test_duration_s:
+                sf_peak_rate = max(r["rate_mbps"] for r in all_rows)
+            else:
                 sf_peak_rate = sf_avg_rate
             self._cell(ws, row, 1, f"sfIndex {sf}", font=self._BOLD)
             self._cell(ws, row, 5, "TOTAL", font=self._BOLD)
@@ -728,6 +735,14 @@ class CmtsCollector:
 
         for i, w in enumerate([14, 12, 12, 40, 20], 1):
             ws.column_dimensions[get_column_letter(i)].width = w
+
+    def _get_polling_interval_s(self):
+        """Detect the polling interval from Kafka timestamps."""
+        ts_list = sorted(self._seen_timestamps)
+        if len(ts_list) < 2:
+            return 60.0  # default assumption
+        gaps = [(ts_list[i] - ts_list[i-1]) / 1000.0 for i in range(1, len(ts_list))]
+        return round(sum(gaps) / len(gaps), 1)
 
     def _get_all_intervals(self, sf_index):
         """Build all consecutive interval deltas for snmp_docsQosServiceFlowOctets.
