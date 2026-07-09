@@ -274,7 +274,7 @@ class CmtsCollector:
     # Report generation
     # ------------------------------------------------------------------
 
-    def generate_report(self, output_dir, test_name="CMTS"):
+    def generate_report(self, output_dir, test_name="CMTS", test_duration_s=60):
         if not EXCEL_AVAILABLE:
             self.logger.warning("openpyxl not available — skipping Excel report")
             return None
@@ -302,10 +302,10 @@ class CmtsCollector:
         self._write_timeseries(wb)
 
         # Summary sheet (tab 2)
-        self._write_summary(wb, sorted(sf_indices))
+        self._write_summary(wb, sorted(sf_indices), test_duration_s)
 
         # Throughput / peak window sheet (tab 3)
-        self._write_peak_window(wb, sorted(sf_indices))
+        self._write_peak_window(wb, sorted(sf_indices), test_duration_s)
 
         # Per-SF sheets
         for sf in sorted(sf_indices):
@@ -386,7 +386,7 @@ class CmtsCollector:
         for i, w in enumerate([8, 18, 18], 1):
             ws.column_dimensions[get_column_letter(i)].width = w
 
-    def _write_summary(self, wb, sf_indices):
+    def _write_summary(self, wb, sf_indices, test_duration_s=60):
         ws = wb.create_sheet(title="Summary")
         ws.sheet_properties.tabColor = "4472C4"
 
@@ -430,14 +430,13 @@ class CmtsCollector:
             total_octet_delta = sum(int(r["delta"]) for r in all_intervals)
             total_pkt_delta = self._get_total_pkt_delta(sf)
 
-            # Peak throughput from highest single interval
-            peak_throughput = max((r["rate_mbps"] for r in all_intervals), default=0)
+            # Avg throughput: total octets / known test duration
+            avg_throughput = (total_octet_delta * 8) / (test_duration_s * 1_000_000) if test_duration_s > 0 else 0
 
-            # Avg throughput: total octets / total duration of traffic intervals (>1 Mbps)
-            traffic_intervals = [r for r in all_intervals if r["rate_mbps"] > 1.0]
-            traffic_duration = sum(r["interval"] for r in traffic_intervals)
-            traffic_octets = sum(int(r["delta"]) for r in traffic_intervals)
-            avg_throughput = (traffic_octets * 8) / (traffic_duration * 1_000_000) if traffic_duration > 0 else 0
+            # Peak throughput: highest single-interval rate, or avg if interval >= test duration
+            peak_throughput = max((r["rate_mbps"] for r in all_intervals), default=0)
+            if peak_throughput < avg_throughput:
+                peak_throughput = avg_throughput
 
             p50 = self._calc_percentile(bin_deltas, 0.50)
             p99 = self._calc_percentile(bin_deltas, 0.99)
@@ -476,13 +475,14 @@ class CmtsCollector:
         sum_octet_delta = 0
         for sf in sf_indices:
             ai = self._get_all_intervals(sf)
-            if ai:
-                sum_peak += max(r["rate_mbps"] for r in ai)
-                ti = [r for r in ai if r["rate_mbps"] > 1.0]
-                td = sum(r["interval"] for r in ti)
-                to = sum(int(r["delta"]) for r in ti)
-                sum_avg += (to * 8) / (td * 1_000_000) if td > 0 else 0
-            sum_octet_delta += sum(int(r["delta"]) for r in ai)
+            sf_octet_delta = sum(int(r["delta"]) for r in ai)
+            sf_avg = (sf_octet_delta * 8) / (test_duration_s * 1_000_000) if test_duration_s > 0 else 0
+            sf_peak = max((r["rate_mbps"] for r in ai), default=0)
+            if sf_peak < sf_avg:
+                sf_peak = sf_avg
+            sum_peak += sf_peak
+            sum_avg += sf_avg
+            sum_octet_delta += sf_octet_delta
             sum_pkt_delta += self._get_total_pkt_delta(sf)
         self._cell(ws, total_row, 1, "TOTAL", font=self._BOLD, fill=self._RESULT_FILL)
         self._cell(ws, total_row, 15, round(sum_peak, 4), font=self._BOLD, fill=self._RESULT_FILL, fmt="0.0000")
@@ -620,7 +620,7 @@ class CmtsCollector:
         for i, w in enumerate([8, 14, 14, 14, 14, 16, 16, 12], 1):
             ws.column_dimensions[get_column_letter(i)].width = w
 
-    def _write_peak_window(self, wb, sf_indices):
+    def _write_peak_window(self, wb, sf_indices, test_duration_s=60):
         """Write all octet-delta intervals per sfIndex with peak highlighted."""
         ws = wb.create_sheet(title="Throughput")
         ws.sheet_properties.tabColor = "00B050"
@@ -668,11 +668,11 @@ class CmtsCollector:
                 row += 1
 
             # SF total row with peak and average
-            traffic_rows = [r for r in all_rows if r["rate_mbps"] > 1.0]
-            traffic_duration = sum(r["interval"] for r in traffic_rows) if traffic_rows else 0
-            traffic_octets = sum(int(r["delta"]) for r in traffic_rows)
-            sf_avg_rate = (traffic_octets * 8) / (traffic_duration * 1_000_000) if traffic_duration > 0 else 0
+            sf_octet_total = sum(int(r["delta"]) for r in all_rows)
+            sf_avg_rate = (sf_octet_total * 8) / (test_duration_s * 1_000_000) if test_duration_s > 0 else 0
             sf_peak_rate = max(r["rate_mbps"] for r in all_rows)
+            if sf_peak_rate < sf_avg_rate:
+                sf_peak_rate = sf_avg_rate
             self._cell(ws, row, 1, f"sfIndex {sf}", font=self._BOLD)
             self._cell(ws, row, 5, "TOTAL", font=self._BOLD)
             self._cell(ws, row, 6, sf_total_delta, font=self._BOLD, fill=self._CALC_FILL)
