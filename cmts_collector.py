@@ -411,8 +411,8 @@ class CmtsCollector:
         for sf in sf_indices:
             bin_deltas = self._get_bin_deltas(sf)
             total_pkts = sum(bin_deltas)
-            avg_samples = [v for _, v, _ in self.samples.get((sf, "dp_flow_QueueLatencyAvgUsec"), [])]
-            max_samples = [v for _, v, _ in self.samples.get((sf, "dp_flow_QueueLatencyMaxUsec"), [])]
+            avg_samples = [v for _, v, _ in self.samples.get((sf, "dp_flow_QueueLatencyAvgUsec"), []) if v > 0]
+            max_samples = [v for _, v, _ in self.samples.get((sf, "dp_flow_QueueLatencyMaxUsec"), []) if v > 0]
             pkts_passed = [v for _, v, _ in self.samples.get((sf, "K_Samis1_DeltaPacketsPassed"), [])]
             pkts_dropped = [v for _, v, _ in self.samples.get((sf, "K_Samis1_DeltaPacketsDropped"), [])]
 
