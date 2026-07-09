@@ -401,7 +401,7 @@ class CmtsCollector:
             "P50 (ms)", "P99 (ms)", "P99.9 (ms)",
             "P50 AVG (ms)", "P99 AVG (ms)", "P99.9 AVG (ms)",
             "AQM Drops", "Congestion Marked", "Sanctioned Pkts",
-            "Peak Throughput (Mbps)", "Pkt Loss %",
+            "Peak Throughput (Mbps)", "Avg Throughput (Mbps)", "Pkt Loss %",
             "Total Pkt Delta", "Total Octet Delta",
         ]
         for col, h in enumerate(headers, 1):
@@ -433,6 +433,12 @@ class CmtsCollector:
             # Peak throughput from highest single interval
             peak_throughput = max((r["rate_mbps"] for r in all_intervals), default=0)
 
+            # Avg throughput: total octets / total duration of traffic intervals (>1 Mbps)
+            traffic_intervals = [r for r in all_intervals if r["rate_mbps"] > 1.0]
+            traffic_duration = sum(r["interval"] for r in traffic_intervals)
+            traffic_octets = sum(int(r["delta"]) for r in traffic_intervals)
+            avg_throughput = (traffic_octets * 8) / (traffic_duration * 1_000_000) if traffic_duration > 0 else 0
+
             p50 = self._calc_percentile(bin_deltas, 0.50)
             p99 = self._calc_percentile(bin_deltas, 0.99)
             p999 = self._calc_percentile(bin_deltas, 0.999)
@@ -456,29 +462,35 @@ class CmtsCollector:
             self._cell(ws, row, 13, int(total_cong), fill=self._CALC_FILL)
             self._cell(ws, row, 14, int(total_sanc), fill=self._CALC_FILL)
             self._cell(ws, row, 15, round(peak_throughput, 4), fill=self._CALC_FILL, fmt="0.0000")
-            self._cell(ws, row, 16, round(loss_pct, 4), fill=self._CALC_FILL, fmt="0.0000")
-            self._cell(ws, row, 17, total_pkt_delta, fill=self._CALC_FILL)
-            self._cell(ws, row, 18, total_octet_delta, fill=self._CALC_FILL)
+            self._cell(ws, row, 16, round(avg_throughput, 4), fill=self._CALC_FILL, fmt="0.0000")
+            self._cell(ws, row, 17, round(loss_pct, 4), fill=self._CALC_FILL, fmt="0.0000")
+            self._cell(ws, row, 18, total_pkt_delta, fill=self._CALC_FILL)
+            self._cell(ws, row, 19, total_octet_delta, fill=self._CALC_FILL)
             row += 1
 
         # TOTAL row — combined across all sfIndices
         total_row = row
-        sum_throughput = 0
+        sum_peak = 0
+        sum_avg = 0
         sum_pkt_delta = 0
         sum_octet_delta = 0
         for sf in sf_indices:
             ai = self._get_all_intervals(sf)
             if ai:
-                peak_r = max(ai, key=lambda r: r["delta"])
-                sum_throughput += peak_r["rate_mbps"]
+                sum_peak += max(r["rate_mbps"] for r in ai)
+                ti = [r for r in ai if r["rate_mbps"] > 1.0]
+                td = sum(r["interval"] for r in ti)
+                to = sum(int(r["delta"]) for r in ti)
+                sum_avg += (to * 8) / (td * 1_000_000) if td > 0 else 0
             sum_octet_delta += sum(int(r["delta"]) for r in ai)
             sum_pkt_delta += self._get_total_pkt_delta(sf)
         self._cell(ws, total_row, 1, "TOTAL", font=self._BOLD, fill=self._RESULT_FILL)
-        self._cell(ws, total_row, 15, round(sum_throughput, 4), font=self._BOLD, fill=self._RESULT_FILL, fmt="0.0000")
-        self._cell(ws, total_row, 17, sum_pkt_delta, font=self._BOLD, fill=self._RESULT_FILL)
-        self._cell(ws, total_row, 18, sum_octet_delta, font=self._BOLD, fill=self._RESULT_FILL)
+        self._cell(ws, total_row, 15, round(sum_peak, 4), font=self._BOLD, fill=self._RESULT_FILL, fmt="0.0000")
+        self._cell(ws, total_row, 16, round(sum_avg, 4), font=self._BOLD, fill=self._RESULT_FILL, fmt="0.0000")
+        self._cell(ws, total_row, 18, sum_pkt_delta, font=self._BOLD, fill=self._RESULT_FILL)
+        self._cell(ws, total_row, 19, sum_octet_delta, font=self._BOLD, fill=self._RESULT_FILL)
 
-        for i, w in enumerate([14, 16, 18, 18, 18, 14, 14, 14, 16, 16, 16, 14, 18, 16, 18, 14, 16, 18], 1):
+        for i, w in enumerate([14, 16, 18, 18, 18, 14, 14, 14, 16, 16, 16, 14, 18, 16, 18, 18, 14, 16, 18], 1):
             ws.column_dimensions[get_column_letter(i)].width = w
 
     def _write_sf_sheet(self, wb, sf_index):
@@ -655,12 +667,17 @@ class CmtsCollector:
                 sf_total_delta += int(entry["delta"])
                 row += 1
 
-            # SF total row
-            total_duration = sum(r["interval"] for r in all_rows) if all_rows else 0
-            sf_total_rate = (sf_total_delta * 8) / (total_duration * 1_000_000) if total_duration > 0 else 0
+            # SF total row with peak and average
+            traffic_rows = [r for r in all_rows if r["rate_mbps"] > 1.0]
+            traffic_duration = sum(r["interval"] for r in traffic_rows) if traffic_rows else 0
+            traffic_octets = sum(int(r["delta"]) for r in traffic_rows)
+            sf_avg_rate = (traffic_octets * 8) / (traffic_duration * 1_000_000) if traffic_duration > 0 else 0
+            sf_peak_rate = max(r["rate_mbps"] for r in all_rows)
             self._cell(ws, row, 1, f"sfIndex {sf}", font=self._BOLD)
             self._cell(ws, row, 5, "TOTAL", font=self._BOLD)
             self._cell(ws, row, 6, sf_total_delta, font=self._BOLD, fill=self._CALC_FILL)
+            self._cell(ws, row, 7, f"Peak: {sf_peak_rate:.2f}", font=self._BOLD, fill=self._CALC_FILL)
+            self._cell(ws, row, 8, f"Avg: {sf_avg_rate:.2f}", font=self._BOLD, fill=self._CALC_FILL)
             row += 1
 
             grand_total_delta += sf_total_delta

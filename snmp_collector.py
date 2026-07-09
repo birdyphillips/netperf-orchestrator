@@ -866,7 +866,7 @@ def write_summary_sheet(wb, all_results, tp_stats=None, fs_before=None, fs_after
         "Weighted Avg (ms)", "P50 (ms)", "P99 (ms)", "P99.9 (ms)",
         "P50 AVG (ms)", "P99 AVG (ms)", "P99.9 AVG (ms)",
         "AQM Drops", "Congestion Marked", "Sanctioned Pkts",
-        "Throughput (Mbps)", "Pkt Loss %",
+        "Peak Throughput (Mbps)", "Avg Throughput (Mbps)", "Pkt Loss %",
         "Total Pkt Delta", "Total Octet Delta",
     ]
     for col, h in enumerate(headers, 1):
@@ -913,13 +913,15 @@ def write_summary_sheet(wb, all_results, tp_stats=None, fs_before=None, fs_after
 
         d_octets = 0
         d_pkts = 0
-        throughput = 0
+        avg_throughput = 0
+        peak_throughput = 0
         loss_pct = 0
         if sfid in fs_before and sfid in fs_after:
             d_octets = max(fs_after[sfid]["octets"] - fs_before[sfid]["octets"], 0)
             d_pkts = max(fs_after[sfid]["packets"] - fs_before[sfid]["packets"], 0)
             d_dropped = max(fs_after[sfid]["dropped"] - fs_before[sfid]["dropped"], 0)
-            throughput = (d_octets * 8) / (duration_s * 1_000_000) if duration_s > 0 else 0
+            avg_throughput = (d_octets * 8) / (duration_s * 1_000_000) if duration_s > 0 else 0
+            peak_throughput = avg_throughput  # SNMP has single interval, peak = avg
             total_pkts = d_pkts + d_dropped
             loss_pct = (d_dropped / total_pkts * 100) if total_pkts > 0 else 0
 
@@ -935,21 +937,23 @@ def write_summary_sheet(wb, all_results, tp_stats=None, fs_before=None, fs_after
         _styled_cell(ws, row, 10, aqm, fill=_CALC_FILL)
         _styled_cell(ws, row, 11, cong, fill=_CALC_FILL)
         _styled_cell(ws, row, 12, sanc, fill=_CALC_FILL)
-        _styled_cell(ws, row, 13, round(throughput, 4), fill=_CALC_FILL, fmt="0.0000")
-        _styled_cell(ws, row, 14, round(loss_pct, 4), fill=_CALC_FILL, fmt="0.0000")
-        _styled_cell(ws, row, 15, d_pkts, fill=_CALC_FILL)
-        _styled_cell(ws, row, 16, d_octets, fill=_CALC_FILL)
-        sum_throughput += throughput
+        _styled_cell(ws, row, 13, round(peak_throughput, 4), fill=_CALC_FILL, fmt="0.0000")
+        _styled_cell(ws, row, 14, round(avg_throughput, 4), fill=_CALC_FILL, fmt="0.0000")
+        _styled_cell(ws, row, 15, round(loss_pct, 4), fill=_CALC_FILL, fmt="0.0000")
+        _styled_cell(ws, row, 16, d_pkts, fill=_CALC_FILL)
+        _styled_cell(ws, row, 17, d_octets, fill=_CALC_FILL)
+        sum_throughput += avg_throughput
         sum_pkt_delta += d_pkts
         sum_octet_delta += d_octets
         row += 1
 
     _styled_cell(ws, row, 1, "TOTAL", font=_BOLD, fill=_RESULT_FILL)
     _styled_cell(ws, row, 13, round(sum_throughput, 4), font=_BOLD, fill=_RESULT_FILL, fmt="0.0000")
-    _styled_cell(ws, row, 15, sum_pkt_delta, font=_BOLD, fill=_RESULT_FILL)
-    _styled_cell(ws, row, 16, sum_octet_delta, font=_BOLD, fill=_RESULT_FILL)
+    _styled_cell(ws, row, 14, round(sum_throughput, 4), font=_BOLD, fill=_RESULT_FILL, fmt="0.0000")
+    _styled_cell(ws, row, 16, sum_pkt_delta, font=_BOLD, fill=_RESULT_FILL)
+    _styled_cell(ws, row, 17, sum_octet_delta, font=_BOLD, fill=_RESULT_FILL)
 
-    for i, w in enumerate([16, 16, 18, 14, 14, 14, 16, 16, 16, 14, 18, 16, 18, 14, 16, 18], 1):
+    for i, w in enumerate([16, 16, 18, 14, 14, 14, 16, 16, 16, 14, 18, 16, 18, 18, 14, 16, 18], 1):
         ws.column_dimensions[get_column_letter(i)].width = w
 
 
