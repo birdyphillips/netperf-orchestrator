@@ -24,6 +24,7 @@ from packetstorm_logic import PacketStormLogic
 from byteblower_logic import ByteBlowerLogic
 from iperf3_logic import IPerf3Logic
 from speedtest_logic import SpeedTestLogic
+from samknows_logic import SamKnowsLogic
 from logger import Logger
 from snmp_collector import collect_snmp_data, generate_latency_report, find_snmp_files
 
@@ -133,14 +134,16 @@ class ByteBlowerCLI:
             self.logger.error(f"SNMP collection failed: {e}")
             return False
     
-    def execute(self, bbp_file, rtt_files, iterations, scenarios, test_group_name=None, client_ip=None, output_format="json", byteblower_only=False, packetstorm_only=False, iperf3_only=False, iperf3_darwin=False, speedtest_only=False, speedtest_clients=None, report_formats="html pdf csv xls xlsx json docx"):
+    def execute(self, bbp_file, rtt_files, iterations, scenarios, test_group_name=None, client_ip=None, output_format="json", byteblower_only=False, packetstorm_only=False, iperf3_only=False, iperf3_darwin=False, speedtest_only=False, speedtest_clients=None, samknows_only=False, samknows_unit_id=None, report_formats="html pdf csv xls xlsx json docx"):
         """Execute workflow based on selected modes"""
         try:
             scenario_list = [s.strip() for s in scenarios.split(',')] if scenarios else ['default']
             rtt_list = [r.strip() for r in rtt_files.split(',')] if rtt_files else ['default.json']
             
             # Determine traffic type
-            if byteblower_only or (not iperf3_only and not iperf3_darwin and not speedtest_only):
+            if samknows_only:
+                traffic_type = "ThousandEyes"
+            elif byteblower_only or (not iperf3_only and not iperf3_darwin and not speedtest_only and not samknows_only):
                 traffic_type = "ByteBlower"
             elif iperf3_darwin:
                 traffic_type = "iPerf3_macOS"
@@ -179,7 +182,7 @@ class ByteBlowerCLI:
             # Run combinations
             for scenario in scenario_list:
                 for rtt_file in rtt_list:
-                    success, snmp_files = self._run_single_test(bbp_file, rtt_file, iterations, scenario, test_group_name, client_ip, output_format, byteblower_only, packetstorm_only, iperf3_only, iperf3_darwin, speedtest_only, speedtest_clients, report_formats, parent_output_dir, rtt_list)
+                    success, snmp_files = self._run_single_test(bbp_file, rtt_file, iterations, scenario, test_group_name, client_ip, output_format, byteblower_only, packetstorm_only, iperf3_only, iperf3_darwin, speedtest_only, speedtest_clients, samknows_only, samknows_unit_id, report_formats, parent_output_dir, rtt_list)
                     all_success = all_success and success
                     all_snmp_files.extend(snmp_files)
             
@@ -194,7 +197,7 @@ class ByteBlowerCLI:
             self.logger.error(f"Workflow failed: {e}")
             return 1
     
-    def _run_single_test(self, bbp_file, rtt_file, iterations, scenario_name, test_group_name, client_ip, output_format, byteblower_only, packetstorm_only, iperf3_only, iperf3_darwin, speedtest_only, speedtest_clients, report_formats, parent_output_dir, rtt_list):
+    def _run_single_test(self, bbp_file, rtt_file, iterations, scenario_name, test_group_name, client_ip, output_format, byteblower_only, packetstorm_only, iperf3_only, iperf3_darwin, speedtest_only, speedtest_clients, samknows_only, samknows_unit_id, report_formats, parent_output_dir, rtt_list):
         """Run a single test scenario"""
         try:
             success = True
@@ -233,7 +236,39 @@ class ByteBlowerCLI:
                 else:
                     test_name = f"ByteBlower_{scenario_name}"
             
-            if speedtest_only:
+            if samknows_only:
+                self.logger.info(f"ThousandEyes mode - all tests (http_get_mt, http_post_mt, udp_jitter)")
+                sk = SamKnowsLogic(scenario_name, test_group_name, rtt_suffix, samknows_unit_id)
+                self.output_dir = test_output_dir
+                success = True
+                snmp_dir = test_output_dir
+
+                for i in range(iterations):
+                    # --- DOWNSTREAM TEST (http_get_mt) ---
+                    self.start_cmts_collection(direction="downstream")
+                    self.wait_for_cmts_poll()
+
+                    if not sk.run_downstream(i, iterations, test_output_dir):
+                        self.logger.error("ThousandEyes downstream failed — stopping test")
+                        self.stop_cmts_collection(snmp_dir, "ThousandEyes_DS")
+                        return False, []
+
+                    self.wait_for_cmts_poll()
+                    self.stop_cmts_collection(snmp_dir, f"ThousandEyes_DS_iteration_{i+1}", post_test_polls=5)
+
+                    # --- UPSTREAM TEST (http_post_mt) ---
+                    self.run_snmp_collection(f"ThousandEyes_US_iteration_{i+1}", "before", snmp_dir, "")
+
+                    if not sk.run_upstream(i, iterations, test_output_dir):
+                        self.logger.error("ThousandEyes upstream failed — stopping test")
+                        return False, []
+
+                    self.run_snmp_collection(f"ThousandEyes_US_iteration_{i+1}", "after", snmp_dir, "")
+                    self._run_latency_report(snmp_dir, iteration=i+1, prefix="ThousandEyes_US")
+
+                    # --- JITTER TEST (udp_jitter) ---
+                    sk.run_jitter(i, iterations, test_output_dir)
+            elif speedtest_only:
                 self.logger.info(f"SpeedTest mode - clients: {speedtest_clients}")
                 st = SpeedTestLogic(speedtest_clients, test_group_name)
                 self.output_dir = test_output_dir
@@ -265,9 +300,9 @@ class ByteBlowerCLI:
                         self.stop_cmts_collection(snmp_dir, scenario_name)
                         return False, []
                     self.wait_for_cmts_poll()
-                    self.stop_cmts_collection(snmp_dir, scenario_name)
+                    self.stop_cmts_collection(snmp_dir, f"{scenario_name}_iteration_{i+1}")
                     self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", snmp_dir, "")
-                self._run_latency_report(snmp_dir)
+                    self._run_latency_report(snmp_dir, iteration=i+1)
             elif iperf3_only or iperf3_darwin:
                 platform_override = 'macos' if iperf3_darwin else None
                 platform_suffix = "_macOS" if iperf3_darwin else "_Linux"
@@ -300,9 +335,9 @@ class ByteBlowerCLI:
                         iperf3.stop_iperf3_servers()
                         return False, []
                     self.wait_for_cmts_poll()
-                    self.stop_cmts_collection(snmp_dir, scenario_name)
+                    self.stop_cmts_collection(snmp_dir, f"{scenario_name}_iteration_{i+1}")
                     self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", snmp_dir, "")
-                self._run_latency_report(snmp_dir)
+                    self._run_latency_report(snmp_dir, iteration=i+1)
                 iperf3.stop_iperf3_servers()
             else:
                 ps = PacketStormLogic(rtt_file)
@@ -339,9 +374,9 @@ class ByteBlowerCLI:
                                 ps.stop_config()
                                 return False, []
                             self.wait_for_cmts_poll()
-                            self.stop_cmts_collection(snmp_dir, scenario_name)
+                            self.stop_cmts_collection(snmp_dir, f"{scenario_name}_iteration_{i+1}")
                             self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", snmp_dir, "")
-                        self._run_latency_report(snmp_dir)
+                            self._run_latency_report(snmp_dir, iteration=i+1)
                         iperf3.stop_iperf3_servers()
                         success = success and ps.stop_config()
                 else:
@@ -365,9 +400,9 @@ class ByteBlowerCLI:
                                 ps.stop_config()
                                 return False, []
                             self.wait_for_cmts_poll()
-                            self.stop_cmts_collection(snmp_dir, scenario_name)
+                            self.stop_cmts_collection(snmp_dir, f"{scenario_name}_iteration_{i+1}")
                             self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", snmp_dir, "")
-                        self._run_latency_report(snmp_dir)
+                            self._run_latency_report(snmp_dir, iteration=i+1)
                         success = success and ps.stop_config()
             
             # Collect SNMP files from scenario directory
@@ -386,20 +421,38 @@ class ByteBlowerCLI:
             self.logger.error(f"Single test failed: {e}")
             return False, []
     
-    def _run_latency_report(self, snmp_dir):
+    def _run_latency_report(self, snmp_dir, iteration=None, prefix=None):
         """Generate latency bin report from SNMP before/after files"""
         try:
-            before_file, after_file = find_snmp_files(snmp_dir)
+            if iteration is not None:
+                # Find before/after files for this specific iteration
+                if prefix:
+                    before_files = sorted(glob.glob(os.path.join(snmp_dir, f"*{prefix}_iteration_{iteration}_SNMP_before_*.txt")))
+                    after_files = sorted(glob.glob(os.path.join(snmp_dir, f"*{prefix}_iteration_{iteration}_SNMP_after_*.txt")))
+                else:
+                    before_files = sorted(glob.glob(os.path.join(snmp_dir, f"*_iteration_{iteration}_SNMP_before_*.txt")))
+                    after_files = sorted(glob.glob(os.path.join(snmp_dir, f"*_iteration_{iteration}_SNMP_after_*.txt")))
+                before_file = before_files[-1] if before_files else None
+                after_file = after_files[-1] if after_files else None
+            else:
+                before_file, after_file = find_snmp_files(snmp_dir)
             if before_file and after_file:
+                # Build output filename with iteration
+                output_dir = os.path.dirname(after_file) or "."
+                dir_name = os.path.basename(os.path.abspath(output_dir))
+                iter_tag = f"_iteration_{iteration}" if iteration else ""
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 # US report (from modem) — always generated
-                result = generate_latency_report(before_file, after_file, direction="US")
+                us_output = os.path.join(output_dir, f"SNMP_US_Latency_Report_{dir_name}{iter_tag}_{timestamp}.xlsx")
+                result = generate_latency_report(before_file, after_file, output_file=us_output, direction="US")
                 if result:
                     self.logger.info(f"✓ US Latency report: {os.path.basename(result)}")
                 else:
                     self.logger.info("US Latency report skipped (no US latency OIDs)")
                 # DS report (from iCMTS SNMP) — only for iCMTS mode
                 if self.cmts_type == "icmts":
-                    result_ds = generate_latency_report(before_file, after_file, direction="DS")
+                    ds_output = os.path.join(output_dir, f"SNMP_DS_Latency_Report_{dir_name}{iter_tag}_{timestamp}.xlsx")
+                    result_ds = generate_latency_report(before_file, after_file, output_file=ds_output, direction="DS")
                     if result_ds:
                         self.logger.info(f"✓ DS Latency report (iCMTS SNMP): {os.path.basename(result_ds)}")
                     else:
@@ -456,17 +509,22 @@ def main():
     parser.add_argument('--output', choices=['json', 'txt'], default='json', help='iPerf3 output format: json or txt (default: json)')
     parser.add_argument('-speedtest', action='store_true', help='Enable SpeedTest mode')
     parser.add_argument('--client', default='linux,macos,nvidia', help='SpeedTest clients: linux,macos,nvidia (default: all)')
+    parser.add_argument('-samknows', action='store_true', help='Enable SamKnows instant-test mode')
+    parser.add_argument('--unit-id', default=None, help='SamKnows unit ID (overrides config.yaml)')
     parser.add_argument('--report-formats', default='html pdf csv xls xlsx json docx', help='ByteBlower report formats (default: all formats)')
     parser.add_argument('-iteration', type=int, default=1, help='Number of iterations (default: 1)')
     
     args = parser.parse_args()
     
-    if not args.byteblower and not args.packetstorm and not args.iperf3 and not getattr(args, 'iperf3_darwin', False) and not getattr(args, 'speedtest', False):
-        parser.error("At least one of -byteblower, -packetstorm, -iperf3, -iperf3-darwin, or -speedtest is required")
+    if not args.byteblower and not args.packetstorm and not args.iperf3 and not getattr(args, 'iperf3_darwin', False) and not getattr(args, 'speedtest', False) and not getattr(args, 'samknows', False):
+        parser.error("At least one of -byteblower, -packetstorm, -iperf3, -iperf3-darwin, -speedtest, or -samknows is required")
     
     if (args.iperf3 or getattr(args, 'iperf3_darwin', False)) and (not args.scenario or not args.clientIP):
         parser.error("Both --scenario and --clientIP are required when using -iperf3 or -iperf3-darwin")
     
+    if getattr(args, 'samknows', False) and not getattr(args, 'unit_id', None):
+        parser.error("--unit-id is required when using -samknows (e.g., --unit-id 82670821)")
+
     if args.packetstorm and not args.rtt:
         parser.error("--rtt is required when using -packetstorm")
     
@@ -482,12 +540,14 @@ def main():
         getattr(args, 'test_group_name', None),
         getattr(args, 'clientIP', None),
         getattr(args, 'output', 'json'),
-        byteblower_only=args.byteblower and not args.packetstorm and not args.iperf3 and not getattr(args, 'speedtest', False),
-        packetstorm_only=args.packetstorm and not args.byteblower and not args.iperf3 and not getattr(args, 'speedtest', False),
-        iperf3_only=args.iperf3 and not args.byteblower and not args.packetstorm and not getattr(args, 'iperf3_darwin', False) and not getattr(args, 'speedtest', False),
-        iperf3_darwin=getattr(args, 'iperf3_darwin', False) and not getattr(args, 'speedtest', False),
-        speedtest_only=getattr(args, 'speedtest', False),
+        byteblower_only=args.byteblower and not args.packetstorm and not args.iperf3 and not getattr(args, 'speedtest', False) and not getattr(args, 'samknows', False),
+        packetstorm_only=args.packetstorm and not args.byteblower and not args.iperf3 and not getattr(args, 'speedtest', False) and not getattr(args, 'samknows', False),
+        iperf3_only=args.iperf3 and not args.byteblower and not args.packetstorm and not getattr(args, 'iperf3_darwin', False) and not getattr(args, 'speedtest', False) and not getattr(args, 'samknows', False),
+        iperf3_darwin=getattr(args, 'iperf3_darwin', False) and not getattr(args, 'speedtest', False) and not getattr(args, 'samknows', False),
+        speedtest_only=getattr(args, 'speedtest', False) and not getattr(args, 'samknows', False),
         speedtest_clients=speedtest_clients,
+        samknows_only=getattr(args, 'samknows', False),
+        samknows_unit_id=getattr(args, 'unit_id', None),
         report_formats=getattr(args, 'report_formats', 'html pdf csv xls xlsx json docx')
     )
 

@@ -281,7 +281,8 @@ class CmtsCollector:
 
         os.makedirs(output_dir, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = os.path.join(output_dir, f"Kafka_DS_Latency_Report_{test_name}_{timestamp}.xlsx")
+        dir_label = "DS" if self.direction == "downstream" else "US"
+        filename = os.path.join(output_dir, f"Kafka_{dir_label}_Latency_Report_{test_name}_{timestamp}.xlsx")
 
         # Group data by sfIndex
         sf_indices = set()
