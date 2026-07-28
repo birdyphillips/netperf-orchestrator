@@ -116,13 +116,14 @@ class NetperfCLI:
                 time.sleep(1)
                 shell.recv(4096)
             shell.send(scm_cmd + '\n')
-            time.sleep(2)
+            time.sleep(3)
             output = ''
-            for _ in range(20):
+            for _ in range(30):
                 if shell.recv_ready():
                     output += shell.recv(4096).decode(errors='ignore')
+                    time.sleep(0.3)
                 else:
-                    time.sleep(0.2)
+                    time.sleep(0.3)
                     if not shell.recv_ready():
                         break
             shell.send('exit\n')
@@ -134,6 +135,9 @@ class NetperfCLI:
                 match = re.search(r'IPv6=([0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4}){5,7})', output)
             else:
                 match = re.search(r'([0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4}){5,7})', output)
+
+            if not match:
+                self.logger.warning(f"scm output was: {repr(output[:300])}")
 
             if match:
                 ipv6 = match.group(1)
