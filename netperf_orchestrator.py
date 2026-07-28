@@ -215,7 +215,7 @@ class NetperfCLI:
             report = self.cmts_collector.generate_report(output_dir, test_name, test_duration_s=test_duration_s)
             self.cmts_collector = None
             if report:
-                self.logger.info(f"✓ CMTS latency report: {os.path.basename(report)}")
+                self.logger.info(f"CMTS latency report: {os.path.basename(report)}")
             return report
         except Exception as e:
             self.logger.warning(f"CMTS report generation failed: {e}")
@@ -547,7 +547,7 @@ class NetperfCLI:
                 us_output = os.path.join(output_dir, f"SNMP_US_Latency_Report_{dir_name}{iter_tag}_{timestamp}.xlsx")
                 result = generate_latency_report(before_file, after_file, output_file=us_output, direction="US")
                 if result:
-                    self.logger.info(f"✓ US Latency report: {os.path.basename(result)}")
+                    self.logger.info(f"US Latency report: {os.path.basename(result)}")
                 else:
                     self.logger.info("US Latency report skipped (no US latency OIDs)")
                 # DS report (from iCMTS SNMP) — only for iCMTS mode
@@ -555,7 +555,7 @@ class NetperfCLI:
                     ds_output = os.path.join(output_dir, f"SNMP_DS_Latency_Report_{dir_name}{iter_tag}_{timestamp}.xlsx")
                     result_ds = generate_latency_report(before_file, after_file, output_file=ds_output, direction="DS")
                     if result_ds:
-                        self.logger.info(f"✓ DS Latency report (iCMTS SNMP): {os.path.basename(result_ds)}")
+                        self.logger.info(f"DS Latency report (iCMTS SNMP): {os.path.basename(result_ds)}")
                     else:
                         self.logger.info("DS Latency report skipped (no DS latency OIDs found)")
                 else:
@@ -587,7 +587,7 @@ class NetperfCLI:
                     
                     excel_file = os.path.join(parent_dir, f"{test_group_name}_SNMP_Combined_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
                     wb.save(excel_file)
-                    self.logger.info(f"✓ Combined SNMP Excel: {os.path.basename(excel_file)}")
+                    self.logger.info(f"Combined SNMP Excel: {os.path.basename(excel_file)}")
                 except Exception as e:
                     self.logger.warning(f"Excel creation skipped: {e}")
         except Exception as e:

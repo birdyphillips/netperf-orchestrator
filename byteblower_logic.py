@@ -23,7 +23,7 @@ class ByteBlowerLogic:
     
     def run_scenario(self, iteration, total_iterations, parent_output_dir=None):
         """Run ByteBlower CLI with specified scenario"""
-        self.logger.info(f"Iteration {iteration + 1}/{total_iterations} - {self.scenario_name}{self.rtt_suffix}")
+        self.logger.info(f"{self.scenario_name} iteration {iteration + 1}/{total_iterations}")
         
         # Create subfolder based on RTT value
         if parent_output_dir:
@@ -65,12 +65,13 @@ class ByteBlowerLogic:
             self.log_rotator.write_log(log_content)
             
             if result.returncode != 0:
-                self.logger.error(f"✗ ByteBlower failed: {result.stderr}")
+                self.logger.error(f"ByteBlower failed (rc={result.returncode}): {result.stderr[:200]}")
                 return False
             
+            self._print_port_info(result.stdout + result.stderr)
             self._generate_additional_reports(output_dir)
             self._print_html_reports(output_dir)
-            self.logger.info(f"✓ Iteration {iteration + 1} completed")
+            self.logger.info(f"ByteBlower iteration {iteration + 1} complete")
             
             # Wait 10 seconds between iterations (except after last iteration)
             if iteration < total_iterations - 1:
@@ -79,17 +80,13 @@ class ByteBlowerLogic:
             return True
             
         except Exception as e:
-            error_msg = f"ByteBlower execution exception: {str(e)}"
-            self.logger.error(f"✗ {error_msg}")
-            self.log_rotator.write_log(f"\nERROR: {error_msg}\n")
+            self.logger.error(f"ByteBlower exception: {e}")
+            self.log_rotator.write_log(f"\nERROR: {e}\n")
             return False
     
     def run_iterations(self, count=3, parent_output_dir=None):
         """Run multiple ByteBlower iterations"""
-        self.logger.info(f"\n{'='*60}")
-        self.logger.info(f"ByteBlower: {self.scenario_name}{self.rtt_suffix}")
-        self.logger.info(f"Iterations: {count}")
-        self.logger.info(f"{'='*60}")
+        self.logger.info(f"ByteBlower: {self.scenario_name} x{count}")
         
         success_count = 0
         
@@ -97,14 +94,12 @@ class ByteBlowerLogic:
             if self.run_scenario(i, count, parent_output_dir):
                 success_count += 1
             else:
-                self.logger.error(f"✗ Iteration {i + 1} failed")
+                self.logger.error(f"Iteration {i + 1} failed")
             
             if i < count - 1:
                 time.sleep(10)
         
-        self.logger.info(f"\n{'='*60}")
-        self.logger.info(f"ByteBlower completed: {success_count}/{count} iterations successful")
-        self.logger.info(f"{'='*60}\n")
+        self.logger.info(f"ByteBlower complete: {success_count}/{count} iterations")
         return success_count == count
     def _generate_additional_reports(self, output_dir):
         """Generate only R2 HTML report format with L4S column for TCP flows, keep JSON and CSV"""
@@ -146,6 +141,31 @@ class ByteBlowerLogic:
             import shutil
             shutil.copy2(original_path, r2_path)
     
+    def _print_port_info(self, output):
+        """Parse and display ByteBlower port MAC and IP info from CLI output"""
+        import re
+        ports = {}
+        for line in output.splitlines():
+            mac_match = re.search(r"layer2 configured on port '([^']+)' \(config ethiimac=([^)]+)\)", line)
+            if mac_match:
+                port_name = mac_match.group(1)
+                ports.setdefault(port_name, {})['mac'] = mac_match.group(2)
+            dhcp_match = re.search(r"dhcp on port '([^']+)' resulted in IP address ([\d.]+)", line)
+            if dhcp_match:
+                port_name = dhcp_match.group(1)
+                ports.setdefault(port_name, {})['ip'] = dhcp_match.group(2)
+            ip_match = re.search(r"layer3 configured on port '([^']+)' \(config ip=([\d.]+)\)", line)
+            if ip_match:
+                port_name = ip_match.group(1)
+                if 'ip' not in ports.setdefault(port_name, {}):
+                    ports[port_name]['ip'] = ip_match.group(2)
+        if ports:
+            print(f"\n  Port Info:")
+            for name, info in ports.items():
+                mac = info.get('mac', 'N/A')
+                ip = info.get('ip', 'N/A')
+                print(f"    {name}: MAC={mac}  IP={ip}")
+
     def _print_html_reports(self, output_dir):
         """Print R2 HTML report and other file formats (JSON, CSV)"""
         try:

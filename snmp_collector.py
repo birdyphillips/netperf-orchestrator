@@ -216,85 +216,87 @@ def ssh_snmp_collector(username, jumpserver, target_ip, output_file=None, snmp_c
         
         try:
             if os.path.exists(key_path):
-                print(f"Attempting SSH connection to {jumpserver} with key: {key_path}")
                 ssh.connect(jumpserver, username=username, key_filename=key_path, timeout=10)
                 connected = True
                 connection_method = f"SSH key: {key_path}"
         except Exception as e:
-            print(f"Failed to connect with {key_path}: {e}")
+            print(f"  SSH key auth failed: {e}")
         
         if not connected:
             try:
-                print(f"Attempting SSH connection to {jumpserver} with default keys")
                 ssh.connect(jumpserver, username=username, timeout=10)
                 connected = True
                 connection_method = "Default SSH keys"
             except Exception as e:
-                print(f"Failed to connect with default keys: {e}")
+                print(f"  Default SSH auth failed: {e}")
         
         if not connected:
-            raise Exception(f"Failed to connect to {jumpserver} as {username}. Tried: {key_path} and default keys. No authentication methods available.")
+            raise Exception(f"Failed to connect to {jumpserver} as {username}")
+        print(f"  Connected to {jumpserver}")
         
-        print(f"Successfully connected to {jumpserver} using {connection_method}")
+        print(f"  SNMP {target_ip}")
         
         results = {}
         output_lines = []
-        
+
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         output_lines.append(f"SNMP Collection - {timestamp}")
         output_lines.append(f"Target IP: {target_ip}")
         output_lines.append("="*60)
-        
+
         # Get modem information first
-        print(f"Executing: snmpwalk -v 2c -c open {target_ip} sysDescr")
         stdin, stdout, stderr = ssh.exec_command(modem_info_cmd)
         modem_output = stdout.read().decode()
         modem_error = stderr.read().decode()
-        
+
         output_lines.append(f"\nCurrent Modem Information")
         output_lines.append("="*50)
         if modem_output:
             output_lines.append(modem_output)
-            print(modem_output)  # Display in terminal
         if modem_error:
             output_lines.append(f"ERROR: {modem_error}")
-            print(f"ERROR: {modem_error}")
-        
-        # Execute each SNMP command
-        for i, cmd in enumerate(commands):
-            print(f"Executing: {labels[i]}")
-            stdin, stdout, stderr = ssh.exec_command(cmd)
-            
-            output = stdout.read().decode()
-            error = stderr.read().decode()
-            
-            results[labels[i]] = {
-                'output': output,
-                'error': error if error else None
-            }
-            
-            # Add to output lines
-            output_lines.append(f"\n{labels[i]}")
+
+        # Execute all SNMP commands in parallel
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        def run_cmd(label, cmd):
+            _, stdout, stderr = ssh.exec_command(cmd)
+            return label, stdout.read().decode(), stderr.read().decode()
+
+        with ThreadPoolExecutor(max_workers=len(commands)) as executor:
+            futures = {executor.submit(run_cmd, labels[i], cmd): i for i, cmd in enumerate(commands)}
+            cmd_results = {}
+            for future in as_completed(futures):
+                label, output, error = future.result()
+                cmd_results[label] = (output, error)
+
+        # Write results in original label order
+        for label in labels:
+            output, error = cmd_results[label]
+            results[label] = {'output': output, 'error': error if error else None}
+            output_lines.append(f"\n{label}")
             output_lines.append("="*50)
             if output:
                 output_lines.append(output)
             if error:
                 output_lines.append(f"ERROR: {error}")
-                print(f"Error in {labels[i]}: {error}")
-        
+                print(f"  {label}: {error}")
+            else:
+                print(f"  {label}")
+
         ssh.close()
         
         # Write to file if specified
         if output_file:
             with open(output_file, 'w') as f:
                 f.write('\n'.join(output_lines))
-            print(f"Results saved to: {output_file}")
+            print(f"  SNMP saved: {os.path.basename(output_file)}")
         
         return results
         
     except Exception as e:
         error_msg = f"SSH connection failed: {e}"
-        print(error_msg)
+        print(f"  SNMP collection failed: {e}")
         if output_file:
             with open(output_file, 'w') as f:
                 f.write(f"ERROR: {error_msg}\n")
@@ -313,8 +315,12 @@ def collect_snmp_data(target_ip, test_name, phase, output_dir):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = os.path.join(output_dir, f"{test_name}_SNMP_{phase}_{timestamp}.txt")
     
-    print(f"Collecting SNMP data - {phase} {test_name}")
+    print(f"  SNMP {phase} - {test_name}")
     result = ssh_snmp_collector(username, jumpserver, target_ip, filename)
+    if result is None:
+        print(f"  SNMP {phase} failed")
+    else:
+        print(f"  SNMP {phase} done")
     
     # DEPRECATED: Combined SNMP Excel export — replaced by latency_calculator.py
     # Latency bin reports are now generated via generate_latency_report() in the
@@ -981,23 +987,18 @@ def generate_latency_report(before_file, after_file, output_file=None, direction
     if direction is None:
         direction = _detect_direction(after_file)
     edges = US_BIN_EDGES_MS if direction == "US" else DS_BIN_EDGES_MS
-    print(f"Direction detected: {direction} — using {'upstream' if direction == 'US' else 'downstream'} bin edges")
+    print(f"  Direction: {direction}")
 
     before_bins = parse_latency_bins(before_file, direction)
     after_bins = parse_latency_bins(after_file, direction)
 
     if not before_bins or not after_bins:
-        print("INFO: No latency stats found in SNMP files (expected for vCMTS modems — DS latency comes from DB).")
-        print("      For iCMTS modems, this indicates missing data.")
+        print("  No latency bins found in SNMP files")
         return None
 
     all_deltas = compute_deltas(before_bins, after_bins)
 
     if not all_deltas:
-        # Still generate report with zero deltas — include raw before/after data
-        print("INFO: All latency bin deltas are zero — generating report with raw data anyway.")
-        print("      (If DS direction, this is expected for vCMTS — DS latency comes from Kafka.)")
-        # Build all_deltas with zero deltas so the report still has structure
         all_sfids = set(before_bins) & set(after_bins)
         for sfid in sorted(all_sfids):
             before_vals, after_vals, deltas = [], [], []
@@ -1039,19 +1040,16 @@ def generate_latency_report(before_file, after_file, output_file=None, direction
                        bin_edges=edges, direction=direction)
 
     wb.save(output_file)
-    print(f"Latency report saved: {output_file}")
-
-    print("\n--- Latency Summary ---")
+    print(f"  Latency report: {os.path.basename(output_file)}")
     for sfid, sf_data in sorted(all_deltas.items()):
         deltas = sf_data["deltas"]
         total = sum(deltas)
-        avg = calc_weighted_avg(deltas, edges)
         p50 = calc_percentile(deltas, 0.50, edges)
         p99 = calc_percentile(deltas, 0.99, edges)
         p999 = calc_percentile(deltas, 0.999, edges)
         tp = tp_stats.get(sfid)
-        tp_str = f"  Throughput={tp['throughput_mbps']:.4f}Mbps  Loss={tp['loss_pct']:.4f}%" if tp else ""
-        print(f"  SFID {sfid}: {total} pkts | AVG={avg:.4f}ms  P50={p50:.4f}ms  P99={p99:.4f}ms  P99.9={p999:.4f}ms{tp_str}")
+        tp_str = f"  {tp['throughput_mbps']:.2f}Mbps  Loss={tp['loss_pct']:.2f}%" if tp else ""
+        print(f"  SFID {sfid}: {total} pkts | P50={p50:.2f}ms  P99={p99:.2f}ms  P99.9={p999:.2f}ms{tp_str}")
 
     return output_file
 

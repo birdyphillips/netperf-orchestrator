@@ -44,17 +44,12 @@ try:
 except ImportError:
     EXCEL_AVAILABLE = False
 
-# Bin edges (16 bins) — upstream and downstream differ in bins 13-16
-US_BIN_EDGES_MS = [
-    0, 0.05, 0.10, 0.25, 0.50, 1.00, 2.00, 5.00, 10.00,
-    20.00, 30.00, 40.00, 50.00, 100.00, 150.00, 200.00, 500.00,
-]
-DS_BIN_EDGES_MS = [
+# Fallback bin edges if not present in Kafka labels
+_FALLBACK_BIN_EDGES_MS = [
     0, 0.05, 0.10, 0.25, 0.50, 1.00, 2.00, 5.00, 10.00,
     20.00, 30.00, 40.00, 50.00, 60.00, 70.00, 80.00, 500.00,
 ]
-BIN_EDGES_MS = US_BIN_EDGES_MS  # default; overridden by direction
-NUM_BINS = len(BIN_EDGES_MS) - 1
+NUM_BINS = 16
 
 # Metrics we collect per service flow
 METRIC_NAMES = [
@@ -94,7 +89,6 @@ class CmtsCollector:
         self.broker = broker or config.get('kafka', 'broker', default='65.185.232.139:11203')
         self.topic = topic or config.get('kafka', 'topic', default='cmts_metrics_apc01k1dccc')
         self.direction = direction
-        self.bin_edges = DS_BIN_EDGES_MS if direction == "downstream" else US_BIN_EDGES_MS
         self.enabled = KAFKA_AVAILABLE
 
         if not KAFKA_AVAILABLE:
@@ -103,17 +97,21 @@ class CmtsCollector:
         # Normalize MAC
         raw = (mac or config.get('vcmts', 'cm_mac', default='')).replace(':', '').replace('.', '').lower()
         self.mac_colon = ':'.join(raw[i:i+2] for i in range(0, 12, 2))
+        self._mac_bytes = self.mac_colon.encode('ascii')
 
         self._thread = None
         self._stop_event = threading.Event()
         self._poll_event = threading.Event()   # signalled on each new polling timestamp
         self._seen_timestamps = set()          # track unique polling timestamps
         self._poll_count = 0
+        self._detected_interval_s = None       # cached once 2 polls observed
 
         # Collected samples: {(sfIndex, metric_name): [(timestamp_ms, value, labels), ...]}
         self.samples = defaultdict(list)
         # Bin counts per sfIndex per timestamp: {(sfIndex, timestamp): {bin_num: count}}
         self.bin_snapshots = defaultdict(lambda: defaultdict(int))
+        # Bin edges per sfIndex read from Kafka labels: {sfIndex: [edge0, edge1, ..., edge16]}
+        self._sf_bin_edges = {}
         # Raw Kafka messages matching our MAC for debugging
         self._raw_messages = []
         self._started_at = None
@@ -135,6 +133,7 @@ class CmtsCollector:
         self._poll_count = 0
         self.samples.clear()
         self.bin_snapshots.clear()
+        self._sf_bin_edges.clear()
         self._raw_messages.clear()
         self._started_at = time.time()
         self._thread = threading.Thread(target=self._consume_loop, daemon=True)
@@ -180,29 +179,40 @@ class CmtsCollector:
     # ------------------------------------------------------------------
 
     def _consume_loop(self):
-        try:
-            consumer = KafkaConsumer(
-                self.topic,
-                bootstrap_servers=self.broker,
-                group_id=f'cmts-collector-{int(time.time())}',
-                auto_offset_reset='latest',
-                enable_auto_commit=True,
-                consumer_timeout_ms=5000,
-            )
-        except Exception as e:
-            self.logger.error(f"Failed to connect to Kafka: {e}")
-            return
-        try:
-            while not self._stop_event.is_set():
-                for message in consumer:
-                    if self._stop_event.is_set():
-                        break
-                    try:
-                        self._process_message(message.value.decode('utf-8'))
-                    except Exception:
-                        pass
-        finally:
-            consumer.close()
+        for attempt in range(2):
+            try:
+                consumer = KafkaConsumer(
+                    self.topic,
+                    bootstrap_servers=self.broker,
+                    group_id=f'cmts-collector-{int(time.time())}',
+                    auto_offset_reset='latest',
+                    enable_auto_commit=True,
+                )
+            except Exception as e:
+                self.logger.error(f"Failed to connect to Kafka: {e}")
+                if attempt == 0:
+                    self.logger.info("Retrying Kafka connection in 5s...")
+                    self._stop_event.wait(timeout=5)
+                    continue
+                return
+            try:
+                while not self._stop_event.is_set():
+                    records = consumer.poll(timeout_ms=65000)
+                    for tp, messages in records.items():
+                        for message in messages:
+                            try:
+                                raw = message.value
+                                if self._mac_bytes not in raw:
+                                    continue
+                                self._process_message(raw.decode('utf-8'))
+                            except Exception:
+                                pass
+                return
+            except Exception as e:
+                self.logger.warning(f"Kafka consumer error: {e}")
+                return
+            finally:
+                consumer.close()
 
     def _process_message(self, line):
         m = _PROM_RE.match(line)
@@ -235,6 +245,14 @@ class CmtsCollector:
         if metric_name == "dp_flow_QueueLatencyBinPktCount":
             bin_num = int(labels.get('bin', '0'))
             self.bin_snapshots[(sf_index, ts)][bin_num] = value
+            # Capture bin edges from labels (done once per sf per bin)
+            if sf_index not in self._sf_bin_edges or len(self._sf_bin_edges[sf_index]) <= bin_num:
+                lower = float(labels.get('edgeLowerMsec', 0))
+                upper = float(labels.get('edgeUpperMsec', 0))
+                edges = self._sf_bin_edges.setdefault(sf_index, [0.0] * (NUM_BINS + 1))
+                if 1 <= bin_num <= NUM_BINS:
+                    edges[bin_num - 1] = lower
+                    edges[bin_num] = upper
         else:
             self.samples[(sf_index, metric_name)].append((ts, value, labels))
 
@@ -242,33 +260,13 @@ class CmtsCollector:
         if ts not in self._seen_timestamps:
             self._seen_timestamps.add(ts)
             self._poll_count += 1
+            # Cache interval as soon as we have 2 timestamps
+            if self._detected_interval_s is None and len(self._seen_timestamps) >= 2:
+                ts_list = sorted(self._seen_timestamps)
+                self._detected_interval_s = (ts_list[-1] - ts_list[-2]) / 1000.0
+                self.logger.info(f"Detected Kafka polling interval: {self._detected_interval_s:.0f}s")
             self._poll_event.set()
 
-    # ------------------------------------------------------------------
-    # Peak window detection
-    # ------------------------------------------------------------------
-
-    def _find_peak_window(self, sf_index):
-        """Find the interval with the highest octet delta for a given sfIndex
-        and return the before/peak/after entries.
-
-        Uses _get_all_intervals (which merges zero-delta gaps) so that rates
-        reflect the true counter accumulation window.
-        """
-        rows = self._get_all_intervals(sf_index)
-        if not rows:
-            return []
-
-        # Find peak index
-        peak_idx = max(range(len(rows)), key=lambda i: rows[i]["delta"])
-
-        # Return before + peak + after (when available)
-        window = []
-        for i in [peak_idx - 1, peak_idx, peak_idx + 1]:
-            if 0 <= i < len(rows):
-                tag = "before" if i < peak_idx else ("peak" if i == peak_idx else "after")
-                window.append({**rows[i], "tag": tag})
-        return window
 
     # ------------------------------------------------------------------
     # Report generation
@@ -296,8 +294,8 @@ class CmtsCollector:
         wb = openpyxl.Workbook()
         wb.remove(wb.active)
 
-        # Write editable Bin_Edges sheet first (other sheets reference it)
-        self._write_bin_edges_sheet(wb)
+        # Write Bin_Edges sheets first (one per sfIndex)
+        self._write_bin_edges_sheet(wb, sorted(sf_indices))
 
         # Raw time-series sheet (tab 1)
         self._write_timeseries(wb)
@@ -350,8 +348,6 @@ class CmtsCollector:
     _CENTER = Alignment(horizontal="center", vertical="center")
     _BOLD = Font(bold=True, size=11)
 
-    _INPUT_FILL = PatternFill("solid", fgColor="FFF2CC")
-
     def _cell(self, ws, row, col, value, font=None, fill=None, fmt=None):
         cell = ws.cell(row=row, column=col, value=value)
         cell.alignment = self._CENTER
@@ -364,28 +360,30 @@ class CmtsCollector:
             cell.number_format = fmt
         return cell
 
-    def _write_bin_edges_sheet(self, wb):
-        """Write editable Bin_Edges sheet. Other sheets reference it via formulas."""
-        ws = wb.create_sheet(title="Bin_Edges")
-        ws.sheet_properties.tabColor = "FFC000"
+    def _write_bin_edges_sheet(self, wb, sf_indices):
+        """Write one Bin_Edges sheet per sfIndex showing edges read from Kafka."""
+        for sf in sf_indices:
+            edges = self._get_bin_edges(sf)
+            ws = wb.create_sheet(title=f"Bin_Edges_sf{sf}")
+            ws.sheet_properties.tabColor = "FFC000"
 
-        ws.merge_cells("A1:C1")
-        ws["A1"] = "EDITABLE BIN EDGES (ms) \u2014 Change values below to recalculate all sheets"
-        ws["A1"].font = Font(bold=True, size=12)
-        ws["A1"].alignment = self._CENTER
+            ws.merge_cells("A1:C1")
+            ws["A1"] = f"BIN EDGES (ms) — sfIndex {sf} (read from Kafka labels)"
+            ws["A1"].font = Font(bold=True, size=12)
+            ws["A1"].alignment = self._CENTER
 
-        self._cell(ws, 3, 1, "Bin #", font=self._HEADER_FONT, fill=self._HEADER_FILL)
-        self._cell(ws, 3, 2, "Lower Edge (ms)", font=self._HEADER_FONT, fill=self._HEADER_FILL)
-        self._cell(ws, 3, 3, "Upper Edge (ms)", font=self._HEADER_FONT, fill=self._HEADER_FILL)
+            self._cell(ws, 3, 1, "Bin #", font=self._HEADER_FONT, fill=self._HEADER_FILL)
+            self._cell(ws, 3, 2, "Lower Edge (ms)", font=self._HEADER_FONT, fill=self._HEADER_FILL)
+            self._cell(ws, 3, 3, "Upper Edge (ms)", font=self._HEADER_FONT, fill=self._HEADER_FILL)
 
-        for i in range(NUM_BINS):
-            row = 4 + i
-            self._cell(ws, row, 1, i + 1)
-            self._cell(ws, row, 2, self.bin_edges[i], fill=self._INPUT_FILL, fmt="0.00")
-            self._cell(ws, row, 3, self.bin_edges[i + 1], fill=self._INPUT_FILL, fmt="0.00")
+            for i in range(NUM_BINS):
+                row = 4 + i
+                self._cell(ws, row, 1, i + 1)
+                self._cell(ws, row, 2, edges[i], fmt="0.00")
+                self._cell(ws, row, 3, edges[i + 1], fmt="0.00")
 
-        for i, w in enumerate([8, 18, 18], 1):
-            ws.column_dimensions[get_column_letter(i)].width = w
+            for i, w in enumerate([8, 18, 18], 1):
+                ws.column_dimensions[get_column_letter(i)].width = w
 
     def _write_summary(self, wb, sf_indices, test_duration_s=60):
         ws = wb.create_sheet(title="Summary")
@@ -402,7 +400,7 @@ class CmtsCollector:
             "P50 (ms)", "P99 (ms)", "P99.9 (ms)",
             "P50 AVG (ms)", "P99 AVG (ms)", "P99.9 AVG (ms)",
             "AQM Drops", "Congestion Marked", "Sanctioned Pkts",
-            "Peak Throughput (Mbps)", "Avg Throughput (Mbps)", "Pkt Loss %",
+            "Throughput (Mbps)", "Pkt Loss %",
             "Total Pkt Delta", "Total Octet Delta",
         ]
         for col, h in enumerate(headers, 1):
@@ -412,10 +410,11 @@ class CmtsCollector:
         for sf in sf_indices:
             bin_deltas = self._get_bin_deltas(sf)
             total_pkts = sum(bin_deltas)
-            avg_samples = [v for _, v, _ in self.samples.get((sf, "dp_flow_QueueLatencyAvgUsec"), []) if v > 0]
-            max_samples = [v for _, v, _ in self.samples.get((sf, "dp_flow_QueueLatencyMaxUsec"), []) if v > 0]
-            pkts_passed = [v for _, v, _ in self.samples.get((sf, "K_Samis1_DeltaPacketsPassed"), [])]
-            pkts_dropped = [v for _, v, _ in self.samples.get((sf, "K_Samis1_DeltaPacketsDropped"), [])]
+            traffic_ts = self._get_traffic_timestamps(sf)
+            avg_samples = [v for ts, v, _ in self.samples.get((sf, "dp_flow_QueueLatencyAvgUsec"), []) if ts in traffic_ts]
+            max_samples = [v for ts, v, _ in self.samples.get((sf, "dp_flow_QueueLatencyMaxUsec"), []) if ts in traffic_ts]
+            pkts_passed = [v for ts, v, _ in self.samples.get((sf, "K_Samis1_DeltaPacketsPassed"), []) if ts in traffic_ts]
+            pkts_dropped = [v for ts, v, _ in self.samples.get((sf, "K_Samis1_DeltaPacketsDropped"), []) if ts in traffic_ts]
 
             avg_lat = sum(avg_samples) / len(avg_samples) if avg_samples else 0
             max_lat = max(max_samples) if max_samples else 0
@@ -431,24 +430,16 @@ class CmtsCollector:
             total_octet_delta = sum(int(r["delta"]) for r in all_intervals)
             total_pkt_delta = self._get_total_pkt_delta(sf)
 
-            # Detect polling interval and calculate throughput accordingly
-            poll_interval = self._get_polling_interval_s()
-            avg_throughput = (total_octet_delta * 8) / (test_duration_s * 1_000_000) if test_duration_s > 0 else 0
+            throughput = (total_octet_delta * 8) / (test_duration_s * 1_000_000) if test_duration_s > 0 else 0
 
-            if poll_interval < test_duration_s:
-                # Polling faster than test — per-interval peak is valid
-                peak_throughput = max((r["rate_mbps"] for r in all_intervals), default=0)
-            else:
-                # Polling >= test duration — per-interval rates are diluted
-                peak_throughput = avg_throughput
-
-            p50 = self._calc_percentile(bin_deltas, 0.50)
-            p99 = self._calc_percentile(bin_deltas, 0.99)
-            p999 = self._calc_percentile(bin_deltas, 0.999)
-            p50a = self._calc_percentile_avg(bin_deltas, 0.50)
-            p99a = self._calc_percentile_avg(bin_deltas, 0.99)
-            p999a = self._calc_percentile_avg(bin_deltas, 0.999)
-            weighted_avg = self._calc_weighted_avg(bin_deltas)
+            sf_edges = self._get_bin_edges(sf)
+            p50 = self._calc_percentile(bin_deltas, 0.50, sf_edges)
+            p99 = self._calc_percentile(bin_deltas, 0.99, sf_edges)
+            p999 = self._calc_percentile(bin_deltas, 0.999, sf_edges)
+            p50a = self._calc_percentile_avg(bin_deltas, 0.50, sf_edges)
+            p99a = self._calc_percentile_avg(bin_deltas, 0.99, sf_edges)
+            p999a = self._calc_percentile_avg(bin_deltas, 0.999, sf_edges)
+            weighted_avg = self._calc_weighted_avg(bin_deltas, sf_edges)
 
             self._cell(ws, row, 1, f"sfIndex {sf}")
             self._cell(ws, row, 2, total_pkts, fill=self._CALC_FILL)
@@ -464,45 +455,34 @@ class CmtsCollector:
             self._cell(ws, row, 12, int(total_aqm), fill=self._CALC_FILL)
             self._cell(ws, row, 13, int(total_cong), fill=self._CALC_FILL)
             self._cell(ws, row, 14, int(total_sanc), fill=self._CALC_FILL)
-            self._cell(ws, row, 15, round(peak_throughput, 4), fill=self._CALC_FILL, fmt="0.0000")
-            self._cell(ws, row, 16, round(avg_throughput, 4), fill=self._CALC_FILL, fmt="0.0000")
-            self._cell(ws, row, 17, round(loss_pct, 4), fill=self._CALC_FILL, fmt="0.0000")
-            self._cell(ws, row, 18, total_pkt_delta, fill=self._CALC_FILL)
-            self._cell(ws, row, 19, total_octet_delta, fill=self._CALC_FILL)
+            self._cell(ws, row, 15, round(throughput, 4), fill=self._CALC_FILL, fmt="0.0000")
+            self._cell(ws, row, 16, round(loss_pct, 4), fill=self._CALC_FILL, fmt="0.0000")
+            self._cell(ws, row, 17, total_pkt_delta, fill=self._CALC_FILL)
+            self._cell(ws, row, 18, total_octet_delta, fill=self._CALC_FILL)
             row += 1
 
         # TOTAL row — combined across all sfIndices
         total_row = row
-        sum_peak = 0
-        sum_avg = 0
-        sum_pkt_delta = 0
         sum_octet_delta = 0
-        poll_interval = self._get_polling_interval_s()
+        sum_pkt_delta = 0
         for sf in sf_indices:
             ai = self._get_all_intervals(sf)
-            sf_octet_delta = sum(int(r["delta"]) for r in ai)
-            sf_avg = (sf_octet_delta * 8) / (test_duration_s * 1_000_000) if test_duration_s > 0 else 0
-            if poll_interval < test_duration_s:
-                sf_peak = max((r["rate_mbps"] for r in ai), default=0)
-            else:
-                sf_peak = sf_avg
-            sum_peak += sf_peak
-            sum_avg += sf_avg
-            sum_octet_delta += sf_octet_delta
+            sum_octet_delta += sum(int(r["delta"]) for r in ai)
             sum_pkt_delta += self._get_total_pkt_delta(sf)
+        sum_throughput = (sum_octet_delta * 8) / (test_duration_s * 1_000_000) if test_duration_s > 0 else 0
         self._cell(ws, total_row, 1, "TOTAL", font=self._BOLD, fill=self._RESULT_FILL)
-        self._cell(ws, total_row, 15, round(sum_peak, 4), font=self._BOLD, fill=self._RESULT_FILL, fmt="0.0000")
-        self._cell(ws, total_row, 16, round(sum_avg, 4), font=self._BOLD, fill=self._RESULT_FILL, fmt="0.0000")
-        self._cell(ws, total_row, 18, sum_pkt_delta, font=self._BOLD, fill=self._RESULT_FILL)
-        self._cell(ws, total_row, 19, sum_octet_delta, font=self._BOLD, fill=self._RESULT_FILL)
+        self._cell(ws, total_row, 15, round(sum_throughput, 4), font=self._BOLD, fill=self._RESULT_FILL, fmt="0.0000")
+        self._cell(ws, total_row, 17, sum_pkt_delta, font=self._BOLD, fill=self._RESULT_FILL)
+        self._cell(ws, total_row, 18, sum_octet_delta, font=self._BOLD, fill=self._RESULT_FILL)
 
-        for i, w in enumerate([14, 16, 18, 18, 18, 14, 14, 14, 16, 16, 16, 14, 18, 16, 18, 18, 14, 16, 18], 1):
+        for i, w in enumerate([14, 16, 18, 18, 18, 14, 14, 14, 16, 16, 16, 14, 18, 16, 18, 14, 16, 18], 1):
             ws.column_dimensions[get_column_letter(i)].width = w
 
     def _write_sf_sheet(self, wb, sf_index):
-        """Write per-SF sheet with Excel formulas referencing Bin_Edges sheet."""
+        """Write per-SF sheet with actual bin edges for this sfIndex."""
         ws = wb.create_sheet(title=f"sfIndex_{sf_index}")
         bin_deltas = self._get_bin_deltas(sf_index)
+        sf_edges = self._get_bin_edges(sf_index)
         total = sum(bin_deltas)
 
         ws.merge_cells("A1:H1")
@@ -522,18 +502,12 @@ class CmtsCollector:
 
         for i in range(NUM_BINS):
             row = 4 + i
-            be_row = 4 + i  # corresponding row in Bin_Edges sheet
-
             self._cell(ws, row, 1, i + 1)
-            # Col B: LOWER from Bin_Edges
-            c = self._cell(ws, row, 2, None, fmt="0.00")
-            c.value = f"=Bin_Edges!B{be_row}"
-            # Col C: UPPER from Bin_Edges
-            c = self._cell(ws, row, 3, None, fmt="0.00")
-            c.value = f"=Bin_Edges!C{be_row}"
+            self._cell(ws, row, 2, sf_edges[i], fmt="0.00")
+            self._cell(ws, row, 3, sf_edges[i + 1], fmt="0.00")
             # Col D: AVG = (LOWER + UPPER) / 2
             c = self._cell(ws, row, 4, None, fill=self._CALC_FILL, fmt="0.0000")
-            c.value = f"=(B{row}+C{row})/2"
+            c.value = round((sf_edges[i] + sf_edges[i + 1]) / 2, 4)
             # Col E: DELTA (raw data)
             self._cell(ws, row, 5, int(bin_deltas[i]), fill=self._CALC_FILL)
             # Col F: CUMULATIVE
@@ -627,76 +601,63 @@ class CmtsCollector:
             ws.column_dimensions[get_column_letter(i)].width = w
 
     def _write_peak_window(self, wb, sf_indices, test_duration_s=60):
-        """Write all octet-delta intervals per sfIndex with peak highlighted."""
+        """Write all octet-delta intervals per sfIndex with throughput."""
         ws = wb.create_sheet(title="Throughput")
         ws.sheet_properties.tabColor = "00B050"
 
-        ws.merge_cells("A1:I1")
+        ws.merge_cells("A1:H1")
         ws["A1"] = f"QOS SERVICE FLOW OCTETS — {self.mac_colon}"
         ws["A1"].font = Font(bold=True, size=14)
         ws["A1"].alignment = self._CENTER
 
         headers = ["SF Index", "Poll Before", "Poll After",
                    "Before Octets", "After Octets", "Delta Octets",
-                   "Interval (s)", "Rate (Mbps)", "Tag"]
+                   "Interval (s)", "Rate (Mbps)"]
         for col, h in enumerate(headers, 1):
             self._cell(ws, 3, col, h, font=self._HEADER_FONT, fill=self._HEADER_FILL)
 
         row = 4
         grand_total_delta = 0
-        grand_total_rate = 0
 
         for sf in sf_indices:
             all_rows = self._get_all_intervals(sf)
             if not all_rows:
                 continue
 
-            # Find peak index
-            peak_idx = max(range(len(all_rows)), key=lambda i: all_rows[i]["delta"])
             sf_total_delta = 0
-
-            for i, entry in enumerate(all_rows):
-                is_peak = (i == peak_idx)
-                fill = self._RESULT_FILL if is_peak else None
-                tag = "PEAK" if is_peak else ""
+            for entry in all_rows:
                 ts_before_dt = datetime.utcfromtimestamp(entry["ts_before"] / 1000)
                 ts_after_dt = datetime.utcfromtimestamp(entry["timestamp_ms"] / 1000)
                 self._cell(ws, row, 1, f"sfIndex {sf}")
-                self._cell(ws, row, 2, ts_before_dt.strftime("%Y-%m-%d %H:%M:%S.%f"), fill=fill)
-                self._cell(ws, row, 3, ts_after_dt.strftime("%Y-%m-%d %H:%M:%S.%f"), fill=fill)
-                self._cell(ws, row, 4, int(entry["before"]), fill=fill)
-                self._cell(ws, row, 5, int(entry["after"]), fill=fill)
-                self._cell(ws, row, 6, int(entry["delta"]), fill=fill)
-                self._cell(ws, row, 7, round(entry["interval"], 6), fill=fill, fmt="0.000000")
-                self._cell(ws, row, 8, round(entry["rate_mbps"], 4), fill=fill, fmt="0.0000")
-                self._cell(ws, row, 9, tag, font=self._BOLD if is_peak else None, fill=fill)
+                self._cell(ws, row, 2, ts_before_dt.strftime("%Y-%m-%d %H:%M:%S.%f"))
+                self._cell(ws, row, 3, ts_after_dt.strftime("%Y-%m-%d %H:%M:%S.%f"))
+                self._cell(ws, row, 4, int(entry["before"]))
+                self._cell(ws, row, 5, int(entry["after"]))
+                self._cell(ws, row, 6, int(entry["delta"]))
+                self._cell(ws, row, 7, round(entry["interval"], 6), fmt="0.000000")
+                self._cell(ws, row, 8, round(entry["rate_mbps"], 4), fmt="0.0000")
                 sf_total_delta += int(entry["delta"])
                 row += 1
 
-            # SF total row with peak and average
-            sf_octet_total = sum(int(r["delta"]) for r in all_rows)
-            sf_avg_rate = (sf_octet_total * 8) / (test_duration_s * 1_000_000) if test_duration_s > 0 else 0
-            poll_interval = self._get_polling_interval_s()
-            if poll_interval < test_duration_s:
-                sf_peak_rate = max(r["rate_mbps"] for r in all_rows)
-            else:
-                sf_peak_rate = sf_avg_rate
+            # SF total row
+            sf_throughput = (sf_total_delta * 8) / (test_duration_s * 1_000_000) if test_duration_s > 0 else 0
             self._cell(ws, row, 1, f"sfIndex {sf}", font=self._BOLD)
             self._cell(ws, row, 5, "TOTAL", font=self._BOLD)
             self._cell(ws, row, 6, sf_total_delta, font=self._BOLD, fill=self._CALC_FILL)
-            self._cell(ws, row, 7, f"Peak: {sf_peak_rate:.2f}", font=self._BOLD, fill=self._CALC_FILL)
-            self._cell(ws, row, 8, f"Avg: {sf_avg_rate:.2f}", font=self._BOLD, fill=self._CALC_FILL)
+            self._cell(ws, row, 8, round(sf_throughput, 4), font=self._BOLD, fill=self._CALC_FILL, fmt="0.0000")
             row += 1
 
             grand_total_delta += sf_total_delta
             row += 1  # blank separator
 
         # Combined total across all sfIndices
+        grand_throughput = (grand_total_delta * 8) / (test_duration_s * 1_000_000) if test_duration_s > 0 else 0
         self._cell(ws, row, 1, "ALL SF COMBINED", font=self._BOLD, fill=self._RESULT_FILL)
         self._cell(ws, row, 5, "TOTAL", font=self._BOLD, fill=self._RESULT_FILL)
         self._cell(ws, row, 6, grand_total_delta, font=self._BOLD, fill=self._RESULT_FILL)
+        self._cell(ws, row, 8, round(grand_throughput, 4), font=self._BOLD, fill=self._RESULT_FILL, fmt="0.0000")
 
-        for i, w in enumerate([12, 28, 28, 18, 18, 18, 14, 14, 8], 1):
+        for i, w in enumerate([12, 28, 28, 18, 18, 18, 14, 14], 1):
             ws.column_dimensions[get_column_letter(i)].width = w
 
     def _write_timeseries(self, wb):
@@ -719,7 +680,8 @@ class CmtsCollector:
                 self._cell(ws, row, 5, round(val, 6) if val != int(val) else int(val))
                 row += 1
 
-        # Write bin snapshot data (all 16 bins per poll, including zero-traffic polls)
+        # Write bin snapshot data (all 16 bins per poll including zero-traffic polls)
+        # Values are cumulative counters — deltas are computed in _get_bin_deltas
         # Collect all sf indices that have bin data
         bin_sf_indices = set(sf for (sf, ts) in self.bin_snapshots.keys())
         all_timestamps = sorted(self._seen_timestamps)
@@ -738,37 +700,68 @@ class CmtsCollector:
             ws.column_dimensions[get_column_letter(i)].width = w
 
     def _get_polling_interval_s(self):
-        """Detect the polling interval from Kafka timestamps."""
-        ts_list = sorted(self._seen_timestamps)
-        if len(ts_list) < 2:
-            return 60.0  # default assumption
-        gaps = [(ts_list[i] - ts_list[i-1]) / 1000.0 for i in range(1, len(ts_list))]
-        return round(sum(gaps) / len(gaps), 1)
+        """Return detected polling interval, or 60s if not yet observed."""
+        return self._detected_interval_s or 60.0
+
+    def _get_traffic_timestamps(self, sf_index):
+        """Identify traffic-window poll timestamps for this sfIndex.
+
+        Always excludes the first poll (pre-test timing alignment).
+        Excludes the last poll only if its bin packet total is zero
+        (post-test verification poll with no traffic).
+        Falls back to all timestamps if no bin data exists.
+        """
+        by_ts = {}
+        for (sf, ts), bins in self.bin_snapshots.items():
+            if sf == sf_index:
+                by_ts[ts] = sum(bins.values())
+
+        if not by_ts:
+            return self._seen_timestamps
+
+        all_ts = sorted(by_ts)
+        if len(all_ts) == 1:
+            return set(all_ts)
+
+        # Always drop first poll (pre-test baseline)
+        candidates = all_ts[1:]
+        # Drop last poll only if it has zero bin packets (post-test idle)
+        if len(candidates) > 1 and by_ts[candidates[-1]] == 0:
+            candidates = candidates[:-1]
+
+        return set(candidates) if candidates else set(all_ts)
+
+    def _get_bin_edges(self, sf_index):
+        """Return bin edges for a given sfIndex, falling back to defaults."""
+        edges = self._sf_bin_edges.get(sf_index)
+        if edges and edges[-1] > 0:
+            return edges
+        return _FALLBACK_BIN_EDGES_MS
 
     def _get_all_intervals(self, sf_index):
-        """Build all consecutive interval deltas for snmp_docsQosServiceFlowOctets.
-
-        Skips zero-delta intervals (no traffic) so that throughput calculations
-        only reflect intervals where data actually flowed.
-        """
-        samples = self.samples.get((sf_index, "snmp_docsQosServiceFlowOctets"), [])
-        if len(samples) < 2:
+        """Build octet-delta intervals using snmp_docsQosServiceFlowOctets, traffic window only."""
+        snmp_samples = self.samples.get((sf_index, "snmp_docsQosServiceFlowOctets"), [])
+        if len(snmp_samples) < 2:
             return []
-        pts = sorted(samples, key=lambda x: x[0])
+        traffic_ts = self._get_traffic_timestamps(sf_index)
+        pts = sorted(snmp_samples, key=lambda x: x[0])
+        # Keep only points at or adjacent to traffic timestamps so we get
+        # the before→after bracket around the traffic window
+        traffic_pts = [p for p in pts if p[0] in traffic_ts]
+        if len(traffic_pts) < 2:
+            traffic_pts = pts  # fall back to all
         rows = []
-        for i in range(1, len(pts)):
-            ts_before, val_before, _ = pts[i - 1]
-            ts_after, val_after, _ = pts[i]
-            delta = val_after - val_before
-            if delta == 0:
+        for i in range(1, len(traffic_pts)):
+            delta = int(traffic_pts[i][1] - traffic_pts[i-1][1])
+            if delta <= 0:
                 continue
-            interval_s = (ts_after - ts_before) / 1000.0
+            interval_s = (traffic_pts[i][0] - traffic_pts[i-1][0]) / 1000.0
             rate = (delta * 8) / (interval_s * 1_000_000) if interval_s > 0 else 0
             rows.append({
-                "timestamp_ms": ts_after,
-                "ts_before": ts_before,
-                "before": val_before,
-                "after": val_after,
+                "timestamp_ms": traffic_pts[i][0],
+                "ts_before": traffic_pts[i-1][0],
+                "before": int(traffic_pts[i-1][1]),
+                "after": int(traffic_pts[i][1]),
                 "delta": delta,
                 "interval": interval_s,
                 "rate_mbps": rate,
@@ -776,32 +769,29 @@ class CmtsCollector:
         return rows
 
     def _get_total_pkt_delta(self, sf_index):
-        """Return total packet delta (last - first) from snmp_docsQosServiceFlowPackets."""
-        samples = self.samples.get((sf_index, "snmp_docsQosServiceFlowPackets"), [])
-        if len(samples) < 2:
+        """Return packet delta across the traffic window from snmp_docsQosServiceFlowPackets."""
+        snmp_samples = self.samples.get((sf_index, "snmp_docsQosServiceFlowPackets"), [])
+        if len(snmp_samples) < 2:
             return 0
-        pts = sorted(samples, key=lambda x: x[0])
+        traffic_ts = self._get_traffic_timestamps(sf_index)
+        pts = sorted(snmp_samples, key=lambda x: x[0])
+        traffic_pts = [p for p in pts if p[0] in traffic_ts]
+        if len(traffic_pts) >= 2:
+            return int(traffic_pts[-1][1] - traffic_pts[0][1])
         return int(pts[-1][1] - pts[0][1])
 
-    def _get_peak_pkt_delta(self, sf_index, peak_entry):
-        """Get the packet delta for the same interval as the peak octet entry."""
-        if not peak_entry:
-            return 0
-        samples = self.samples.get((sf_index, "snmp_docsQosServiceFlowPackets"), [])
-        if len(samples) < 2:
-            return 0
-        pts = sorted(samples, key=lambda x: x[0])
-        for i in range(1, len(pts)):
-            if pts[i][0] == peak_entry["timestamp_ms"]:
-                return int(pts[i][1] - pts[i - 1][1])
-        return 0
 
     def _counter_delta(self, sf_index, metric_name):
-        """Return last - first value for a cumulative counter metric."""
+        """Return delta between first and last traffic-window samples for a cumulative counter."""
         samples = self.samples.get((sf_index, metric_name), [])
         if len(samples) < 2:
             return 0
+        traffic_ts = self._get_traffic_timestamps(sf_index)
         pts = sorted(samples, key=lambda x: x[0])
+        traffic_pts = [p for p in pts if p[0] in traffic_ts]
+        if len(traffic_pts) >= 2:
+            return int(traffic_pts[-1][1] - traffic_pts[0][1])
+        # Fall back to first/last overall if no traffic-window match
         return int(pts[-1][1] - pts[0][1])
 
     # ------------------------------------------------------------------
@@ -809,22 +799,19 @@ class CmtsCollector:
     # ------------------------------------------------------------------
 
     def _get_bin_deltas(self, sf_index):
-        """Sum bin packet counts across all timestamps for a given sfIndex.
-
-        Each 30s snapshot gives the delta bin counts for that interval,
-        so we sum them to get total counts over the test window.
-        """
+        """Sum bin packet counts across traffic-window polls for this sfIndex."""
+        test_ts = self._get_traffic_timestamps(sf_index)
         totals = [0] * NUM_BINS
         for (sf, ts), bins in self.bin_snapshots.items():
-            if sf != sf_index:
+            if sf != sf_index or ts not in test_ts:
                 continue
             for bin_num, count in bins.items():
-                idx = bin_num - 1  # bin labels are 1-based
+                idx = bin_num - 1
                 if 0 <= idx < NUM_BINS:
                     totals[idx] += int(count)
         return totals
 
-    def _calc_percentile(self, deltas, percentile):
+    def _calc_percentile(self, deltas, percentile, bin_edges):
         total = sum(deltas)
         if total == 0:
             return 0.0
@@ -834,13 +821,13 @@ class CmtsCollector:
             cumulative += count
             if cumulative >= target:
                 prev_cum = cumulative - count
-                low = self.bin_edges[i]
-                high = self.bin_edges[i + 1]
+                low = bin_edges[i]
+                high = bin_edges[i + 1]
                 denom = count if count > 0 else 1
                 return low + ((target - prev_cum) / denom) * (high - low)
-        return self.bin_edges[-1]
+        return bin_edges[-1]
 
-    def _calc_percentile_avg(self, deltas, percentile):
+    def _calc_percentile_avg(self, deltas, percentile, bin_edges):
         """AVG method: return the bin midpoint of the first bin where
         cumulative count >= percentile target."""
         total = sum(deltas)
@@ -851,16 +838,16 @@ class CmtsCollector:
         for i, count in enumerate(deltas):
             cumulative += count
             if cumulative >= target:
-                return (self.bin_edges[i] + self.bin_edges[i + 1]) / 2
-        return (self.bin_edges[-2] + self.bin_edges[-1]) / 2
+                return (bin_edges[i] + bin_edges[i + 1]) / 2
+        return (bin_edges[-2] + bin_edges[-1]) / 2
 
-    def _calc_weighted_avg(self, deltas):
+    def _calc_weighted_avg(self, deltas, bin_edges):
         """Weighted average latency: sum(delta_i × bin_avg_i) / total."""
         total = sum(deltas)
         if total == 0:
             return 0.0
         weighted = sum(
-            deltas[i] * (self.bin_edges[i] + self.bin_edges[i + 1]) / 2
+            deltas[i] * (bin_edges[i] + bin_edges[i + 1]) / 2
             for i in range(NUM_BINS)
         )
         return weighted / total
