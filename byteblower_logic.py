@@ -7,7 +7,7 @@ from log_rotator import LogRotator
 from config_loader import config
 
 class ByteBlowerLogic:
-    def __init__(self, bbp_file, scenario_name, bb_scenario_name, test_group_name=None, rtt_suffix="", report_formats="html pdf csv xls xlsx json docx"):
+    def __init__(self, bbp_file, scenario_name, bb_scenario_name, test_group_name=None, rtt_suffix="", report_formats="html pdf csv xls xlsx json docx", cm_mac=None, cm_ipv6=None):
         self.logger = Logger("ByteBlowerLogic")
         self.bbp_file = bbp_file
         self.scenario_name = scenario_name
@@ -15,6 +15,8 @@ class ByteBlowerLogic:
         self.test_group_name = test_group_name
         self.rtt_suffix = rtt_suffix
         self.report_formats = report_formats
+        self.cm_mac = cm_mac
+        self.cm_ipv6 = cm_ipv6
         self.test_id = int(datetime.now().timestamp())
         self.timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.output_prefix = f"{self.test_group_name}_{self.scenario_name}{self.rtt_suffix}_{self.timestamp_str}"
@@ -142,7 +144,7 @@ class ByteBlowerLogic:
             shutil.copy2(original_path, r2_path)
     
     def _print_port_info(self, output):
-        """Parse and display ByteBlower port MAC and IP info from CLI output"""
+        """Parse and display ByteBlower port info plus modem details."""
         import re
         ports = {}
         for line in output.splitlines():
@@ -159,11 +161,16 @@ class ByteBlowerLogic:
                 port_name = ip_match.group(1)
                 if 'ip' not in ports.setdefault(port_name, {}):
                     ports[port_name]['ip'] = ip_match.group(2)
+
+        print(f"\n  Test Info:")
+        if self.cm_mac:
+            print(f"    CM MAC:  {self.cm_mac}")
+        if self.cm_ipv6:
+            print(f"    CM IPv6: {self.cm_ipv6}")
         if ports:
-            print(f"\n  Port Info:")
             for name, info in ports.items():
                 mac = info.get('mac', 'N/A')
-                ip = info.get('ip', 'N/A')
+                ip  = info.get('ip',  'N/A')
                 print(f"    {name}: MAC={mac}  IP={ip}")
 
     def _print_html_reports(self, output_dir):

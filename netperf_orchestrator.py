@@ -27,7 +27,7 @@ from iperf3_logic import IPerf3Logic
 from speedtest_logic import SpeedTestLogic
 from thousandeyes_logic import ThousandEyesLogic
 from logger import Logger
-from snmp_collector import collect_snmp_data, generate_latency_report, find_snmp_files
+from snmp_collector import collect_snmp_data, generate_latency_report, find_snmp_files, parse_modem_info
 
 try:
     from cmts_collector import CmtsCollector
@@ -377,7 +377,7 @@ class NetperfCLI:
                 ps = PacketStormLogic(rtt_file)
                 success = ps.start_config() and ps.stop_config()
             elif byteblower_only:
-                bb = ByteBlowerLogic(bbp_file, scenario_name, scenario_name, test_group_name, rtt_suffix, report_formats)
+                bb = ByteBlowerLogic(bbp_file, scenario_name, scenario_name, test_group_name, rtt_suffix, report_formats, cm_mac=self.cm_mac, cm_ipv6=self.target_ip)
                 self.output_dir = test_output_dir
                 success = True
                 snmp_dir = os.path.join(test_output_dir, scenario_name + rtt_suffix)
@@ -390,6 +390,21 @@ class NetperfCLI:
                     iter_dir = os.path.join(snmp_dir, f"iteration_{i+1}") if iterations > 1 else snmp_dir
                     os.makedirs(iter_dir, exist_ok=True)
                     self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "before", iter_dir, "")
+                    # Print modem info from first SNMP before file
+                    if i == 0:
+                        snmp_files = glob.glob(os.path.join(iter_dir, "*_SNMP_before_*.txt"))
+                        if snmp_files:
+                            info = parse_modem_info(snmp_files[-1])
+                            if info:
+                                print(f"\n  Modem Info:")
+                                print(f"    Model:   {info.get('model', 'N/A')}")
+                                print(f"    Vendor:  {info.get('vendor', 'N/A')}")
+                                print(f"    SW Rev:  {info.get('sw_rev', 'N/A')}")
+                                print(f"    HW Rev:  {info.get('hw_rev', 'N/A')}")
+                                if self.cm_mac:
+                                    print(f"    CM MAC:  {self.cm_mac}")
+                                if self.target_ip:
+                                    print(f"    CM IPv6: {self.target_ip}")
                     self.start_cmts_collection(direction=cmts_dir)
                     self.wait_for_cmts_poll()
                     test_start = time.time()

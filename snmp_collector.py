@@ -308,7 +308,31 @@ def ssh_snmp_collector(username, jumpserver, target_ip, output_file=None, snmp_c
                 f.write(f"ERROR: {error_msg}\n")
         return None
 
-def collect_snmp_data(target_ip, test_name, phase, output_dir):
+def parse_modem_info(snmp_file):
+    """Parse modem model, vendor, SW version from sysDescr in SNMP file."""
+    import re
+    try:
+        with open(snmp_file, 'r') as f:
+            content = f.read()
+        m = re.search(r'sysDescr\.0\s*=\s*STRING:\s*(.+)', content)
+        if not m:
+            return {}
+        desc = m.group(1).strip()
+        info = {'description': desc}
+        for key, pattern in [
+            ('vendor',  r'VENDOR:\s*([^;>]+)'),
+            ('model',   r'MODEL:\s*([^;>]+)'),
+            ('sw_rev',  r'SW_REV:\s*([^;>]+)'),
+            ('hw_rev',  r'HW_REV:\s*([^;>]+)'),
+        ]:
+            km = re.search(pattern, desc)
+            if km:
+                info[key] = km.group(1).strip()
+        return info
+    except Exception:
+        return {}
+
+
     """Collect SNMP data for a specific test and phase"""
     username = config.snmp_username
     jumpserver = config.snmp_jumpserver
