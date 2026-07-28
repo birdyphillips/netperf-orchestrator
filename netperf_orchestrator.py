@@ -69,7 +69,6 @@ class NetperfCLI:
             self.target_ip = user_input if user_input else None
         if self.target_ip:
             print(f"Modem IPv6: {self.target_ip}")
-            self.logger.info(f"Using modem IPv6: {self.target_ip}")
         else:
             self.logger.warning("No modem IPv6 — upstream SNMP collection will be skipped")
         
@@ -138,9 +137,9 @@ class NetperfCLI:
 
             if match:
                 ipv6 = match.group(1)
-                self.logger.info(f"Auto-detected IPv6: {ipv6}")
+                print(f"Modem IPv6 (auto-detected): {ipv6}")
                 return ipv6
-            self.logger.warning("scm ran but no IPv6 found in output — falling back to manual input")
+            self.logger.warning(f"scm ran but no IPv6 found — falling back to manual input")
         except Exception as e:
             self.logger.warning(f"CMTS IPv6 lookup failed: {e} — falling back to manual input")
         return None
