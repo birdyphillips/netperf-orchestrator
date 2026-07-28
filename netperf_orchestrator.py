@@ -77,32 +77,38 @@ class NetperfCLI:
         self.cmts_collector = None
     
     def _lookup_ipv6_from_cmts(self, mac):
-        """SSH to CMTS and run 'scm <mac> ip' to get the modem IPv6 address.
+        """SSH to CMTS and run scm command to get the modem IPv6 address.
+        vcmts: 'scm <mac> ip'     — IPv6 in table column
+        icmts: 'scm <mac> detail' — IPv6= on Uptime line
         Returns the IPv6 string or None if lookup fails."""
         import re
         import paramiko
+        import time
         try:
             from config_loader import config
-            jumpserver  = config.snmp_jumpserver
-            username    = config.snmp_username
-            key_path    = os.path.expanduser(config.ssh_key_path)
-            cmts_host   = "apc01k1dccc"
-            cmts_pass   = config.vcmts_password
+            jumpserver = config.snmp_jumpserver
+            username   = config.snmp_username
+            key_path   = os.path.expanduser(config.ssh_key_path)
+            cmts_pass  = config.vcmts_password
+
+            # Pick CMTS host and command based on type
+            if self.cmts_type == 'icmts':
+                cmts_host = 'cts01k1dccc'
+                scm_cmd   = f"scm {mac} detail"
+            else:
+                cmts_host = 'apc01k1dccc'
+                scm_cmd   = f"scm {mac} ip"
 
             self.logger.info(f"Looking up IPv6 for {mac} via {cmts_host}...")
 
             ssh = paramiko.SSHClient()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
-            # Connect to jumpserver
             if os.path.exists(key_path):
                 ssh.connect(jumpserver, username=username, key_filename=key_path, timeout=10)
             else:
                 ssh.connect(jumpserver, username=username, timeout=10)
 
-            # Open interactive shell, hop to CMTS, run scm command
             shell = ssh.invoke_shell()
-            import time
             shell.send(f"ssh -o StrictHostKeyChecking=no {username}@{cmts_host}\n")
             time.sleep(1)
             buf = shell.recv(4096).decode(errors='ignore')
@@ -110,7 +116,7 @@ class NetperfCLI:
                 shell.send(cmts_pass + '\n')
                 time.sleep(1)
                 shell.recv(4096)
-            shell.send(f"scm {mac} ip\n")
+            shell.send(scm_cmd + '\n')
             time.sleep(2)
             output = ''
             for _ in range(20):
@@ -124,7 +130,12 @@ class NetperfCLI:
             shell.close()
             ssh.close()
 
-            match = re.search(r'([0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4}){5,7})', output)
+            # icmts: parse IPv6=<addr> from detail output
+            if self.cmts_type == 'icmts':
+                match = re.search(r'IPv6=([0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4}){5,7})', output)
+            else:
+                match = re.search(r'([0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4}){5,7})', output)
+
             if match:
                 ipv6 = match.group(1)
                 self.logger.info(f"Auto-detected IPv6: {ipv6}")
