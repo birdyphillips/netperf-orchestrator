@@ -333,7 +333,7 @@ def parse_modem_info(snmp_file):
         return {}
 
 
-    """Collect SNMP data for a specific test and phase"""
+def collect_snmp_data(target_ip, test_name, phase, output_dir):
     username = config.snmp_username
     jumpserver = config.snmp_jumpserver
     
@@ -585,6 +585,41 @@ def _styled_cell(ws, row, col, value, font=None, fill=None, fmt=None):
     if fmt:
         cell.number_format = fmt
     return cell
+
+
+def write_modem_info_sheet(wb, cm_mac=None, cm_ipv6=None, before_file=None):
+    """Write a Modem Info sheet as the first tab in the Excel report."""
+    ws = wb.create_sheet(title="Modem Info", index=0)
+    ws.sheet_properties.tabColor = "70AD47"
+
+    ws.merge_cells("A1:B1")
+    ws["A1"] = "MODEM INFORMATION"
+    ws["A1"].font = Font(bold=True, size=14)
+    ws["A1"].alignment = _CENTER
+
+    info_fill = PatternFill("solid", fgColor="E2EFDA")
+    rows = []
+    if cm_mac:   rows.append(("CM MAC",  cm_mac))
+    if cm_ipv6:  rows.append(("CM IPv6", cm_ipv6))
+
+    # Parse modem details from SNMP before file
+    if before_file:
+        modem = parse_modem_info(before_file)
+        if modem:
+            for key, label in [("vendor", "Vendor"), ("model", "Model"),
+                               ("sw_rev", "SW Rev"), ("hw_rev", "HW Rev")]:
+                if key in modem:
+                    rows.append((label, modem[key]))
+        ts = parse_snmp_timestamp(before_file)
+        if ts:
+            rows.append(("Collection Time", ts.strftime("%Y-%m-%d %H:%M:%S")))
+
+    for i, (label, value) in enumerate(rows, start=3):
+        _styled_cell(ws, i, 1, label, font=_BOLD, fill=_HEADER_FILL)
+        _styled_cell(ws, i, 2, value, fill=info_fill)
+
+    ws.column_dimensions["A"].width = 20
+    ws.column_dimensions["B"].width = 45
 
 
 def write_bin_edges_sheet(wb, bin_edges):
@@ -1008,7 +1043,7 @@ def _detect_direction(filepath):
     return "US"
 
 
-def generate_latency_report(before_file, after_file, output_file=None, direction=None):
+def generate_latency_report(before_file, after_file, output_file=None, direction=None, cm_mac=None, cm_ipv6=None):
     """Main entry: parse SNMP files, compute deltas, write Excel report."""
     if not OPENPYXL_AVAILABLE:
         print("WARNING: openpyxl not available \u2014 skipping latency report")
@@ -1055,7 +1090,7 @@ def generate_latency_report(before_file, after_file, output_file=None, direction
     wb = openpyxl.Workbook()
     wb.remove(wb.active)
 
-    # Write editable Bin_Edges sheet first (other sheets reference it)
+    write_modem_info_sheet(wb, cm_mac=cm_mac, cm_ipv6=cm_ipv6, before_file=before_file)
     write_bin_edges_sheet(wb, edges)
 
     write_timeseries_sheet(wb, before_file, after_file, fs_before, fs_after,

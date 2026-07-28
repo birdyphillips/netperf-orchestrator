@@ -165,7 +165,7 @@ class NetperfCLI:
             self.logger.warning("CMTS collector not available (kafka-python not installed) — skipping")
             return False
         try:
-            self.cmts_collector = CmtsCollector(mac=self.cm_mac, direction=direction)
+            self.cmts_collector = CmtsCollector(mac=self.cm_mac, direction=direction, cm_ipv6=self.target_ip)
             self.cmts_collector.start()
             return True
         except Exception as e:
@@ -560,7 +560,7 @@ class NetperfCLI:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 # US report (from modem) — always generated
                 us_output = os.path.join(output_dir, f"SNMP_US_Latency_Report_{dir_name}{iter_tag}_{timestamp}.xlsx")
-                result = generate_latency_report(before_file, after_file, output_file=us_output, direction="US")
+                result = generate_latency_report(before_file, after_file, output_file=us_output, direction="US", cm_mac=self.cm_mac, cm_ipv6=self.target_ip)
                 if result:
                     self.logger.info(f"US Latency report: {os.path.basename(result)}")
                 else:
@@ -568,7 +568,7 @@ class NetperfCLI:
                 # DS report (from iCMTS SNMP) — only for iCMTS mode
                 if self.cmts_type == "icmts":
                     ds_output = os.path.join(output_dir, f"SNMP_DS_Latency_Report_{dir_name}{iter_tag}_{timestamp}.xlsx")
-                    result_ds = generate_latency_report(before_file, after_file, output_file=ds_output, direction="DS")
+                    result_ds = generate_latency_report(before_file, after_file, output_file=ds_output, direction="DS", cm_mac=self.cm_mac, cm_ipv6=self.target_ip)
                     if result_ds:
                         self.logger.info(f"DS Latency report (iCMTS SNMP): {os.path.basename(result_ds)}")
                     else:

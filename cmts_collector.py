@@ -84,11 +84,12 @@ def _parse_labels(label_str):
 class CmtsCollector:
     """Collects CMTS Kafka metrics in a background thread during a test."""
 
-    def __init__(self, broker=None, topic=None, mac=None, direction="downstream"):
+    def __init__(self, broker=None, topic=None, mac=None, direction="downstream", cm_ipv6=None):
         self.logger = Logger("CmtsCollector")
         self.broker = broker or config.get('kafka', 'broker', default='65.185.232.139:11203')
         self.topic = topic or config.get('kafka', 'topic', default='cmts_metrics_apc01k1dccc')
         self.direction = direction
+        self.cm_ipv6 = cm_ipv6
         self.enabled = KAFKA_AVAILABLE
 
         if not KAFKA_AVAILABLE:
@@ -294,6 +295,9 @@ class CmtsCollector:
         wb = openpyxl.Workbook()
         wb.remove(wb.active)
 
+        # Modem Info sheet first
+        self._write_modem_info_sheet(wb)
+
         # Write Bin_Edges sheets first (one per sfIndex)
         self._write_bin_edges_sheet(wb, sorted(sf_indices))
 
@@ -359,6 +363,33 @@ class CmtsCollector:
         if fmt:
             cell.number_format = fmt
         return cell
+
+    def _write_modem_info_sheet(self, wb):
+        """Write Modem Info as first tab in Kafka Excel report."""
+        ws = wb.create_sheet(title="Modem Info", index=0)
+        ws.sheet_properties.tabColor = "70AD47"
+        ws.merge_cells("A1:B1")
+        ws["A1"] = "MODEM INFORMATION"
+        ws["A1"].font = Font(bold=True, size=14)
+        ws["A1"].alignment = self._CENTER
+        info_fill = PatternFill("solid", fgColor="E2EFDA")
+        rows = [
+            ("CM MAC",    self.mac_colon),
+            ("Direction", self.direction),
+            ("Broker",    self.broker),
+            ("Topic",     self.topic),
+        ]
+        if self.cm_ipv6:
+            rows.insert(1, ("CM IPv6", self.cm_ipv6))
+        if self._started_at:
+            rows.append(("Collection Start", datetime.fromtimestamp(self._started_at).strftime("%Y-%m-%d %H:%M:%S")))
+        if self._stopped_at:
+            rows.append(("Collection Stop",  datetime.fromtimestamp(self._stopped_at).strftime("%Y-%m-%d %H:%M:%S")))
+        for i, (label, value) in enumerate(rows, start=3):
+            self._cell(ws, i, 1, label, font=self._BOLD, fill=self._HEADER_FILL)
+            self._cell(ws, i, 2, value, fill=info_fill)
+        ws.column_dimensions["A"].width = 20
+        ws.column_dimensions["B"].width = 45
 
     def _write_bin_edges_sheet(self, wb, sf_indices):
         """Write one Bin_Edges sheet per sfIndex showing edges read from Kafka."""
