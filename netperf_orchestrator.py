@@ -64,6 +64,9 @@ class NetperfCLI:
         self.target_ip = None
         if self.cm_mac:
             self.target_ip = self._lookup_ipv6_from_cmts(self.cm_mac)
+        if not self.target_ip:
+            user_input = input("Enter modem IPv6 address (or press Enter to skip SNMP): ").strip()
+            self.target_ip = user_input if user_input else None
         if self.target_ip:
             print(f"Modem IPv6: {self.target_ip}")
             self.logger.info(f"Using modem IPv6: {self.target_ip}")
@@ -74,32 +77,61 @@ class NetperfCLI:
         self.cmts_collector = None
     
     def _lookup_ipv6_from_cmts(self, mac):
-        """Run 'scm <mac> ip' on the CMTS and parse the IPv6 address.
+        """SSH to CMTS and run 'scm <mac> ip' to get the modem IPv6 address.
         Returns the IPv6 string or None if lookup fails."""
         import re
-        # Convert normalized mac (aabbccddeeff) to CMTS dot notation (aabb.ccdd.eeff)
-        mac_clean = mac.replace(':', '').replace('-', '').lower()
-        mac_dot = f"{mac_clean[0:4]}.{mac_clean[4:8]}.{mac_clean[8:12]}"
+        import paramiko
         try:
-            self.logger.info(f"Looking up IPv6 for {mac_dot} via CMTS...")
-            result = subprocess.run(
-                ["scm", mac_dot, "ip"],
-                capture_output=True, text=True, timeout=15
-            )
-            output = result.stdout + result.stderr
-            # Match a full IPv6 address (groups of hex separated by colons)
-            match = re.search(r'([0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4}){7})', output)
+            from config_loader import config
+            jumpserver  = config.snmp_jumpserver
+            username    = config.snmp_username
+            key_path    = os.path.expanduser(config.ssh_key_path)
+            cmts_host   = "apc01k1dccc"
+            cmts_pass   = config.vcmts_password
+
+            self.logger.info(f"Looking up IPv6 for {mac} via {cmts_host}...")
+
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+            # Connect to jumpserver
+            if os.path.exists(key_path):
+                ssh.connect(jumpserver, username=username, key_filename=key_path, timeout=10)
+            else:
+                ssh.connect(jumpserver, username=username, timeout=10)
+
+            # Open interactive shell, hop to CMTS, run scm command
+            shell = ssh.invoke_shell()
+            import time
+            shell.send(f"ssh -o StrictHostKeyChecking=no {username}@{cmts_host}\n")
+            time.sleep(1)
+            buf = shell.recv(4096).decode(errors='ignore')
+            if 'password' in buf.lower():
+                shell.send(cmts_pass + '\n')
+                time.sleep(1)
+                shell.recv(4096)
+            shell.send(f"scm {mac} ip\n")
+            time.sleep(2)
+            output = ''
+            for _ in range(20):
+                if shell.recv_ready():
+                    output += shell.recv(4096).decode(errors='ignore')
+                else:
+                    time.sleep(0.2)
+                    if not shell.recv_ready():
+                        break
+            shell.send('exit\n')
+            shell.close()
+            ssh.close()
+
+            match = re.search(r'([0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4}){5,7})', output)
             if match:
                 ipv6 = match.group(1)
                 self.logger.info(f"Auto-detected IPv6: {ipv6}")
                 return ipv6
-            self.logger.warning("scm command ran but no IPv6 found in output — falling back to manual input")
-        except FileNotFoundError:
-            self.logger.warning("'scm' command not found — falling back to manual IPv6 input")
-        except subprocess.TimeoutExpired:
-            self.logger.warning("scm lookup timed out — falling back to manual IPv6 input")
+            self.logger.warning("scm ran but no IPv6 found in output — falling back to manual input")
         except Exception as e:
-            self.logger.warning(f"scm lookup failed: {e} — falling back to manual IPv6 input")
+            self.logger.warning(f"CMTS IPv6 lookup failed: {e} — falling back to manual input")
         return None
 
     def start_cmts_collection(self, direction="downstream"):
