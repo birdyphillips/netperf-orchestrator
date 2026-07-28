@@ -8,6 +8,12 @@ import logging
 from datetime import datetime
 from config_loader import config
 
+RED   = "\033[31m"
+RESET = "\033[0m"
+
+def _err(msg):
+    print(f"{RED}{msg}{RESET}")
+
 # Suppress paramiko's verbose logging (including SSH banners)
 logging.getLogger("paramiko").setLevel(logging.WARNING)
 
@@ -220,7 +226,7 @@ def ssh_snmp_collector(username, jumpserver, target_ip, output_file=None, snmp_c
                 connected = True
                 connection_method = f"SSH key: {key_path}"
         except Exception as e:
-            print(f"  SSH key auth failed: {e}")
+            _err(f"  SSH key auth failed: {e}")
         
         if not connected:
             try:
@@ -228,7 +234,7 @@ def ssh_snmp_collector(username, jumpserver, target_ip, output_file=None, snmp_c
                 connected = True
                 connection_method = "Default SSH keys"
             except Exception as e:
-                print(f"  Default SSH auth failed: {e}")
+                _err(f"  Default SSH auth failed: {e}")
         
         if not connected:
             raise Exception(f"Failed to connect to {jumpserver} as {username}")
@@ -296,7 +302,7 @@ def ssh_snmp_collector(username, jumpserver, target_ip, output_file=None, snmp_c
         
     except Exception as e:
         error_msg = f"SSH connection failed: {e}"
-        print(f"  SNMP collection failed: {e}")
+        _err(f"  SNMP collection failed: {e}")
         if output_file:
             with open(output_file, 'w') as f:
                 f.write(f"ERROR: {error_msg}\n")
@@ -318,7 +324,7 @@ def collect_snmp_data(target_ip, test_name, phase, output_dir):
     print(f"  SNMP {phase} - {test_name}")
     result = ssh_snmp_collector(username, jumpserver, target_ip, filename)
     if result is None:
-        print(f"  SNMP {phase} failed")
+        _err(f"  SNMP {phase} failed")
     else:
         print(f"  SNMP {phase} done")
     
@@ -993,7 +999,7 @@ def generate_latency_report(before_file, after_file, output_file=None, direction
     after_bins = parse_latency_bins(after_file, direction)
 
     if not before_bins or not after_bins:
-        print("  No latency bins found in SNMP files")
+        _err("  No latency bins found in SNMP files")
         return None
 
     all_deltas = compute_deltas(before_bins, after_bins)

@@ -1,6 +1,16 @@
 import logging
 from datetime import datetime
 
+RED   = "\033[31m"
+RESET = "\033[0m"
+
+class ColorFormatter(logging.Formatter):
+    def format(self, record):
+        msg = super().format(record)
+        if record.levelno >= logging.ERROR:
+            return f"{RED}{msg}{RESET}"
+        return msg
+
 class Logger:
     def __init__(self, module="LLD_TEST"):
         self.logger = logging.getLogger(module)
@@ -8,8 +18,7 @@ class Logger:
         
         if not self.logger.handlers:
             handler = logging.StreamHandler()
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-            handler.setFormatter(formatter)
+            handler.setFormatter(ColorFormatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
             self.logger.addHandler(handler)
             self.logger.propagate = False
     
