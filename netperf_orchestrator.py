@@ -5,6 +5,7 @@ import sys
 import subprocess
 import os
 import glob
+import time
 from datetime import datetime
 
 import csv
@@ -24,7 +25,7 @@ from packetstorm_logic import PacketStormLogic
 from byteblower_logic import ByteBlowerLogic
 from iperf3_logic import IPerf3Logic
 from speedtest_logic import SpeedTestLogic
-from samknows_logic import SamKnowsLogic
+from thousandeyes_logic import ThousandEyesLogic
 from logger import Logger
 from snmp_collector import collect_snmp_data, generate_latency_report, find_snmp_files
 
@@ -34,29 +35,37 @@ try:
 except ImportError:
     CMTS_AVAILABLE = False
 
-class ByteBlowerCLI:
+class NetperfCLI:
     def __init__(self, cmts_type="vcmts"):
-        self.logger = Logger("ByteBlowerCLI")
+        self.logger = Logger("NetperfCLI")
         self.cmts_type = cmts_type
         self.logger.info(f"CMTS type: {cmts_type} ({'Kafka for DS latency' if cmts_type == 'vcmts' else 'SNMP for DS latency'})")
 
         # Prompt for CM MAC (downstream CMTS Kafka collector — vcmts only)
         if cmts_type == "vcmts":
-            mac_input = input("Enter CM MAC address (or press Enter to skip CMTS collection): ")
-            self.cm_mac = mac_input.strip() if mac_input.strip() else None
-            if self.cm_mac:
-                from cmts_modem_info import normalize_mac
-                self.cm_mac = normalize_mac(self.cm_mac)
-                self.logger.info(f"Using CM MAC: {self.cm_mac}")
-            else:
-                self.logger.warning("No CM MAC — downstream CMTS Kafka collection will be skipped")
+            from cmts_modem_info import normalize_mac
+            while True:
+                mac_input = input("Enter CM MAC address (or press Enter to skip CMTS collection): ").strip()
+                if not mac_input:
+                    self.cm_mac = None
+                    self.logger.warning("No CM MAC — downstream CMTS Kafka collection will be skipped")
+                    break
+                try:
+                    self.cm_mac = normalize_mac(mac_input)
+                    self.logger.info(f"Using CM MAC: {self.cm_mac}")
+                    break
+                except ValueError:
+                    print(f"Invalid MAC address: '{mac_input}'. Expected format: aabbccddeeff or aa:bb:cc:dd:ee:ff")
+                    print("Tip: if you meant to enter an IPv6 address, press Enter to skip and provide it at the next prompt.")
         else:
             self.cm_mac = None
         
-        # Prompt for modem IPv6 address (upstream SNMP collection)
-        user_input = input("Enter modem IPv6 address (or press Enter to skip SNMP): ")
-        self.target_ip = user_input.strip() if user_input.strip() else None
+        # Auto-lookup IPv6 from CMTS using CM MAC
+        self.target_ip = None
+        if self.cm_mac:
+            self.target_ip = self._lookup_ipv6_from_cmts(self.cm_mac)
         if self.target_ip:
+            print(f"Modem IPv6: {self.target_ip}")
             self.logger.info(f"Using modem IPv6: {self.target_ip}")
         else:
             self.logger.warning("No modem IPv6 — upstream SNMP collection will be skipped")
@@ -64,6 +73,35 @@ class ByteBlowerCLI:
         self.output_dir = None
         self.cmts_collector = None
     
+    def _lookup_ipv6_from_cmts(self, mac):
+        """Run 'scm <mac> ip' on the CMTS and parse the IPv6 address.
+        Returns the IPv6 string or None if lookup fails."""
+        import re
+        # Convert normalized mac (aabbccddeeff) to CMTS dot notation (aabb.ccdd.eeff)
+        mac_clean = mac.replace(':', '').replace('-', '').lower()
+        mac_dot = f"{mac_clean[0:4]}.{mac_clean[4:8]}.{mac_clean[8:12]}"
+        try:
+            self.logger.info(f"Looking up IPv6 for {mac_dot} via CMTS...")
+            result = subprocess.run(
+                ["scm", mac_dot, "ip"],
+                capture_output=True, text=True, timeout=15
+            )
+            output = result.stdout + result.stderr
+            # Match a full IPv6 address (groups of hex separated by colons)
+            match = re.search(r'([0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4}){7})', output)
+            if match:
+                ipv6 = match.group(1)
+                self.logger.info(f"Auto-detected IPv6: {ipv6}")
+                return ipv6
+            self.logger.warning("scm command ran but no IPv6 found in output — falling back to manual input")
+        except FileNotFoundError:
+            self.logger.warning("'scm' command not found — falling back to manual IPv6 input")
+        except subprocess.TimeoutExpired:
+            self.logger.warning("scm lookup timed out — falling back to manual IPv6 input")
+        except Exception as e:
+            self.logger.warning(f"scm lookup failed: {e} — falling back to manual IPv6 input")
+        return None
+
     def start_cmts_collection(self, direction="downstream"):
         """Start CMTS Kafka metrics collection in background.
         Only used for vCMTS downstream. For iCMTS downstream, SNMP handles it."""
@@ -84,33 +122,50 @@ class ByteBlowerCLI:
             self.cmts_collector = None
             return False
 
-    def wait_for_cmts_poll(self, timeout=45):
-        """Wait for next Kafka polling interval. Safe to call if collector not started."""
+    def wait_for_cmts_poll(self, timeout=None):
+        """Wait for next Kafka polling interval. Safe to call if collector not started.
+
+        Uses detected polling interval + 20% headroom. Falls back to 150s on first
+        call before any interval is known (covers up to a 120s polling environment).
+        """
         if not self.cmts_collector:
             return False
         try:
+            if timeout is None:
+                interval = self.cmts_collector._get_polling_interval_s()
+                # If interval is still the 60s default (not yet detected), use 150s
+                # to safely cover environments with up to 120s polling
+                timeout = interval * 1.2 if self.cmts_collector._detected_interval_s else 150
             return self.cmts_collector.wait_for_poll(timeout=timeout)
         except Exception as e:
             self.logger.warning(f"wait_for_cmts_poll failed: {e}")
             return False
 
-    def stop_cmts_collection(self, output_dir, test_name, post_test_polls=2):
+    def stop_cmts_collection(self, output_dir, test_name, post_test_polls=2, test_duration_s=60):
         """Stop CMTS Kafka collection and generate report.
-        
-        Waits for post_test_polls additional poll cycles after test ends
+
+        Detects the actual Kafka polling interval and waits for
+        post_test_polls additional poll cycles after the test ends
         to capture delayed bin reporting data.
+
+        test_duration_s: actual test duration for throughput calculation.
         """
         if not self.cmts_collector:
             return None
         try:
-            # Wait for additional polls to capture delayed bin data
+            # Detect polling interval from observed Kafka timestamps
+            poll_interval_s = self.cmts_collector._get_polling_interval_s()
+            # Add 20% headroom so we don't time out right at the boundary
+            poll_timeout = poll_interval_s * 1.2
+            self.logger.info(f"Detected poll interval: {poll_interval_s:.0f}s — waiting for {post_test_polls} post-test polls (timeout {poll_timeout:.0f}s each)")
+
             for i in range(post_test_polls):
                 self.logger.info(f"Waiting for post-test poll {i+1}/{post_test_polls}...")
-                if not self.cmts_collector.wait_for_poll(timeout=45):
-                    self.logger.warning(f"Post-test poll {i+1} timed out")
+                if not self.cmts_collector.wait_for_poll(timeout=poll_timeout):
+                    self.logger.warning(f"Post-test poll {i+1} timed out after {poll_timeout:.0f}s")
                     break
             self.cmts_collector.stop()
-            report = self.cmts_collector.generate_report(output_dir, test_name)
+            report = self.cmts_collector.generate_report(output_dir, test_name, test_duration_s=test_duration_s)
             self.cmts_collector = None
             if report:
                 self.logger.info(f"✓ CMTS latency report: {os.path.basename(report)}")
@@ -134,16 +189,16 @@ class ByteBlowerCLI:
             self.logger.error(f"SNMP collection failed: {e}")
             return False
     
-    def execute(self, bbp_file, rtt_files, iterations, scenarios, test_group_name=None, client_ip=None, output_format="json", byteblower_only=False, packetstorm_only=False, iperf3_only=False, iperf3_darwin=False, speedtest_only=False, speedtest_clients=None, samknows_only=False, samknows_unit_id=None, report_formats="html pdf csv xls xlsx json docx"):
+    def execute(self, bbp_file, rtt_files, iterations, scenarios, test_group_name=None, client_ip=None, output_format="json", byteblower_only=False, packetstorm_only=False, iperf3_only=False, iperf3_darwin=False, speedtest_only=False, speedtest_clients=None, thousandeyes_only=False, thousandeyes_unit_id=None, report_formats="html pdf csv xls xlsx json docx"):
         """Execute workflow based on selected modes"""
         try:
             scenario_list = [s.strip() for s in scenarios.split(',')] if scenarios else ['default']
             rtt_list = [r.strip() for r in rtt_files.split(',')] if rtt_files else ['default.json']
             
             # Determine traffic type
-            if samknows_only:
+            if thousandeyes_only:
                 traffic_type = "ThousandEyes"
-            elif byteblower_only or (not iperf3_only and not iperf3_darwin and not speedtest_only and not samknows_only):
+            elif byteblower_only or (not iperf3_only and not iperf3_darwin and not speedtest_only and not thousandeyes_only):
                 traffic_type = "ByteBlower"
             elif iperf3_darwin:
                 traffic_type = "iPerf3_macOS"
@@ -182,7 +237,7 @@ class ByteBlowerCLI:
             # Run combinations
             for scenario in scenario_list:
                 for rtt_file in rtt_list:
-                    success, snmp_files = self._run_single_test(bbp_file, rtt_file, iterations, scenario, test_group_name, client_ip, output_format, byteblower_only, packetstorm_only, iperf3_only, iperf3_darwin, speedtest_only, speedtest_clients, samknows_only, samknows_unit_id, report_formats, parent_output_dir, rtt_list)
+                    success, snmp_files = self._run_single_test(bbp_file, rtt_file, iterations, scenario, test_group_name, client_ip, output_format, byteblower_only, packetstorm_only, iperf3_only, iperf3_darwin, speedtest_only, speedtest_clients, thousandeyes_only, thousandeyes_unit_id, report_formats, parent_output_dir, rtt_list)
                     all_success = all_success and success
                     all_snmp_files.extend(snmp_files)
             
@@ -197,7 +252,7 @@ class ByteBlowerCLI:
             self.logger.error(f"Workflow failed: {e}")
             return 1
     
-    def _run_single_test(self, bbp_file, rtt_file, iterations, scenario_name, test_group_name, client_ip, output_format, byteblower_only, packetstorm_only, iperf3_only, iperf3_darwin, speedtest_only, speedtest_clients, samknows_only, samknows_unit_id, report_formats, parent_output_dir, rtt_list):
+    def _run_single_test(self, bbp_file, rtt_file, iterations, scenario_name, test_group_name, client_ip, output_format, byteblower_only, packetstorm_only, iperf3_only, iperf3_darwin, speedtest_only, speedtest_clients, thousandeyes_only, thousandeyes_unit_id, report_formats, parent_output_dir, rtt_list):
         """Run a single test scenario"""
         try:
             success = True
@@ -236,38 +291,37 @@ class ByteBlowerCLI:
                 else:
                     test_name = f"ByteBlower_{scenario_name}"
             
-            if samknows_only:
+            if thousandeyes_only:
                 self.logger.info(f"ThousandEyes mode - all tests (http_get_mt, http_post_mt, udp_jitter)")
-                sk = SamKnowsLogic(scenario_name, test_group_name, rtt_suffix, samknows_unit_id)
+                sk = ThousandEyesLogic(scenario_name, test_group_name, rtt_suffix, thousandeyes_unit_id)
                 self.output_dir = test_output_dir
                 success = True
                 snmp_dir = test_output_dir
 
                 for i in range(iterations):
-                    # --- DOWNSTREAM TEST (http_get_mt) ---
+                    self.run_snmp_collection(f"ThousandEyes_iteration_{i+1}", "before", snmp_dir, "")
+
                     self.start_cmts_collection(direction="downstream")
                     self.wait_for_cmts_poll()
 
+                    test_start = time.time()
                     if not sk.run_downstream(i, iterations, test_output_dir):
                         self.logger.error("ThousandEyes downstream failed — stopping test")
                         self.stop_cmts_collection(snmp_dir, "ThousandEyes_DS")
                         return False, []
 
-                    self.wait_for_cmts_poll()
-                    self.stop_cmts_collection(snmp_dir, f"ThousandEyes_DS_iteration_{i+1}", post_test_polls=5)
-
-                    # --- UPSTREAM TEST (http_post_mt) ---
-                    self.run_snmp_collection(f"ThousandEyes_US_iteration_{i+1}", "before", snmp_dir, "")
-
                     if not sk.run_upstream(i, iterations, test_output_dir):
                         self.logger.error("ThousandEyes upstream failed — stopping test")
+                        self.stop_cmts_collection(snmp_dir, f"ThousandEyes_DS_iteration_{i+1}")
                         return False, []
 
-                    self.run_snmp_collection(f"ThousandEyes_US_iteration_{i+1}", "after", snmp_dir, "")
-                    self._run_latency_report(snmp_dir, iteration=i+1, prefix="ThousandEyes_US")
-
-                    # --- JITTER TEST (udp_jitter) ---
                     sk.run_jitter(i, iterations, test_output_dir)
+
+                    test_elapsed = time.time() - test_start
+                    self.stop_cmts_collection(snmp_dir, f"ThousandEyes_DS_iteration_{i+1}", post_test_polls=2, test_duration_s=test_elapsed)
+
+                    self.run_snmp_collection(f"ThousandEyes_iteration_{i+1}", "after", snmp_dir, "")
+                    self._run_latency_report(snmp_dir, iteration=i+1, prefix="ThousandEyes")
             elif speedtest_only:
                 self.logger.info(f"SpeedTest mode - clients: {speedtest_clients}")
                 st = SpeedTestLogic(speedtest_clients, test_group_name)
@@ -295,12 +349,13 @@ class ByteBlowerCLI:
                     self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "before", snmp_dir, "")
                     self.start_cmts_collection(direction=cmts_dir)
                     self.wait_for_cmts_poll()
+                    test_start = time.time()
                     if not bb.run_scenario(i, iterations, test_output_dir):
                         self.logger.error("ByteBlower failed — stopping test")
                         self.stop_cmts_collection(snmp_dir, scenario_name)
                         return False, []
-                    self.wait_for_cmts_poll()
-                    self.stop_cmts_collection(snmp_dir, f"{scenario_name}_iteration_{i+1}")
+                    test_elapsed = time.time() - test_start
+                    self.stop_cmts_collection(snmp_dir, f"{scenario_name}_iteration_{i+1}", test_duration_s=test_elapsed)
                     self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", snmp_dir, "")
                     self._run_latency_report(snmp_dir, iteration=i+1)
             elif iperf3_only or iperf3_darwin:
@@ -329,13 +384,14 @@ class ByteBlowerCLI:
                     self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "before", snmp_dir, "")
                     self.start_cmts_collection(direction=cmts_dir)
                     self.wait_for_cmts_poll()
+                    test_start = time.time()
                     if not iperf3.run_scenario(i, iterations):
                         self.logger.error("iPerf3 failed — stopping test")
                         self.stop_cmts_collection(snmp_dir, scenario_name)
                         iperf3.stop_iperf3_servers()
                         return False, []
-                    self.wait_for_cmts_poll()
-                    self.stop_cmts_collection(snmp_dir, f"{scenario_name}_iteration_{i+1}")
+                    test_elapsed = time.time() - test_start
+                    self.stop_cmts_collection(snmp_dir, f"{scenario_name}_iteration_{i+1}", test_duration_s=test_elapsed)
                     self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", snmp_dir, "")
                     self._run_latency_report(snmp_dir, iteration=i+1)
                 iperf3.stop_iperf3_servers()
@@ -367,14 +423,15 @@ class ByteBlowerCLI:
                             self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "before", snmp_dir, "")
                             self.start_cmts_collection(direction=cmts_dir)
                             self.wait_for_cmts_poll()
+                            test_start = time.time()
                             if not iperf3.run_scenario(i, iterations):
                                 self.logger.error("iPerf3 failed — stopping test")
                                 self.stop_cmts_collection(snmp_dir, scenario_name)
                                 iperf3.stop_iperf3_servers()
                                 ps.stop_config()
                                 return False, []
-                            self.wait_for_cmts_poll()
-                            self.stop_cmts_collection(snmp_dir, f"{scenario_name}_iteration_{i+1}")
+                            test_elapsed = time.time() - test_start
+                            self.stop_cmts_collection(snmp_dir, f"{scenario_name}_iteration_{i+1}", test_duration_s=test_elapsed)
                             self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", snmp_dir, "")
                             self._run_latency_report(snmp_dir, iteration=i+1)
                         iperf3.stop_iperf3_servers()
@@ -394,13 +451,14 @@ class ByteBlowerCLI:
                             self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "before", snmp_dir, "")
                             self.start_cmts_collection(direction=cmts_dir)
                             self.wait_for_cmts_poll()
+                            test_start = time.time()
                             if not bb.run_scenario(i, iterations, test_output_dir):
                                 self.logger.error("ByteBlower failed — stopping test")
                                 self.stop_cmts_collection(snmp_dir, scenario_name)
                                 ps.stop_config()
                                 return False, []
-                            self.wait_for_cmts_poll()
-                            self.stop_cmts_collection(snmp_dir, f"{scenario_name}_iteration_{i+1}")
+                            test_elapsed = time.time() - test_start
+                            self.stop_cmts_collection(snmp_dir, f"{scenario_name}_iteration_{i+1}", test_duration_s=test_elapsed)
                             self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", snmp_dir, "")
                             self._run_latency_report(snmp_dir, iteration=i+1)
                         success = success and ps.stop_config()
@@ -509,21 +567,21 @@ def main():
     parser.add_argument('--output', choices=['json', 'txt'], default='json', help='iPerf3 output format: json or txt (default: json)')
     parser.add_argument('-speedtest', action='store_true', help='Enable SpeedTest mode')
     parser.add_argument('--client', default='linux,macos,nvidia', help='SpeedTest clients: linux,macos,nvidia (default: all)')
-    parser.add_argument('-samknows', action='store_true', help='Enable SamKnows instant-test mode')
-    parser.add_argument('--unit-id', default=None, help='SamKnows unit ID (overrides config.yaml)')
+    parser.add_argument('-thousandeyes', action='store_true', help='Enable ThousandEyes instant-test mode')
+    parser.add_argument('--unit-id', default=None, help='ThousandEyes unit ID (overrides config.yaml)')
     parser.add_argument('--report-formats', default='html pdf csv xls xlsx json docx', help='ByteBlower report formats (default: all formats)')
     parser.add_argument('-iteration', type=int, default=1, help='Number of iterations (default: 1)')
     
     args = parser.parse_args()
     
-    if not args.byteblower and not args.packetstorm and not args.iperf3 and not getattr(args, 'iperf3_darwin', False) and not getattr(args, 'speedtest', False) and not getattr(args, 'samknows', False):
-        parser.error("At least one of -byteblower, -packetstorm, -iperf3, -iperf3-darwin, -speedtest, or -samknows is required")
+    if not args.byteblower and not args.packetstorm and not args.iperf3 and not getattr(args, 'iperf3_darwin', False) and not getattr(args, 'speedtest', False) and not getattr(args, 'thousandeyes', False):
+        parser.error("At least one of -byteblower, -packetstorm, -iperf3, -iperf3-darwin, -speedtest, or -thousandeyes is required")
     
     if (args.iperf3 or getattr(args, 'iperf3_darwin', False)) and (not args.scenario or not args.clientIP):
         parser.error("Both --scenario and --clientIP are required when using -iperf3 or -iperf3-darwin")
     
-    if getattr(args, 'samknows', False) and not getattr(args, 'unit_id', None):
-        parser.error("--unit-id is required when using -samknows (e.g., --unit-id 82670821)")
+    if getattr(args, 'thousandeyes', False) and not getattr(args, 'unit_id', None):
+        parser.error("--unit-id is required when using -thousandeyes (e.g., --unit-id 82670821)")
 
     if args.packetstorm and not args.rtt:
         parser.error("--rtt is required when using -packetstorm")
@@ -531,7 +589,7 @@ def main():
     bb_file = args.bbp or 'default.bbp'
     speedtest_clients = [c.strip() for c in args.client.split(',')] if getattr(args, 'speedtest', False) else None
     
-    tool = ByteBlowerCLI(cmts_type=args.cmts_type)
+    tool = NetperfCLI(cmts_type=args.cmts_type)
     return tool.execute(
         bb_file, 
         args.rtt or 'default.json', 
@@ -540,14 +598,14 @@ def main():
         getattr(args, 'test_group_name', None),
         getattr(args, 'clientIP', None),
         getattr(args, 'output', 'json'),
-        byteblower_only=args.byteblower and not args.packetstorm and not args.iperf3 and not getattr(args, 'speedtest', False) and not getattr(args, 'samknows', False),
-        packetstorm_only=args.packetstorm and not args.byteblower and not args.iperf3 and not getattr(args, 'speedtest', False) and not getattr(args, 'samknows', False),
-        iperf3_only=args.iperf3 and not args.byteblower and not args.packetstorm and not getattr(args, 'iperf3_darwin', False) and not getattr(args, 'speedtest', False) and not getattr(args, 'samknows', False),
-        iperf3_darwin=getattr(args, 'iperf3_darwin', False) and not getattr(args, 'speedtest', False) and not getattr(args, 'samknows', False),
-        speedtest_only=getattr(args, 'speedtest', False) and not getattr(args, 'samknows', False),
+        byteblower_only=args.byteblower and not args.packetstorm and not args.iperf3 and not getattr(args, 'speedtest', False) and not getattr(args, 'thousandeyes', False),
+        packetstorm_only=args.packetstorm and not args.byteblower and not args.iperf3 and not getattr(args, 'speedtest', False) and not getattr(args, 'thousandeyes', False),
+        iperf3_only=args.iperf3 and not args.byteblower and not args.packetstorm and not getattr(args, 'iperf3_darwin', False) and not getattr(args, 'speedtest', False) and not getattr(args, 'thousandeyes', False),
+        iperf3_darwin=getattr(args, 'iperf3_darwin', False) and not getattr(args, 'speedtest', False) and not getattr(args, 'thousandeyes', False),
+        speedtest_only=getattr(args, 'speedtest', False) and not getattr(args, 'thousandeyes', False),
         speedtest_clients=speedtest_clients,
-        samknows_only=getattr(args, 'samknows', False),
-        samknows_unit_id=getattr(args, 'unit_id', None),
+        thousandeyes_only=getattr(args, 'thousandeyes', False),
+        thousandeyes_unit_id=getattr(args, 'unit_id', None),
         report_formats=getattr(args, 'report_formats', 'html pdf csv xls xlsx json docx')
     )
 
