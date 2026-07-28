@@ -64,9 +64,11 @@ class NetperfCLI:
         self.target_ip = None
         if self.cm_mac:
             self.target_ip = self._lookup_ipv6_from_cmts(self.cm_mac)
-        if not self.target_ip:
-            user_input = input("Enter modem IPv6 address (or press Enter to skip SNMP): ").strip()
-            self.target_ip = user_input if user_input else None
+            if not self.target_ip:
+                answer = input("Cable modem not found on CMTS. Continue without SNMP? [y/N]: ").strip().lower()
+                if answer != 'y':
+                    print("Test stopped.")
+                    sys.exit(1)
         if self.target_ip:
             print(f"Modem IPv6: {self.target_ip}")
         else:
@@ -396,18 +398,20 @@ class NetperfCLI:
                 cmts_dir = "upstream" if scenario_name.lower().startswith("us") else "downstream"
                 
                 for i in range(iterations):
-                    self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "before", snmp_dir, "")
+                    iter_dir = os.path.join(snmp_dir, f"iteration_{i+1}") if iterations > 1 else snmp_dir
+                    os.makedirs(iter_dir, exist_ok=True)
+                    self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "before", iter_dir, "")
                     self.start_cmts_collection(direction=cmts_dir)
                     self.wait_for_cmts_poll()
                     test_start = time.time()
                     if not bb.run_scenario(i, iterations, test_output_dir):
                         self.logger.error("ByteBlower failed — stopping test")
-                        self.stop_cmts_collection(snmp_dir, scenario_name)
+                        self.stop_cmts_collection(iter_dir, scenario_name)
                         return False, []
                     test_elapsed = time.time() - test_start
-                    self.stop_cmts_collection(snmp_dir, f"{scenario_name}_iteration_{i+1}", test_duration_s=test_elapsed)
-                    self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", snmp_dir, "")
-                    self._run_latency_report(snmp_dir, iteration=i+1)
+                    self.stop_cmts_collection(iter_dir, f"{scenario_name}_iteration_{i+1}", test_duration_s=test_elapsed)
+                    self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", iter_dir, "")
+                    self._run_latency_report(iter_dir, iteration=i+1)
             elif iperf3_only or iperf3_darwin:
                 platform_override = 'macos' if iperf3_darwin else None
                 platform_suffix = "_macOS" if iperf3_darwin else "_Linux"
