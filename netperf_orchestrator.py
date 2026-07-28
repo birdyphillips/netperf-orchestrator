@@ -52,7 +52,6 @@ class NetperfCLI:
                     break
                 try:
                     self.cm_mac = normalize_mac(mac_input)
-                    self.logger.info(f"Using CM MAC: {self.cm_mac}")
                     break
                 except ValueError:
                     print(f"Invalid MAC address: '{mac_input}'. Expected format: aabbccddeeff or aa:bb:cc:dd:ee:ff")
@@ -143,15 +142,15 @@ class NetperfCLI:
                 match = re.search(r'([0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4}){5,7})', output)
 
             if not match:
-                self.logger.warning(f"scm output was: {repr(output[:300])}")
+                self.logger.warning(f"No IPv6 found in scm output")
 
             if match:
                 ipv6 = match.group(1)
                 print(f"Modem IPv6 (auto-detected): {ipv6}")
                 return ipv6
-            self.logger.warning(f"scm ran but no IPv6 found — falling back to manual input")
+            self.logger.warning("scm ran but no IPv6 found")
         except Exception as e:
-            self.logger.warning(f"CMTS IPv6 lookup failed: {e} — falling back to manual input")
+            self.logger.warning(f"CMTS IPv6 lookup failed: {e}")
         return None
 
     def start_cmts_collection(self, direction="downstream"):
@@ -205,16 +204,12 @@ class NetperfCLI:
         if not self.cmts_collector:
             return None
         try:
-            # Detect polling interval from observed Kafka timestamps
             poll_interval_s = self.cmts_collector._get_polling_interval_s()
-            # Add 20% headroom so we don't time out right at the boundary
             poll_timeout = poll_interval_s * 1.2
-            self.logger.info(f"Detected poll interval: {poll_interval_s:.0f}s — waiting for {post_test_polls} post-test polls (timeout {poll_timeout:.0f}s each)")
 
             for i in range(post_test_polls):
-                self.logger.info(f"Waiting for post-test poll {i+1}/{post_test_polls}...")
                 if not self.cmts_collector.wait_for_poll(timeout=poll_timeout):
-                    self.logger.warning(f"Post-test poll {i+1} timed out after {poll_timeout:.0f}s")
+                    self.logger.warning(f"Post-test poll {i+1} timed out")
                     break
             self.cmts_collector.stop()
             report = self.cmts_collector.generate_report(output_dir, test_name, test_duration_s=test_duration_s)
@@ -233,9 +228,7 @@ class NetperfCLI:
         try:
             if output_dir is None:
                 output_dir = "Results"
-            snmp_name = f"{test_name}{rtt_suffix}"
-            self.logger.info(f"Running SNMP collection - {phase} {snmp_name}")
-            collect_snmp_data(self.target_ip, snmp_name, phase, output_dir)
+            collect_snmp_data(self.target_ip, f"{test_name}{rtt_suffix}", phase, output_dir)
             return True
         except Exception as e:
             self.logger.error(f"SNMP collection failed: {e}")
@@ -278,10 +271,7 @@ class NetperfCLI:
             self.rtt_suffix = rtt_suffix
             
             if len(scenario_list) > 1 or len(rtt_list) > 1:
-                self.logger.info(f"\n{'='*60}")
-                self.logger.info(f"Multi-scenario/RTT run: {len(scenario_list)} scenarios x {len(rtt_list)} RTT configs")
-                self.logger.info(f"Output: {parent_output_dir}")
-                self.logger.info(f"{'='*60}\n")
+                self.logger.info(f"Multi-scenario run: {len(scenario_list)} scenarios x {len(rtt_list)} RTT configs → {parent_output_dir}")
             
             all_success = True
             all_snmp_files = []
@@ -387,7 +377,6 @@ class NetperfCLI:
                 ps = PacketStormLogic(rtt_file)
                 success = ps.start_config() and ps.stop_config()
             elif byteblower_only:
-                self.logger.info(f"ByteBlower only mode - file: {bbp_file}, scenario: {scenario_name}")
                 bb = ByteBlowerLogic(bbp_file, scenario_name, scenario_name, test_group_name, rtt_suffix, report_formats)
                 self.output_dir = test_output_dir
                 success = True
@@ -570,7 +559,7 @@ class NetperfCLI:
                     else:
                         self.logger.info("DS Latency report skipped (no DS latency OIDs found)")
                 else:
-                    self.logger.info("DS latency report from Kafka (vCMTS mode) — see CMTS_Latency_Report_*.xlsx")
+                    self.logger.info("DS latency via Kafka (vCMTS) — see CMTS_Latency_Report_*.xlsx")
             else:
                 self.logger.warning("Latency report skipped (SNMP files not found)")
         except Exception as e:
