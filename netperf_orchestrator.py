@@ -109,12 +109,16 @@ class NetperfCLI:
 
             shell = ssh.invoke_shell()
             shell.send(f"ssh -o StrictHostKeyChecking=no {username}@{cmts_host}\n")
-            time.sleep(1)
+            time.sleep(2)
             buf = shell.recv(4096).decode(errors='ignore')
-            if 'password' in buf.lower():
-                shell.send(cmts_pass + '\n')
-                time.sleep(1)
-                shell.recv(4096)
+            # Handle up to 3 password attempts (tacacs may prompt multiple times)
+            for _ in range(3):
+                if 'password' in buf.lower():
+                    shell.send(cmts_pass + '\n')
+                    time.sleep(2)
+                    buf = shell.recv(4096).decode(errors='ignore')
+                else:
+                    break
             shell.send(scm_cmd + '\n')
             time.sleep(3)
             output = ''
