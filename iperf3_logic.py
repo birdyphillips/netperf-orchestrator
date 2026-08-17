@@ -555,7 +555,7 @@ class IPerf3Logic:
         commands = self.scenario_commands.get(self.scenario_name)
         if not commands:
             self.logger.error(f"Unknown scenario: {self.scenario_name}")
-            return False
+            return False, None
         
         try:
             # Create remote directory on execution host
@@ -602,7 +602,7 @@ class IPerf3Logic:
             
             if result.returncode != 0:
                 self.logger.error(f"Failed to create remote directory: {result.stderr}")
-                return False
+                return False, None
             
             # Start all commands in background (non-blocking)
             processes = []
@@ -676,7 +676,7 @@ class IPerf3Logic:
             
             if result.returncode != 0:
                 self.logger.error(f"iPerf3 execution failed: {result.stderr}")
-                return False
+                return False, None
             
             # Copy results directly to output directory
             key_path = os.path.expanduser("~/.ssh/lld_key")
@@ -701,9 +701,7 @@ class IPerf3Logic:
             
             if result.returncode != 0:
                 self.logger.error(f"Failed to copy results: {result.stderr}")
-                return False
-            
-            result_files = [f for f in os.listdir(output_dir) if f.endswith(('.json', '.txt'))]
+                return False, None
             self.logger.info(f"✓ Iteration {iteration + 1} completed - {len(result_files)} result files")
             print(f"\n✓ [{self.scenario_name}] Completed - {len(result_files)} files saved to {output_dir}\n", flush=True)
             
@@ -711,14 +709,34 @@ class IPerf3Logic:
             if iteration < total_iterations - 1:
                 time.sleep(10)
             
-            return True
+            return True, self._parse_test_duration(output_dir)
             
         except Exception as e:
             error_msg = f"iPerf3 execution exception: {str(e)}"
             self.logger.error(error_msg)
             self.log_rotator.write_log(f"\\nERROR: {error_msg}\\n")
-            return False
-    
+            return False, None
+
+    def _parse_test_duration(self, output_dir):
+        """Parse actual test duration from iPerf3 JSON output (end.sum_received.seconds)."""
+        import glob as _glob, json
+        try:
+            json_files = _glob.glob(os.path.join(output_dir, "*.json"))
+            durations = []
+            for jf in json_files:
+                with open(jf) as f:
+                    data = json.load(f)
+                secs = data.get("end", {}).get("sum_received", {}).get("seconds")
+                if secs:
+                    durations.append(float(secs))
+            if durations:
+                duration = max(durations)
+                self.logger.info(f"iPerf3 test duration: {duration:.1f}s")
+                return duration
+        except Exception as e:
+            self.logger.warning(f"Could not parse iPerf3 duration: {e}")
+        return None
+
     def run_iterations(self, count=1):
         """Run multiple iPerf3 iterations"""
         self.logger.info(f"Starting {count} iPerf3 iterations")

@@ -24,7 +24,7 @@ class ByteBlowerLogic:
         self.log_rotator = LogRotator(self.log_file)
     
     def run_scenario(self, iteration, total_iterations, parent_output_dir=None):
-        """Run ByteBlower CLI with specified scenario"""
+        """Run ByteBlower CLI with specified scenario. Returns (success, duration_s)."""
         self.logger.info(f"{self.scenario_name} iteration {iteration + 1}/{total_iterations}")
         
         # Create subfolder based on RTT value
@@ -68,9 +68,10 @@ class ByteBlowerLogic:
             
             if result.returncode != 0:
                 self.logger.error(f"ByteBlower failed (rc={result.returncode}): {result.stderr[:200]}")
-                return False
+                return False, None
             
             self._print_port_info(result.stdout + result.stderr)
+            duration_s = self._parse_test_duration(output_dir)
             self._generate_additional_reports(output_dir)
             self._print_html_reports(output_dir)
             self.logger.info(f"ByteBlower iteration {iteration + 1} complete")
@@ -79,12 +80,35 @@ class ByteBlowerLogic:
             if iteration < total_iterations - 1:
                 time.sleep(10)
             
-            return True
+            return True, duration_s
             
         except Exception as e:
             self.logger.error(f"ByteBlower exception: {e}")
             self.log_rotator.write_log(f"\nERROR: {e}\n")
-            return False
+            return False, None
+
+    def _parse_test_duration(self, output_dir):
+        """Parse actual test duration from ByteBlower JSON output (startMoment/endMoment)."""
+        try:
+            from datetime import timezone
+            import glob as _glob
+            json_files = _glob.glob(os.path.join(output_dir, "*.json"))
+            if not json_files:
+                return None
+            import json
+            with open(json_files[0]) as f:
+                data = json.load(f)
+            start = data.get("startMoment")
+            end = data.get("endMoment")
+            if start and end:
+                from datetime import datetime as _dt
+                fmt = "%Y-%m-%dT%H:%M:%S.%fZ"
+                duration = (_dt.strptime(end, fmt) - _dt.strptime(start, fmt)).total_seconds()
+                self.logger.info(f"ByteBlower test duration: {duration:.1f}s")
+                return duration
+        except Exception as e:
+            self.logger.warning(f"Could not parse ByteBlower duration: {e}")
+        return None
     
     def run_iterations(self, count=3, parent_output_dir=None):
         """Run multiple ByteBlower iterations"""

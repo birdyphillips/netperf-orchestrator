@@ -295,22 +295,12 @@ class CmtsCollector:
         wb = openpyxl.Workbook()
         wb.remove(wb.active)
 
-        # Modem Info sheet first
         self._write_modem_info_sheet(wb)
-
-        # Write Bin_Edges sheets first (one per sfIndex)
-        self._write_bin_edges_sheet(wb, sorted(sf_indices))
-
-        # Raw time-series sheet (tab 1)
         self._write_timeseries(wb)
-
-        # Summary sheet (tab 2)
         self._write_summary(wb, sorted(sf_indices), test_duration_s)
-
-        # Throughput / peak window sheet (tab 3)
         self._write_peak_window(wb, sorted(sf_indices), test_duration_s)
 
-        # Per-SF sheets
+        self._write_bin_edges_sheet(wb, sorted(sf_indices))
         for sf in sorted(sf_indices):
             self._write_sf_sheet(wb, sf)
 
@@ -737,9 +727,8 @@ class CmtsCollector:
     def _get_traffic_timestamps(self, sf_index):
         """Identify traffic-window poll timestamps for this sfIndex.
 
-        Always excludes the first poll (pre-test timing alignment).
-        Excludes the last poll only if its bin packet total is zero
-        (post-test verification poll with no traffic).
+        Drops leading and trailing polls whose bin packet total is below
+        1% of the peak poll — these are pre/post-test idle polls.
         Falls back to all timestamps if no bin data exists.
         """
         by_ts = {}
@@ -754,12 +743,8 @@ class CmtsCollector:
         if len(all_ts) == 1:
             return set(all_ts)
 
-        # Always drop first poll (pre-test baseline)
-        candidates = all_ts[1:]
-        # Drop last poll only if it has zero bin packets (post-test idle)
-        if len(candidates) > 1 and by_ts[candidates[-1]] == 0:
-            candidates = candidates[:-1]
-
+        threshold = max(by_ts.values()) * 0.01
+        candidates = [ts for ts in all_ts if by_ts[ts] >= threshold]
         return set(candidates) if candidates else set(all_ts)
 
     def _get_bin_edges(self, sf_index):

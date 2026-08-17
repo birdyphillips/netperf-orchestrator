@@ -2,14 +2,15 @@ import os
 import time
 import json
 import requests
+import threading
 from datetime import datetime
 from logger import Logger
 from log_rotator import LogRotator
 from config_loader import config
 
 
-class SamKnowsLogic:
-    """SamKnows instant-test API client with SNMP/Kafka metrics collection."""
+class ThousandEyesLogic:
+    """ThousandEyes instant-test API client with SNMP/Kafka metrics collection."""
 
     AVAILABLE_TESTS = {
         "http_get_mt": "Downstream (HTTP GET Multi-Thread)",
@@ -18,7 +19,7 @@ class SamKnowsLogic:
     }
 
     def __init__(self, scenario_name, test_group_name=None, rtt_suffix="", unit_id=None):
-        self.logger = Logger("SamKnowsLogic")
+        self.logger = Logger("ThousandEyesLogic")
         self.scenario_name = scenario_name
         self.test_group_name = test_group_name
         self.rtt_suffix = rtt_suffix
@@ -26,14 +27,14 @@ class SamKnowsLogic:
         self.timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
 
         # API config
-        self.api_url = config.samknows_api_url
-        self.api_token = config.samknows_api_token
+        self.api_url = config.thousandeyes_api_url
+        self.api_token = config.thousandeyes_api_token
         self.unit_id = unit_id  # required CLI argument
-        self.app_name = config.samknows_app_name
-        self.timeout = config.samknows_timeout
+        self.app_name = config.thousandeyes_app_name
+        self.timeout = config.thousandeyes_timeout
 
         if not self.unit_id:
-            raise ValueError("SamKnows unit_id is required (pass --unit-id on CLI)")
+            raise ValueError("ThousandEyes unit_id is required (pass --unit-id on CLI)")
 
         # Output naming
         if self.test_group_name:
@@ -41,7 +42,7 @@ class SamKnowsLogic:
         else:
             self.output_prefix = f"ThousandEyes_{self.timestamp_str}"
 
-        self.log_file = os.path.join(os.getcwd(), "logs", f"samknows_{self.test_id}.log")
+        self.log_file = os.path.join(os.getcwd(), "logs", f"thousandeyes_{self.test_id}.log")
         os.makedirs(os.path.dirname(self.log_file), exist_ok=True)
         self.log_rotator = LogRotator(self.log_file)
 
@@ -51,11 +52,12 @@ class SamKnowsLogic:
     def _build_url(self):
         return f"{self.api_url}/units/{self.unit_id}/tests"
 
-    def _run_test(self, test_name):
-        """Execute a single SamKnows instant test via API.
-        
-        The API is synchronous — it blocks until the test completes on the
-        SamKnows unit and returns results. Each test can take 30-120+ seconds.
+    def _run_test(self, test_name, result_store=None):
+        """Execute a single ThousandEyes instant test via API.
+
+        If result_store dict is provided, stores result under test_name key
+        (used for concurrent execution via threads).
+        Returns (data, elapsed_s) tuple.
         """
         url = self._build_url()
         headers = {
@@ -64,7 +66,7 @@ class SamKnowsLogic:
         }
         payload = json.dumps({"test": test_name, "appName": self.app_name})
 
-        self.logger.info(f"Running SamKnows test: {test_name} on unit {self.unit_id} (waiting for result...)")
+        self.logger.info(f"Running ThousandEyes test: {test_name} on unit {self.unit_id} (waiting for result...)")
         print(f"\n  [{test_name}] Executing on unit {self.unit_id} — waiting for completion...", flush=True)
         start_time = time.time()
 
@@ -74,7 +76,7 @@ class SamKnowsLogic:
             response.raise_for_status()
             result = response.json()
 
-            log_content = f"\n=== SamKnows {test_name} ===\n"
+            log_content = f"\n=== ThousandEyes {test_name} ===\n"
             log_content += f"URL: {url}\n"
             log_content += f"Status: {response.status_code}\n"
             log_content += f"Elapsed: {elapsed:.1f}s\n"
@@ -85,24 +87,40 @@ class SamKnowsLogic:
                 data = result["data"]
                 print(f"  [{test_name}] Completed in {elapsed:.1f}s", flush=True)
                 self._print_result(test_name, data)
-                return data
+                if result_store is not None:
+                    result_store[test_name] = data
+                return data, elapsed
             else:
-                self.logger.error(f"SamKnows test failed: {result.get('message', 'Unknown error')}")
-                return None
+                self.logger.error(f"ThousandEyes test failed: {result.get('message', 'Unknown error')}")
+                return None, elapsed
 
         except requests.exceptions.Timeout:
             elapsed = time.time() - start_time
-            self.logger.error(f"SamKnows API timeout after {elapsed:.0f}s (limit: {self.timeout}s)")
+            self.logger.error(f"ThousandEyes API timeout after {elapsed:.0f}s (limit: {self.timeout}s)")
             self.log_rotator.write_log(f"\nERROR: API timeout for {test_name} after {elapsed:.0f}s\n")
-            return None
+            return None, elapsed
         except requests.exceptions.RequestException as e:
-            self.logger.error(f"SamKnows API error: {e}")
+            elapsed = time.time() - start_time
+            self.logger.error(f"ThousandEyes API error: {e}")
             self.log_rotator.write_log(f"\nERROR: {e}\n")
-            return None
+            return None, elapsed
+
+    def _run_tests_concurrent(self, test_names):
+        """Run multiple tests simultaneously in threads so timestamps align."""
+        results = {}
+        threads = [
+            threading.Thread(target=self._run_test, args=(name, results), daemon=True)
+            for name in test_names
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=self.timeout + 30)
+        return results
 
     def _print_result(self, test_name, data):
         """Display test result summary."""
-        print(f"\n  SamKnows {test_name}:")
+        print(f"\n  ThousandEyes {test_name}:")
         print(f"    Unit: {data.get('unit_id')} | MAC: {data.get('mac')}")
         print(f"    Target: {data.get('target')}")
         print(f"    Time: {data.get('utc_datetime')}")
@@ -133,28 +151,30 @@ class SamKnowsLogic:
         return output_dir
 
     def run_downstream(self, iteration, total_iterations, parent_output_dir=None):
-        """Run downstream test only (http_get_mt)."""
-        self.logger.info(f"Iteration {iteration + 1}/{total_iterations} - SamKnows DS (http_get_mt)")
-        data = self._run_test("http_get_mt")
+        """Run downstream test only (http_get_mt). Returns (success, elapsed_s)."""
+        self.logger.info(f"Iteration {iteration + 1}/{total_iterations} - ThousandEyes DS (http_get_mt)")
+        data, elapsed = self._run_test("http_get_mt")
         if data:
             self._last_ds_result = data
-            return True
-        return False
+            self._last_ds_elapsed = elapsed
+            return True, elapsed
+        return False, elapsed
 
     def run_upstream(self, iteration, total_iterations, parent_output_dir=None):
-        """Run upstream test only (http_post_mt)."""
-        self.logger.info(f"Iteration {iteration + 1}/{total_iterations} - SamKnows US (http_post_mt)")
-        data = self._run_test("http_post_mt")
+        """Run upstream test only (http_post_mt). Returns (success, elapsed_s)."""
+        self.logger.info(f"Iteration {iteration + 1}/{total_iterations} - ThousandEyes US (http_post_mt)")
+        data, elapsed = self._run_test("http_post_mt")
         if data:
             self._last_us_result = data
-            return True
-        return False
+            self._last_us_elapsed = elapsed
+            return True, elapsed
+        return False, elapsed
 
     def run_jitter(self, iteration, total_iterations, parent_output_dir=None):
         """Run jitter/latency test only (udp_jitter) and save all results."""
-        self.logger.info(f"Iteration {iteration + 1}/{total_iterations} - SamKnows Jitter (udp_jitter)")
+        self.logger.info(f"Iteration {iteration + 1}/{total_iterations} - ThousandEyes Jitter (udp_jitter)")
         output_dir = self._get_output_dir(iteration, total_iterations, parent_output_dir)
-        data = self._run_test("udp_jitter")
+        data, elapsed = self._run_test("udp_jitter")
 
         # Collect all results from this iteration
         results = {}
@@ -174,45 +194,27 @@ class SamKnowsLogic:
         return data is not None
 
     def run_scenario(self, iteration, total_iterations, parent_output_dir=None):
-        """Run all 3 SamKnows tests (http_get_mt, http_post_mt, udp_jitter)."""
+        """Run all 3 ThousandEyes tests sequentially with a short gap between each."""
         self.logger.info(f"Iteration {iteration + 1}/{total_iterations} - ThousandEyes{self.rtt_suffix}")
 
-        # Determine output directory
-        if parent_output_dir:
-            if total_iterations > 1:
-                output_dir = os.path.join(parent_output_dir, f"iteration_{iteration + 1}")
-            else:
-                output_dir = parent_output_dir
-        else:
-            if total_iterations > 1:
-                output_dir = os.path.join("Results", self.output_prefix, f"iteration_{iteration + 1}")
-            else:
-                output_dir = os.path.join("Results", self.output_prefix)
-
-        os.makedirs(output_dir, exist_ok=True)
+        output_dir = self._get_output_dir(iteration, total_iterations, parent_output_dir)
 
         results = {}
         all_passed = True
-
         for test_name in self.test_sequence:
-            data = self._run_test(test_name)
+            data, _ = self._run_test(test_name)
             if data:
                 results[test_name] = data
             else:
                 all_passed = False
-            # Brief pause between tests to avoid API rate limiting
-            if test_name != self.test_sequence[-1]:
-                time.sleep(5)
 
-        # Save results to JSON
         self._save_results(output_dir, iteration, results)
 
         if all_passed:
-            self.logger.info(f"✓ Iteration {iteration + 1} completed - {len(results)}/3 tests passed")
+            self.logger.info(f"✓ Iteration {iteration + 1} completed - {len(results)}/5 tests passed")
         else:
-            self.logger.error(f"✗ Iteration {iteration + 1} - {len(results)}/3 tests passed")
+            self.logger.error(f"✗ Iteration {iteration + 1} - {len(results)}/5 tests passed")
 
-        # Wait between iterations
         if iteration < total_iterations - 1:
             time.sleep(10)
 
@@ -223,7 +225,7 @@ class SamKnowsLogic:
         if not results:
             return
 
-        base_name = f"SamKnows_{self.test_group_name or 'test'}_iteration_{iteration + 1}"
+        base_name = f"ThousandEyes_{self.test_group_name or 'test'}_iteration_{iteration + 1}"
 
         # --- JSON output (machine-readable) ---
         json_file = os.path.join(output_dir, f"{base_name}.json")
@@ -274,7 +276,7 @@ class SamKnowsLogic:
         """Write formatted text report with raw values and conversions."""
         lines = []
         lines.append("=" * 70)
-        lines.append(f"  SAMKNOWS INSTANT TEST REPORT")
+        lines.append(f"  THOUSANDEYES INSTANT TEST REPORT")
         lines.append("=" * 70)
         lines.append(f"  Test Group:  {self.test_group_name or 'N/A'}")
         lines.append(f"  Unit ID:     {self.unit_id}")
@@ -357,9 +359,9 @@ class SamKnowsLogic:
         lines.append(f"  {'Metric':<30} {'Raw Value':<20} {'Converted':<20}")
         lines.append(f"  {'-'*30} {'-'*20} {'-'*20}")
         if ds:
-            lines.append(f"  {'DS Throughput':<30} {ds.get('bytes_sec', 0):>14} B/s  {(ds.get('bytes_sec', 0) * 8) / 1_000_000:>12.2f} Mbps")
+            lines.append(f"  {'DS Throughput (TCP)':<30} {ds.get('bytes_sec', 0):>14} B/s  {(ds.get('bytes_sec', 0) * 8) / 1_000_000:>12.2f} Mbps")
         if us:
-            lines.append(f"  {'US Throughput':<30} {us.get('bytes_sec', 0):>14} B/s  {(us.get('bytes_sec', 0) * 8) / 1_000_000:>12.2f} Mbps")
+            lines.append(f"  {'US Throughput (TCP)':<30} {us.get('bytes_sec', 0):>14} B/s  {(us.get('bytes_sec', 0) * 8) / 1_000_000:>12.2f} Mbps")
         if jitter:
             lines.append(f"  {'Latency':<30} {jitter.get('latency', 0):>14} µs   {jitter.get('latency', 0) / 1000:>12.3f} ms")
             lines.append(f"  {'Down Jitter':<30} {jitter.get('down_jitter', 0):>14} µs   {jitter.get('down_jitter', 0) / 1000:>12.3f} ms")
@@ -372,12 +374,12 @@ class SamKnowsLogic:
 
         # Also print summary to terminal
         print(f"\n  {'='*60}")
-        print(f"  SAMKNOWS SUMMARY — Iteration {iteration + 1}")
+        print(f"  THOUSANDEYES SUMMARY \u2014 Iteration {iteration + 1}")
         print(f"  {'='*60}")
         if ds:
-            print(f"  DS Throughput:  {(ds.get('bytes_sec', 0) * 8) / 1_000_000:.2f} Mbps  (raw: {ds.get('bytes_sec', 0):,} bytes/sec)")
+            print(f"  DS Throughput (TCP): {(ds.get('bytes_sec', 0) * 8) / 1_000_000:.2f} Mbps  (raw: {ds.get('bytes_sec', 0):,} bytes/sec)")
         if us:
-            print(f"  US Throughput:  {(us.get('bytes_sec', 0) * 8) / 1_000_000:.2f} Mbps  (raw: {us.get('bytes_sec', 0):,} bytes/sec)")
+            print(f"  US Throughput (TCP): {(us.get('bytes_sec', 0) * 8) / 1_000_000:.2f} Mbps  (raw: {us.get('bytes_sec', 0):,} bytes/sec)")
         if jitter:
             print(f"  Latency:        {jitter.get('latency', 0) / 1000:.3f} ms    (raw: {jitter.get('latency', 0)} µs)")
             print(f"  Down Jitter:    {jitter.get('down_jitter', 0) / 1000:.3f} ms    (raw: {jitter.get('down_jitter', 0)} µs)")
@@ -385,9 +387,9 @@ class SamKnowsLogic:
         print(f"  {'='*60}\n", flush=True)
 
     def run_iterations(self, count=1, parent_output_dir=None):
-        """Run multiple SamKnows iterations (all 3 tests per iteration)."""
+        """Run multiple ThousandEyes iterations (all 3 tests per iteration)."""
         self.logger.info(f"\n{'='*60}")
-        self.logger.info(f"SamKnows: http_get_mt + http_post_mt + udp_jitter")
+        self.logger.info(f"ThousandEyes: http_get_mt + http_post_mt + udp_jitter")
         self.logger.info(f"Unit ID: {self.unit_id}")
         self.logger.info(f"Iterations: {count}")
         self.logger.info(f"{'='*60}")
@@ -401,6 +403,6 @@ class SamKnowsLogic:
                 self.logger.error(f"✗ Iteration {i + 1} failed")
 
         self.logger.info(f"\n{'='*60}")
-        self.logger.info(f"SamKnows completed: {success_count}/{count} iterations successful")
+        self.logger.info(f"ThousandEyes completed: {success_count}/{count} iterations successful")
         self.logger.info(f"{'='*60}\n")
         return success_count == count

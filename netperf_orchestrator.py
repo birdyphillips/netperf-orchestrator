@@ -283,6 +283,8 @@ class NetperfCLI:
                     all_success = all_success and success
                     all_snmp_files.extend(snmp_files)
             
+            self._zip_results(parent_output_dir)
+
             if all_success:
                 self.logger.info("All workflows completed successfully")
                 return 0
@@ -334,7 +336,7 @@ class NetperfCLI:
                     test_name = f"ByteBlower_{scenario_name}"
             
             if thousandeyes_only:
-                self.logger.info(f"ThousandEyes mode - all tests (http_get_mt, http_post_mt, udp_jitter)")
+                self.logger.info(f"ThousandEyes mode - all tests (http_get_mt, http_post_mt, udp_accelerated_dl, udp_accelerated_ul, udp_jitter)")
                 sk = ThousandEyesLogic(scenario_name, test_group_name, rtt_suffix, thousandeyes_unit_id)
                 self.output_dir = test_output_dir
                 success = True
@@ -346,13 +348,18 @@ class NetperfCLI:
                     self.start_cmts_collection(direction="downstream")
                     self.wait_for_cmts_poll()
 
+                    ds_elapsed = 0
+                    us_elapsed = 0
                     test_start = time.time()
-                    if not sk.run_downstream(i, iterations, test_output_dir):
+
+                    ds_ok, ds_elapsed = sk.run_downstream(i, iterations, test_output_dir)
+                    if not ds_ok:
                         self.logger.error("ThousandEyes downstream failed — stopping test")
                         self.stop_cmts_collection(snmp_dir, "ThousandEyes_DS")
                         return False, []
 
-                    if not sk.run_upstream(i, iterations, test_output_dir):
+                    us_ok, us_elapsed = sk.run_upstream(i, iterations, test_output_dir)
+                    if not us_ok:
                         self.logger.error("ThousandEyes upstream failed — stopping test")
                         self.stop_cmts_collection(snmp_dir, f"ThousandEyes_DS_iteration_{i+1}")
                         return False, []
@@ -360,10 +367,10 @@ class NetperfCLI:
                     sk.run_jitter(i, iterations, test_output_dir)
 
                     test_elapsed = time.time() - test_start
-                    self.stop_cmts_collection(snmp_dir, f"ThousandEyes_DS_iteration_{i+1}", post_test_polls=2, test_duration_s=test_elapsed)
+                    self.stop_cmts_collection(snmp_dir, f"ThousandEyes_DS_iteration_{i+1}", post_test_polls=2, test_duration_s=ds_elapsed)
 
                     self.run_snmp_collection(f"ThousandEyes_iteration_{i+1}", "after", snmp_dir, "")
-                    self._run_latency_report(snmp_dir, iteration=i+1, prefix="ThousandEyes")
+                    self._run_latency_report(snmp_dir, iteration=i+1, prefix="ThousandEyes", duration_s=us_elapsed)
             elif speedtest_only:
                 self.logger.info(f"SpeedTest mode - clients: {speedtest_clients}")
                 st = SpeedTestLogic(speedtest_clients, test_group_name)
@@ -408,14 +415,15 @@ class NetperfCLI:
                     self.start_cmts_collection(direction=cmts_dir)
                     self.wait_for_cmts_poll()
                     test_start = time.time()
-                    if not bb.run_scenario(i, iterations, test_output_dir):
+                    bb_ok, bb_duration = bb.run_scenario(i, iterations, test_output_dir)
+                    if not bb_ok:
                         self.logger.error("ByteBlower failed — stopping test")
                         self.stop_cmts_collection(iter_dir, scenario_name)
                         return False, []
-                    test_elapsed = time.time() - test_start
+                    test_elapsed = bb_duration or (time.time() - test_start)
                     self.stop_cmts_collection(iter_dir, f"{scenario_name}_iteration_{i+1}", test_duration_s=test_elapsed)
                     self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", iter_dir, "")
-                    self._run_latency_report(iter_dir, iteration=i+1)
+                    self._run_latency_report(iter_dir, iteration=i+1, duration_s=test_elapsed)
             elif iperf3_only or iperf3_darwin:
                 platform_override = 'macos' if iperf3_darwin else None
                 platform_suffix = "_macOS" if iperf3_darwin else "_Linux"
@@ -443,15 +451,16 @@ class NetperfCLI:
                     self.start_cmts_collection(direction=cmts_dir)
                     self.wait_for_cmts_poll()
                     test_start = time.time()
-                    if not iperf3.run_scenario(i, iterations):
+                    ip3_ok, ip3_duration = iperf3.run_scenario(i, iterations)
+                    if not ip3_ok:
                         self.logger.error("iPerf3 failed — stopping test")
                         self.stop_cmts_collection(snmp_dir, scenario_name)
                         iperf3.stop_iperf3_servers()
                         return False, []
-                    test_elapsed = time.time() - test_start
+                    test_elapsed = ip3_duration or (time.time() - test_start)
                     self.stop_cmts_collection(snmp_dir, f"{scenario_name}_iteration_{i+1}", test_duration_s=test_elapsed)
                     self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", snmp_dir, "")
-                    self._run_latency_report(snmp_dir, iteration=i+1)
+                    self._run_latency_report(snmp_dir, iteration=i+1, duration_s=test_elapsed)
                 iperf3.stop_iperf3_servers()
             else:
                 ps = PacketStormLogic(rtt_file)
@@ -482,16 +491,17 @@ class NetperfCLI:
                             self.start_cmts_collection(direction=cmts_dir)
                             self.wait_for_cmts_poll()
                             test_start = time.time()
-                            if not iperf3.run_scenario(i, iterations):
+                            ip3_ok, ip3_duration = iperf3.run_scenario(i, iterations)
+                            if not ip3_ok:
                                 self.logger.error("iPerf3 failed — stopping test")
                                 self.stop_cmts_collection(snmp_dir, scenario_name)
                                 iperf3.stop_iperf3_servers()
                                 ps.stop_config()
                                 return False, []
-                            test_elapsed = time.time() - test_start
+                            test_elapsed = ip3_duration or (time.time() - test_start)
                             self.stop_cmts_collection(snmp_dir, f"{scenario_name}_iteration_{i+1}", test_duration_s=test_elapsed)
                             self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", snmp_dir, "")
-                            self._run_latency_report(snmp_dir, iteration=i+1)
+                            self._run_latency_report(snmp_dir, iteration=i+1, duration_s=test_elapsed)
                         iperf3.stop_iperf3_servers()
                         success = success and ps.stop_config()
                 else:
@@ -510,15 +520,16 @@ class NetperfCLI:
                             self.start_cmts_collection(direction=cmts_dir)
                             self.wait_for_cmts_poll()
                             test_start = time.time()
-                            if not bb.run_scenario(i, iterations, test_output_dir):
+                            bb_ok, bb_duration = bb.run_scenario(i, iterations, test_output_dir)
+                            if not bb_ok:
                                 self.logger.error("ByteBlower failed — stopping test")
                                 self.stop_cmts_collection(snmp_dir, scenario_name)
                                 ps.stop_config()
                                 return False, []
-                            test_elapsed = time.time() - test_start
+                            test_elapsed = bb_duration or (time.time() - test_start)
                             self.stop_cmts_collection(snmp_dir, f"{scenario_name}_iteration_{i+1}", test_duration_s=test_elapsed)
                             self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", snmp_dir, "")
-                            self._run_latency_report(snmp_dir, iteration=i+1)
+                            self._run_latency_report(snmp_dir, iteration=i+1, duration_s=test_elapsed)
                         success = success and ps.stop_config()
             
             # Collect SNMP files from scenario directory
@@ -537,7 +548,7 @@ class NetperfCLI:
             self.logger.error(f"Single test failed: {e}")
             return False, []
     
-    def _run_latency_report(self, snmp_dir, iteration=None, prefix=None):
+    def _run_latency_report(self, snmp_dir, iteration=None, prefix=None, duration_s=None):
         """Generate latency bin report from SNMP before/after files"""
         try:
             if iteration is not None:
@@ -560,7 +571,7 @@ class NetperfCLI:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 # US report (from modem) — always generated
                 us_output = os.path.join(output_dir, f"SNMP_US_Latency_Report_{dir_name}{iter_tag}_{timestamp}.xlsx")
-                result = generate_latency_report(before_file, after_file, output_file=us_output, direction="US", cm_mac=self.cm_mac, cm_ipv6=self.target_ip)
+                result = generate_latency_report(before_file, after_file, output_file=us_output, direction="US", cm_mac=self.cm_mac, cm_ipv6=self.target_ip, duration_s=duration_s)
                 if result:
                     self.logger.info(f"US Latency report: {os.path.basename(result)}")
                 else:
@@ -568,7 +579,7 @@ class NetperfCLI:
                 # DS report (from iCMTS SNMP) — only for iCMTS mode
                 if self.cmts_type == "icmts":
                     ds_output = os.path.join(output_dir, f"SNMP_DS_Latency_Report_{dir_name}{iter_tag}_{timestamp}.xlsx")
-                    result_ds = generate_latency_report(before_file, after_file, output_file=ds_output, direction="DS", cm_mac=self.cm_mac, cm_ipv6=self.target_ip)
+                    result_ds = generate_latency_report(before_file, after_file, output_file=ds_output, direction="DS", cm_mac=self.cm_mac, cm_ipv6=self.target_ip, duration_s=duration_s)
                     if result_ds:
                         self.logger.info(f"DS Latency report (iCMTS SNMP): {os.path.basename(result_ds)}")
                     else:
@@ -579,6 +590,20 @@ class NetperfCLI:
                 self.logger.warning("Latency report skipped (SNMP files not found)")
         except Exception as e:
             self.logger.error(f"Latency report failed: {e}")
+
+    def _zip_results(self, folder):
+        """Compress results folder to a zip file alongside it."""
+        import zipfile
+        zip_path = folder.rstrip('/') + '.zip'
+        try:
+            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+                for root, _, files in os.walk(folder):
+                    for file in files:
+                        abs_path = os.path.join(root, file)
+                        zf.write(abs_path, os.path.relpath(abs_path, os.path.dirname(folder)))
+            self.logger.info(f"Results compressed: {os.path.basename(zip_path)}")
+        except Exception as e:
+            self.logger.warning(f"Zip failed: {e}")
 
     def _consolidate_snmp_to_excel(self, snmp_files, parent_dir, test_group_name):
         """Consolidate all SNMP files into Excel with separate sheets"""

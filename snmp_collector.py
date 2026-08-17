@@ -409,7 +409,7 @@ def parse_flow_stats(filepath, direction="US"):
     return stats
 
 
-DEFAULT_DURATION = {"byteblower": 60, "iperf3": 30}
+DEFAULT_DURATION = {"byteblower": 60, "iperf3": 60}
 
 
 def _infer_duration(filepath):
@@ -869,7 +869,7 @@ def write_timeseries_sheet(wb, before_file, after_file, fs_before, fs_after, con
         ws.column_dimensions[get_column_letter(i)].width = w
 
 
-def write_throughput_sheet(wb, fs_before, fs_after, before_file, after_file):
+def write_throughput_sheet(wb, fs_before, fs_after, before_file, after_file, duration_s=None):
     """Write Throughput tab showing octet/packet deltas per SFID."""
     ws = wb.create_sheet(title="Throughput")
     ws.sheet_properties.tabColor = "00B050"
@@ -883,7 +883,8 @@ def write_throughput_sheet(wb, fs_before, fs_after, before_file, after_file):
     ts_after = parse_snmp_timestamp(after_file)
     ts_b_str = ts_before.strftime("%Y-%m-%d %H:%M:%S") if ts_before else "unknown"
     ts_a_str = ts_after.strftime("%Y-%m-%d %H:%M:%S") if ts_after else "unknown"
-    duration_s = _infer_duration(before_file)
+    if duration_s is None:
+        duration_s = _infer_duration(before_file)
     if duration_s is None:
         duration_s = (ts_after - ts_before).total_seconds() if ts_before and ts_after else 0
 
@@ -920,7 +921,7 @@ def write_throughput_sheet(wb, fs_before, fs_after, before_file, after_file):
 
 def write_summary_sheet(wb, all_results, tp_stats=None, fs_before=None, fs_after=None,
                         cong_before=None, cong_after=None, before_file=None, after_file=None,
-                        bin_edges=None, direction="US"):
+                        bin_edges=None, direction="US", duration_s=None):
     """Write a summary sheet matching cmts_collector format."""
     edges = _get_edges(bin_edges)
     ws = wb.create_sheet(title="Summary")
@@ -956,7 +957,8 @@ def write_summary_sheet(wb, all_results, tp_stats=None, fs_before=None, fs_after
 
     ts_before = parse_snmp_timestamp(before_file) if before_file else None
     ts_after = parse_snmp_timestamp(after_file) if after_file else None
-    duration_s = _infer_duration(before_file) if before_file else None
+    if duration_s is None:
+        duration_s = _infer_duration(before_file) if before_file else None
     if duration_s is None:
         duration_s = (ts_after - ts_before).total_seconds() if ts_before and ts_after else 0
 
@@ -1043,7 +1045,7 @@ def _detect_direction(filepath):
     return "US"
 
 
-def generate_latency_report(before_file, after_file, output_file=None, direction=None, cm_mac=None, cm_ipv6=None):
+def generate_latency_report(before_file, after_file, output_file=None, direction=None, cm_mac=None, cm_ipv6=None, duration_s=None):
     """Main entry: parse SNMP files, compute deltas, write Excel report."""
     if not OPENPYXL_AVAILABLE:
         print("WARNING: openpyxl not available \u2014 skipping latency report")
@@ -1075,7 +1077,7 @@ def generate_latency_report(before_file, after_file, output_file=None, direction
                 deltas.append(max(av - bv, 0))
             all_deltas[sfid] = {"before": before_vals, "after": after_vals, "deltas": deltas}
 
-    tp_stats = compute_throughput_and_loss(before_file, after_file, direction=direction)
+    tp_stats = compute_throughput_and_loss(before_file, after_file, duration_s=duration_s, direction=direction)
     fs_before = parse_flow_stats(before_file, direction)
     fs_after = parse_flow_stats(after_file, direction)
     cong_before = parse_congestion_stats(before_file, direction)
@@ -1091,15 +1093,14 @@ def generate_latency_report(before_file, after_file, output_file=None, direction
     wb.remove(wb.active)
 
     write_modem_info_sheet(wb, cm_mac=cm_mac, cm_ipv6=cm_ipv6, before_file=before_file)
-    write_bin_edges_sheet(wb, edges)
-
     write_timeseries_sheet(wb, before_file, after_file, fs_before, fs_after,
                            cong_before, cong_after, before_bins, after_bins)
     write_summary_sheet(wb, all_deltas, tp_stats, fs_before, fs_after,
                         cong_before, cong_after, before_file, after_file,
-                        bin_edges=edges, direction=direction)
-    write_throughput_sheet(wb, fs_before, fs_after, before_file, after_file)
+                        bin_edges=edges, direction=direction, duration_s=duration_s)
+    write_throughput_sheet(wb, fs_before, fs_after, before_file, after_file, duration_s=duration_s)
 
+    write_bin_edges_sheet(wb, edges)
     for sfid, sf_data in sorted(all_deltas.items()):
         write_sf_sheet(wb, f"SFID_{sfid}", sf_data, tp_stats.get(sfid),
                        bin_edges=edges, direction=direction)

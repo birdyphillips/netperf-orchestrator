@@ -14,5 +14,11 @@ openpyxl>=3.0.10
 kafka-python>=2.0.0
 zstandard>=0.20.0
 
+# HTTP client for SamKnows API
+requests>=2.28.0
+
+# MySQL database
+mysql-connector-python>=8.0
+
 # Optional: For enhanced logging
 # colorlog>=6.7.0

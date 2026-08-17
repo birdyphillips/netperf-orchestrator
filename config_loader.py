@@ -191,5 +191,26 @@ class Config:
     def ssh_command_timeout(self):
         return self.get('ssh', 'command_timeout', default=30)
 
+    # ThousandEyes
+    @property
+    def thousandeyes_api_url(self):
+        return self.get('thousandeyes', 'api_url', default='https://api.thousandeyes.com/v7/samknows/instant-test')
+
+    @property
+    def thousandeyes_api_token(self):
+        return self.get('thousandeyes', 'api_token', default='')
+
+    @property
+    def thousandeyes_unit_id(self):
+        return str(self.get('thousandeyes', 'unit_id', default=''))
+
+    @property
+    def thousandeyes_app_name(self):
+        return self.get('thousandeyes', 'app_name', default='lld_automation')
+
+    @property
+    def thousandeyes_timeout(self):
+        return self.get('thousandeyes', 'timeout', default=300)
+
 # Singleton instance
 config = Config()
