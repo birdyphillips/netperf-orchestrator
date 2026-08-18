@@ -702,6 +702,8 @@ class IPerf3Logic:
             if result.returncode != 0:
                 self.logger.error(f"Failed to copy results: {result.stderr}")
                 return False, None
+            import glob as _glob
+            result_files = _glob.glob(os.path.join(output_dir, '*'))
             self.logger.info(f"✓ Iteration {iteration + 1} completed - {len(result_files)} result files")
             print(f"\n✓ [{self.scenario_name}] Completed - {len(result_files)} files saved to {output_dir}\n", flush=True)
             

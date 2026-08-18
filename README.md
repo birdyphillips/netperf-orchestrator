@@ -1,161 +1,140 @@
-# NetPerf Orchestrator v1.4
+# NetPerf Orchestrator
 
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![GitHub](https://img.shields.io/badge/GitHub-netperf--orchestrator-black.svg)](https://github.com/birdyphillips/netperf-orchestrator)
 
-**GitHub**: https://github.com/birdyphillips/netperf-orchestrator
+CLI-based DOCSIS 3.1 / 4.0 network performance testing tool for automated traffic generation, SNMP latency collection, Kafka telemetry capture, and PDF/Excel report generation.
 
-CLI-based DOCSIS 3.1 and 4.0 network performance testing orchestration tool integrating ByteBlower, PacketStorm, iPerf3, SpeedTest, and SamKnows for automated, comprehensive network testing with SNMP monitoring.
+## Features
 
-## 🚀 Features
+- **ByteBlower** — automated traffic generation with HTML/CSV/JSON/Excel reports
+- **iPerf3 Linux** — TCP (cubic/Prague) + UDP parallel flows via SSH
+- **iPerf3 macOS** — Apple QUIC + L4S flows via SSH
+- **SpeedTest** — Ookla multi-client (Linux, macOS, Windows/NVIDIA)
+- **ThousandEyes/SamKnows** — instant-test API (DS throughput, US throughput, UDP jitter)
+- **PacketStorm** — configurable RTT emulation (10–50 ms)
+- **SNMP monitoring** — before/after latency bin collection → `SNMP_US/DS_Latency_Report_*.xlsx`
+- **Kafka telemetry** — real-time vCMTS `dp_flow_*` metrics → `Kafka_*_Latency_Report_*.xlsx`
+- **Continuous cm_collector** — per-poll SNMP + Kafka CSVs + raw `.txt` files during test
+- **PDF report** — per-session summary with throughput, weighted avg latency, P50/P99/P99.9 bins, AQM drops, loss%
+- **Excel TimeSeries** — raw time-series workbook (TimeSeries, Throughput, per-SFID bins, Modem Info)
+- **CMTS IPv6 auto-lookup** — SSH to CMTS to resolve modem IPv6 before test starts
+- **Auto zip** — results folder compressed to `.zip` on completion
 
-- **ByteBlower Integration** - Automated traffic generation with HTML/PDF/CSV/JSON/Excel reports
-- **iPerf3 Support** - Linux (TCP/Prague) and macOS (Apple QUIC/L4S) testing
-- **PacketStorm RTT** - Configurable round-trip time emulation (10-50ms)
-- **SpeedTest** - Multi-client Ookla speed testing (Linux, macOS, Windows)
-- **SamKnows Integration** - ThousandEyes/SamKnows instant-test API (DS/US throughput + jitter)
-- **SNMP Monitoring** - Automatic before/after data collection with Excel consolidation
-- **CMTS Kafka Telemetry** - Real-time downstream latency collection from Harmonic vCMTS via Kafka
-- **Multi-Scenario** - 6 test scenarios (US/DS Classic/Combined/LL_Only)
-- **Automated Test Runner** - Execute all 36 SCN RTT test combinations
-- **Configuration File** - YAML-based config for easy environment portability
-- **Smart Folder Structure** - Organized results with RTT naming
-- **SSH Automation** - Automatic key deployment and remote execution
+## Table of Contents
 
-## 📋 Table of Contents
+- [Setup](#setup)
+- [Usage](#usage)
+- [Scenarios](#scenarios)
+- [Output Structure](#output-structure)
+- [Architecture](#architecture)
+- [Version History](#version-history)
 
-- [Quick Start](#-quick-start)
-- [Test Types](#-test-types)
-- [Usage Examples](#-usage-examples)
-- [Scenarios](#-scenarios)
-- [Configuration](#️-configuration)
-- [Architecture](#️-architecture)
-- [Version History](#-version-history)
+## Setup
 
-## Initial Setup
+### 1. Clone and configure
 
-### 0. Clone Repository
 ```bash
-git clone https://github.com/birdyphillips/netperf-orchestrator.git
+git clone git@github.com:birdyphillips/netperf-orchestrator.git
 cd netperf-orchestrator
-```
-
-### 1. Create Configuration File
-```bash
-# Copy example configuration
 cp config.yaml.example config.yaml
-
-# Edit for your environment
-nano config.yaml
+nano config.yaml   # fill in your environment
 ```
 
-### 2. Configure Your Environment
-Edit `config.yaml` to match your environment:
-- ByteBlower CLI path
-- PacketStorm URL and credentials
-- iPerf3 client/server IPs and credentials
-- SpeedTest client IPs and credentials
-- SNMP jump server and credentials
-- SSH key paths
+### 2. Install dependencies
 
-### 3. Install Dependencies
 ```bash
-# Install Python dependencies
-pip install pyyaml paramiko pandas openpyxl kafka-python zstandard
-
-# Install system tools
+pip install -r requirements.txt
 sudo apt install -y sshpass openssh-client
 ```
 
-### 4. Detailed Setup Instructions
-For complete setup instructions including ByteBlower, iPerf3, SpeedTest, SSH keys, and SNMP configuration, see **[SETUP_GUIDE.md](SETUP_GUIDE.md)**.
+### 3. Key config.yaml sections
 
-## Quick Start
+```yaml
+snmp:
+  jumpserver: <jump_host>
+  username: <user>
+  community: open
 
-### Using the Wrapper Script (Recommended)
-Use the `netperf` wrapper script to ensure all dependencies are available:
+cmts_hosts:
+  - name: <cmts_hostname>
+
+kafka:
+  broker: <broker_ip:port>
+  topic: <topic_name>
+
+byteblower:
+  cli_path: /path/to/ByteBlowerCLI
+  bb_flows_dir: bb_flows/
+```
+
+See `config.yaml.example` and `SETUP_GUIDE.md` for full documentation.
+
+## Usage
+
+Use the `netperf` wrapper script (sets up PATH/venv) or call `python3 netperf_orchestrator.py` directly.
+
+`--cmts-type` is **required** for every run:
+- `vcmts` — Kafka for DS latency
+- `icmts` — SNMP for DS latency
+
+### ByteBlower
 
 ```bash
-# Single iteration — vCMTS (Kafka for DS latency)
+# Single scenario, 1 iteration — vCMTS
 ./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
 
-# Single iteration — iCMTS (SNMP for DS latency)
-./netperf --cmts-type icmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
-
-# With RTT configuration
-./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
-```
-
-### Using Python Directly
-Alternatively, run with the venv Python:
-
-```bash
-source venv/bin/activate
-python3 netperf_orchestrator.py --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
-```
-
-### Run All Service Class Name (SCN) RTT Tests
-```bash
-./netperf --cmts-type vcmts -byteblower --bbp Port_16_example.bbp --scenario US_Classic_Only,DS_Classic_Only,US_Combined,DS_Combined -test-group-name HSI008_AQM -iteration 1
-./netperf --cmts-type vcmts -byteblower --bbp Port_16_example.bbp --scenario US_Classic_Only,DS_Classic_Only,US_Combined,DS_Combined,US_LL_Only,DS_LL_Only -test-group-name TEST_SCN_RTT -packetstorm --rtt vcmts10ms.json,vcmts30ms.json,vcmts50ms.json -iteration 1
-```
-
-## Usage Examples
-
-### ByteBlower Only
-```bash
-# Single iteration — vCMTS
-./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
-
-# Single iteration — iCMTS
-./netperf --cmts-type icmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
+# Single scenario, 1 iteration — iCMTS
+./netperf --cmts-type icmts -byteblower --bbp Port_7_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
 
 # Multiple iterations
 ./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0 -iteration 3
 
-# All ByteBlower scenarios (vCMTS)
+# All 6 scenarios
 ./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
 ./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario DS_Classic_Only -test-group-name TEST_SCN_RTT_0
 ./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Combined -test-group-name TEST_SCN_RTT_0
 ./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario DS_Combined -test-group-name TEST_SCN_RTT_0
 ./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_LL_Only -test-group-name TEST_SCN_RTT_0
 ./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario DS_LL_Only -test-group-name TEST_SCN_RTT_0
+
+# Run all scenarios in one command
+./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp \
+  --scenario US_Classic_Only,DS_Classic_Only,US_Combined,DS_Combined,US_LL_Only,DS_LL_Only \
+  -test-group-name HSI016_AQM -iteration 3
 ```
 
-### ByteBlower + PacketStorm
+### ByteBlower + PacketStorm RTT
+
 ```bash
-# With RTT configuration (vCMTS)
-./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
+# vCMTS RTT values
+./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt vcmts10ms.json
+./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_20 -packetstorm --rtt vcmts20ms.json
+./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_30 -packetstorm --rtt vcmts30ms.json
+./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_40 -packetstorm --rtt vcmts40ms.json
+./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt vcmts50ms.json
 
-# All RTT values (vCMTS)
-./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
-./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_20 -packetstorm --rtt vcmts20ms.json -iteration 1
-./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_30 -packetstorm --rtt vcmts30ms.json -iteration 1
-./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_40 -packetstorm --rtt vcmts40ms.json -iteration 1
-./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt vcmts50ms.json -iteration 1
+# iCMTS RTT values
+./netperf --cmts-type icmts -byteblower --bbp Port_7_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt icmts10ms.json
+./netperf --cmts-type icmts -byteblower --bbp Port_7_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_30 -packetstorm --rtt icmts30ms.json
+./netperf --cmts-type icmts -byteblower --bbp Port_7_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt icmts50ms.json
 
-# All RTT values (iCMTS)
-./netperf --cmts-type icmts -byteblower --bbp Port_7_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt icmts10ms.json -iteration 1
-./netperf --cmts-type icmts -byteblower --bbp Port_7_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_30 -packetstorm --rtt icmts30ms.json -iteration 1
-./netperf --cmts-type icmts -byteblower --bbp Port_7_example.bbp --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt icmts50ms.json -iteration 1
+# All scenarios + all RTT values in one command
+./netperf --cmts-type vcmts -byteblower --bbp Port_20_example.bbp \
+  --scenario US_Classic_Only,DS_Classic_Only,US_Combined,DS_Combined,US_LL_Only,DS_LL_Only \
+  -test-group-name TEST_SCN_RTT -packetstorm --rtt vcmts10ms.json,vcmts30ms.json,vcmts50ms.json -iteration 1
 ```
 
-### iPerf3 Linux Client
-```bash
-./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only,DS_Classic_Only,US_Combined,DS_Combined -test-group-name TEST_SCN_RTT_0 -iteration 1
-
-./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only,DS_Classic_Only,US_Combined,DS_Combined -test-group-name TEST_SCN_RTT_0 --output json -iteration 1
-```
+### iPerf3 Linux
 
 ```bash
-# TXT output (default)
-./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN
+# Single scenario
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
 
 # JSON output
 ./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0 --output json
 
-# All iPerf3 scenarios (TXT)
+# All 6 scenarios
 ./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0
 ./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario DS_Classic_Only -test-group-name TEST_SCN_RTT_0
 ./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Combined -test-group-name TEST_SCN_RTT_0
@@ -163,29 +142,37 @@ python3 netperf_orchestrator.py --cmts-type vcmts -byteblower --bbp Port_20_exam
 ./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_LL_Only -test-group-name TEST_SCN_RTT_0
 ./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario DS_LL_Only -test-group-name TEST_SCN_RTT_0
 
-# All iPerf3 scenarios (JSON)
-./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_0 --output json
-./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario DS_Classic_Only -test-group-name TEST_SCN_RTT_0 --output json
-./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Combined -test-group-name TEST_SCN_RTT_0 --output json
-./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario DS_Combined -test-group-name TEST_SCN_RTT_0 --output json
-./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_LL_Only -test-group-name TEST_SCN_RTT_0 --output json
-./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario DS_LL_Only -test-group-name TEST_SCN_RTT_0 --output json
+# Multiple scenarios in one command, 3 iterations, JSON
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> \
+  --scenario US_Classic_Only,DS_Classic_Only,US_Combined,DS_Combined \
+  -test-group-name HSI029_AQP --output json -iteration 3
+
+# 1000-packet AQM validation
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_1000_Packets -test-group-name AQM_packet_count_test
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario DS_1000_Packets -test-group-name AQM_packet_count_test
+
+# STVA (Set Top Video Analyzer)
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario DS_STVA -test-group-name STVA_TEST -iteration 3
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario DS_STVA_ECT1 -test-group-name STVA_ECT1_TEST -iteration 3
 ```
 
-### iPerf3 macOS Client (Apple QUIC/L4S)
+### iPerf3 Linux + PacketStorm RTT
+
 ```bash
-./netperf --cmts-type vcmts -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Classic_Only,DS_Classic_Only,US_Combined,DS_Combined -test-group-name TEST_SCN -iteration 1
-./netperf --cmts-type vcmts -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Classic_Only,DS_Classic_Only,US_Combined,DS_Combined -test-group-name TEST_SCN --output txt -iteration 1
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt vcmts10ms.json
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_20 -packetstorm --rtt vcmts20ms.json
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_30 -packetstorm --rtt vcmts30ms.json
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_40 -packetstorm --rtt vcmts40ms.json
+./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt vcmts50ms.json
 ```
 
-```bash
-# JSON output (default for macOS)
-./netperf --cmts-type vcmts -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN
+### iPerf3 macOS (Apple QUIC / L4S)
 
-# TXT output
+```bash
+# TXT output (interval reporting)
 ./netperf --cmts-type vcmts -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN --output txt
 
-# All iPerf3-darwin scenarios (JSON)
+# All 6 scenarios
 ./netperf --cmts-type vcmts -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN
 ./netperf --cmts-type vcmts -iperf3-darwin --clientIP <CLIENT_IP> --scenario DS_Classic_Only -test-group-name TEST_SCN
 ./netperf --cmts-type vcmts -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Combined -test-group-name TEST_SCN
@@ -193,70 +180,27 @@ python3 netperf_orchestrator.py --cmts-type vcmts -byteblower --bbp Port_20_exam
 ./netperf --cmts-type vcmts -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_LL_Only -test-group-name TEST_SCN
 ./netperf --cmts-type vcmts -iperf3-darwin --clientIP <CLIENT_IP> --scenario DS_LL_Only -test-group-name TEST_SCN
 
-# All iPerf3-darwin scenarios (TXT)
-./netperf --cmts-type vcmts -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN --output txt
-./netperf --cmts-type vcmts -iperf3-darwin --clientIP <CLIENT_IP> --scenario DS_Classic_Only -test-group-name TEST_SCN --output txt
-./netperf --cmts-type vcmts -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_Combined -test-group-name TEST_SCN --output txt
-./netperf --cmts-type vcmts -iperf3-darwin --clientIP <CLIENT_IP> --scenario DS_Combined -test-group-name TEST_SCN --output txt
-./netperf --cmts-type vcmts -iperf3-darwin --clientIP <CLIENT_IP> --scenario US_LL_Only -test-group-name TEST_SCN --output txt
-./netperf --cmts-type vcmts -iperf3-darwin --clientIP <CLIENT_IP> --scenario DS_LL_Only -test-group-name TEST_SCN --output txt
-```
-
-### iPerf3 1000-Packet Count Test (AQM Validation)
-```bash
-# Upstream — send exactly 1000 UDP packets (1400 byte payload)
-./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_1000_Packets -test-group-name AQM_iPerf3_packet_count_test
-
-# Downstream — send exactly 1000 UDP packets (1400 byte payload)
-./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario DS_1000_Packets -test-group-name AQM_iPerf3_packet_count_test
-```
-
-### iPerf3 STVA (Set Top Video Analyzer)
-```bash
-# DS_STVA with 3 iterations
-./netperf --cmts-type vcmts -iperf3 --clientIP 71.85.92.213 --scenario DS_STVA -test-group-name STVA_TEST -iteration 3
-```
-
-### iPerf3 + PacketStorm
-```bash
-# TXT output with RTT (default)
-./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt vcmts40ms.json -iteration 1
-
-# JSON output with RTT
-./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt vcmts40ms.json --output json -iteration 1
-
-# All RTT values with iPerf3
-./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_10 -packetstorm --rtt vcmts10ms.json -iteration 1
-./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_20 -packetstorm --rtt vcmts20ms.json -iteration 1
-./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_30 -packetstorm --rtt vcmts30ms.json -iteration 1
-./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_40 -packetstorm --rtt vcmts40ms.json -iteration 1
-./netperf --cmts-type vcmts -iperf3 --clientIP <CLIENT_IP> --scenario US_Classic_Only -test-group-name TEST_SCN_RTT_50 -packetstorm --rtt vcmts50ms.json -iteration 1
-```
-
-### PacketStorm Only
-```bash
-# Start and stop RTT configuration
-./netperf --cmts-type vcmts -packetstorm --rtt vcmts10ms.json
-./netperf --cmts-type vcmts -packetstorm --rtt vcmts20ms.json
-./netperf --cmts-type vcmts -packetstorm --rtt vcmts30ms.json
-./netperf --cmts-type vcmts -packetstorm --rtt vcmts40ms.json
-./netperf --cmts-type vcmts -packetstorm --rtt vcmts50ms.json
+# Multiple scenarios in one command
+./netperf --cmts-type vcmts -iperf3-darwin --clientIP <CLIENT_IP> \
+  --scenario US_Classic_Only,DS_Classic_Only,US_Combined,DS_Combined \
+  -test-group-name TEST_SCN --output txt -iteration 3
 ```
 
 ### SpeedTest
+
 ```bash
-# Run on all clients (linux, macos, nvidia)
+# All clients (linux, macos, nvidia)
 ./netperf --cmts-type vcmts -speedtest -test-group-name TEST_SCN_Ookla_Speedtest
 
-# Run on specific clients
+# Specific clients
 ./netperf --cmts-type vcmts -speedtest --client linux -test-group-name TEST_SCN_Ookla_Speedtest
 ./netperf --cmts-type vcmts -speedtest --client linux,macos -test-group-name TEST_SCN_Ookla_Speedtest
 ./netperf --cmts-type vcmts -speedtest --client nvidia -test-group-name TEST_SCN_Ookla_Speedtest
 ```
 
-### SamKnows (ThousandEyes Instant Test)
+### ThousandEyes / SamKnows
 
-SamKnows always executes all 3 tests per iteration: downstream throughput (`http_get_mt`), upstream throughput (`http_post_mt`), and UDP jitter/latency (`udp_jitter`).
+Runs all 3 tests per iteration: `http_get_mt` (DS throughput), `http_post_mt` (US throughput), `udp_jitter`.
 
 ```bash
 # Basic run — unit ID required
@@ -271,516 +215,222 @@ SamKnows always executes all 3 tests per iteration: downstream throughput (`http
 ./netperf --cmts-type vcmts -thousandeyes --unit-id 82670821 -packetstorm --rtt vcmts50ms.json -test-group-name HSI021_SamKnows_RTT_50
 ```
 
-#### Tests Executed Per Iteration
-| Test | API Endpoint | Metrics |
-|------|-------------|--------|
-| `http_get_mt` | POST `/units/{unit_id}/tests` | Downstream throughput (bytes/sec → Mbps) |
-| `http_post_mt` | POST `/units/{unit_id}/tests` | Upstream throughput (bytes/sec → Mbps) |
-| `udp_jitter` | POST `/units/{unit_id}/tests` | Latency (µs), Down jitter (µs), Up jitter (µs) |
+#### ThousandEyes tests per iteration
 
-## Workflow
+| Test | Metrics |
+|---|---|
+| `http_get_mt` | Downstream throughput (Mbps) |
+| `http_post_mt` | Upstream throughput (Mbps) |
+| `udp_jitter` | Latency (µs), Down jitter (µs), Up jitter (µs) |
 
-- **Full**: PacketStorm start → ByteBlower (3 iterations) → PacketStorm stop
-- **ByteBlower Only**: Run ByteBlower scenario with 3 iterations
-- **PacketStorm Only**: PacketStorm start → PacketStorm stop
+### PacketStorm only
 
-## PacketStorm API Documentation
-
-### Base Configuration
-- **URL**: `http://<PACKETSTORM_IP>/xgui/rest`
-- **Username**: `automation`
-- **Password**: `automation`
-- **Content-Type**: `application/json`
-- **Timeout**: 30 seconds
-
-### API Endpoints
-
-#### Login
 ```bash
+./netperf --cmts-type vcmts -packetstorm --rtt vcmts10ms.json
+./netperf --cmts-type vcmts -packetstorm --rtt vcmts20ms.json
+./netperf --cmts-type vcmts -packetstorm --rtt vcmts30ms.json
+./netperf --cmts-type vcmts -packetstorm --rtt vcmts40ms.json
+./netperf --cmts-type vcmts -packetstorm --rtt vcmts50ms.json
+```
+
+### PacketStorm API
+
+```bash
+# Login
 curl -X POST http://<PACKETSTORM_IP>/xgui/rest \
   -H "Content-Type: application/json" \
   -d '{"op": "login", "user": "<username>", "args": {"password": "<password>"}}'
-```
 
-#### Start Configuration
-```bash
+# Start RTT config
 curl -X POST http://<PACKETSTORM_IP>/xgui/rest \
   -H "Content-Type: application/json" \
   -d '{"op": "start", "user": "<username>", "args": {"config": "vcmts10ms.json"}}'
-```
 
-#### Stop Configuration
-```bash
+# Stop
 curl -X POST http://<PACKETSTORM_IP>/xgui/rest \
   -H "Content-Type: application/json" \
   -d '{"op": "stop", "user": "<username>"}'
-```
 
-#### Status Check
-```bash
+# Status
 curl -X POST http://<PACKETSTORM_IP>/xgui/rest \
   -H "Content-Type: application/json" \
   -d '{"op": "status", "user": "<username>"}'
 ```
 
-#### List Configurations
-```bash
-curl -X POST http://<PACKETSTORM_IP>/xgui/rest \
-  -H "Content-Type: application/json" \
-  -d '{"op": "list", "user": "<username>", "args": {"type": "configs"}}'
-```
+## Scenarios
 
-### Testing
+All traffic modes support the same scenario names:
 
-#### Python API Tester
-```bash
-# Test all endpoints
-python3 test_packetstorm_api.py full vcmts10ms
+| Scenario | Direction | Flows |
+|---|---|---|
+| `US_Classic_Only` | Upstream | 4 TCP cubic + 1 UDP |
+| `DS_Classic_Only` | Downstream | 4 TCP cubic + 1 UDP |
+| `US_Combined` | Upstream | 4 TCP cubic + 1 TCP Prague + 1 UDP CL + 1 UDP LL |
+| `DS_Combined` | Downstream | 4 TCP cubic + 1 TCP Prague + 1 UDP CL + 1 UDP LL |
+| `US_LL_Only` | Upstream | 1 TCP Prague + 1 UDP DSCP45 |
+| `DS_LL_Only` | Downstream | 1 TCP Prague + 1 UDP DSCP45 |
+| `US_UDP_NC` | Upstream | UDP non-conforming |
+| `DS_UDP_NC` | Downstream | UDP non-conforming |
+| `US_LL_1TCP_LL` | Upstream | 1 TCP Prague |
+| `US_LL_4TCP_LL` | Upstream | 4 TCP Prague |
+| `DS_LL_1TCP_LL` | Downstream | 1 TCP Prague |
+| `DS_LL_4TCP_LL` | Downstream | 4 TCP Prague |
+| `DS_STVA` | Downstream | 1 TCP cubic + 1 TCP ECT(1) |
+| `DS_STVA_ECT1` | Downstream | 1 TCP cubic + 1 TCP ECT(1) |
+| `US_1000_Packets` | Upstream | 1000 UDP packets (1400B, 10 Mbps) |
+| `DS_1000_Packets` | Downstream | 1000 UDP packets (1400B, 10 Mbps) |
 
-# Test individual endpoints
-python3 test_packetstorm_api.py login
-python3 test_packetstorm_api.py status
-python3 test_packetstorm_api.py start vcmts25ms
-python3 test_packetstorm_api.py stop
-```
-
-#### Bash API Tester
-```bash
-# Test all endpoints
-./test_packetstorm.sh full icmts30ms
-
-# Test individual endpoints
-./test_packetstorm.sh login
-./test_packetstorm.sh status
-./test_packetstorm.sh start vcmts40ms
-./test_packetstorm.sh stop
-```
-
-### Response Codes
-- **200**: Success
-- **400**: Bad Request (malformed JSON)
-- **401**: Unauthorized (authentication failed)
-- **404**: Not Found (config file not found)
-- **500**: Internal Server Error
-
-## Arguments
-
-- `--cmts-type`: **REQUIRED** — CMTS type: `vcmts` (Kafka for DS latency) or `icmts` (SNMP for DS latency)
-- `-byteblower`: Enable ByteBlower mode
-- `--bbp`: .bbp filename from bb_flows/ directory (required with -byteblower)
-- `--scenario`: Scenario name (required with -byteblower, -iperf3, or -samknows)
-- `-test-group-name`: Test group name prefix for results (e.g., SCN_RTT_0)
-- `-packetstorm`: Enable PacketStorm mode
-- `--rtt`: PacketStorm configuration name (required with -packetstorm)
-- `-iperf3`: Enable iPerf3 Linux mode
-- `-iperf3-darwin`: Enable iPerf3 macOS mode (Apple QUIC/L4S)
-- `--clientIP`: Client IP address (required with -iperf3 or -iperf3-darwin)
-- `--output`: iPerf3 output format: json or txt (default: txt)
-- `-iteration`: Number of iterations (default: 1)
-- `-speedtest`: Enable SpeedTest mode
-- `--client`: SpeedTest clients to run on: linux, macos, nvidia (default: all three)
-- `-thousandeyes`: Enable SamKnows/ThousandEyes instant-test mode (runs all 3 tests: DS, US, jitter)
-- `--unit-id`: **REQUIRED with -thousandeyes** — SamKnows unit ID (e.g., 82670821)
-
-## 🎯 Supported Scenarios
-
-All tools support the same 6 test scenarios:
-
-### Upstream Tests
-- **US_Classic_Only**: Upstream Classic service flow only (4 TCP + 1 UDP)
-- **US_Combined**: Upstream Classic + Low Latency combined (4 TCP Classic + 1 TCP LL + 1 UDP Classic + 1 UDP LL)
-- **US_LL_Only**: Upstream Low Latency service flow only (1 TCP + 1 UDP with DSCP 45)
-- **US_1000_Packets**: Upstream exactly 1000 UDP packets (1400B payload, 10Mbps rate)
-
-### Downstream Tests  
-- **DS_Classic_Only**: Downstream Classic service flow only (4 TCP + 1 UDP)
-- **DS_Combined**: Downstream Classic + Low Latency combined (4 TCP Classic + 1 TCP LL + 1 UDP Classic + 1 UDP LL)
-- **DS_LL_Only**: Downstream Low Latency service flow only (1 TCP + 1 UDP with DSCP 45)
-- **DS_1000_Packets**: Downstream exactly 1000 UDP packets (1400B payload, 10Mbps rate)
-
-## Linux iPerf3 Integration
-
-The tool supports running iPerf3 tests on Linux clients with automatic SSH key setup and result collection.
-
-### Prerequisites
-- Linux client with iPerf3 installed
-- SSH access to client (username: `lld`, password: `<password>`)
-- `sshpass` installed on control machine
-
-### Supported Scenarios
-- **US_Classic_Only**: Upstream Classic service flow tests
-- **DS_Classic_Only**: Downstream Classic service flow tests  
-- **US_Combined**: Upstream Classic + Low Latency combined tests
-- **DS_Combined**: Downstream Classic + Low Latency combined tests
-- **US_LL_Only**: Upstream Low Latency service flow tests
-- **DS_LL_Only**: Downstream Low Latency service flow tests
-
-### Automatic Features
-- SSH key generation and deployment
-- Remote directory creation
-- Parallel iPerf3 test execution
-- JSON and text result collection
-- Local result storage with RTT naming
-
-## macOS iPerf3 Integration
-
-The tool supports running iPerf3-darwin tests on macOS clients with Apple QUIC and L4S support.
-
-### Prerequisites
-- macOS client with iperf3-darwin installed
-- macOS server with iperf3-darwin installed
-- SSH access to client (username: `lld_mac_client`, password: `<password>`)
-- SSH access to server (username: `mac_studio_server`, password: `<password>`)
-- `sshpass` installed on control machine
-
-### Supported Scenarios
-- **US_Classic_Only**: Upstream Classic service flow tests (QUIC + UDP)
-- **DS_Classic_Only**: Downstream Classic service flow tests (QUIC + UDP)
-- **US_Combined**: Upstream Classic + Low Latency combined tests (QUIC + QUIC L4S + UDP + UDP L4S)
-- **DS_Combined**: Downstream Classic + Low Latency combined tests (QUIC + QUIC L4S + UDP + UDP L4S)
-- **US_LL_Only**: Upstream Low Latency service flow tests (QUIC L4S + UDP L4S)
-- **DS_LL_Only**: Downstream Low Latency service flow tests (QUIC L4S + UDP L4S)
-
-### Apple QUIC/L4S Features
-- Apple QUIC protocol support with `--apple-quic`
-- Apple L4S (Low Latency, Low Loss, Scalable Throughput) with `--apple-l4s`
-- Automatic SSH key deployment to both client and server
-- Platform-specific directory paths (/Users vs /home)
-- JSON and text result collection
-- Local result storage with RTT naming
-
-## Logs
-
-- **Application Logs**: Stored in `logs/` directory with 10MB rotation
-- **ByteBlower Logs**: Individual log files per test execution
-- **PacketStorm Logs**: API interaction logs with timestamps
+macOS (`-iperf3-darwin`) uses Apple QUIC (`--apple-quic`) and `--apple-l4s` in place of TCP Prague.
 
 ## Output Structure
 
-### Single Iteration (Default)
-Results saved directly to main folder:
-```
-Results/SCN_RTT_10_US_Classic_Only_RTT_10ms_20251224_202431/
-├── US_Classic_Only_RTT_10ms - 20251224_202431__1.csv
-├── US_Classic_Only_RTT_10ms - 20251224_202431__1.html
-├── US_Classic_Only_RTT_10ms - 20251224_202431__1.json
-├── US_Classic_Only_RTT_10ms - 20251224_202431__1_R1_1.html
-├── US_Classic_Only_RTT_10ms - 20251224_202431__1_R2_1.html
-└── US_Classic_Only_RTT_10ms - 20251224_202431__1_R3_1.html
-```
+### ByteBlower (multiple iterations)
 
-### Multiple Iterations
-Results organized in iteration subfolders:
 ```
-Results/SCN_RTT_10_US_Classic_Only_RTT_10ms_20251224_202431/
-├── iteration_1/
-│   ├── US_Classic_Only_RTT_10ms - 20251224_202431__1.csv
-│   └── ...
-├── iteration_2/
-│   ├── US_Classic_Only_RTT_10ms - 20251224_202431__1.csv
-│   └── ...
-└── iteration_3/
-    ├── US_Classic_Only_RTT_10ms - 20251224_202431__1.csv
-    └── ...
+Results/<TestGroup>_ByteBlower_<ts>/
+└── <Scenario>/
+    └── iteration_<n>/
+        ├── ByteBlower_<Scenario>_iteration_<n>_SNMP_before_<ts>.txt
+        ├── ByteBlower_<Scenario>_iteration_<n>_SNMP_after_<ts>.txt
+        ├── <Scenario> - <ts>_R2_1.html
+        ├── <Scenario> - <ts>_1.csv
+        ├── <Scenario> - <ts>_1.json
+        ├── Kafka_DS_Latency_Report_<Scenario>_iteration_<n>_<ts>.xlsx  (vcmts)
+        ├── Kafka_Raw_Messages_<Scenario>_iteration_<n>_<ts>.txt
+        └── SNMP_US_Latency_Report_iteration_<n>_<ts>.xlsx
 ```
 
-## Automated Test Runner
+### iPerf3 Linux (multiple iterations)
 
-The `run_scn_rtt_tests.py` script executes all 36 Service Class Name (SCN) RTT test combinations:
-- 6 scenarios: US_Classic_Only, DS_Classic_Only, US_Combined, DS_Combined, DS_LL_Only, US_LL_Only
-- 6 RTT values per scenario: 0ms, 10ms, 20ms, 30ms, 40ms, 50ms
-- 15-second intervals between tests
-- Continues on individual test failures
-
-```bash
-# Run all Service Class Name (SCN) RTT tests
-python3 run_scn_rtt_tests.py
-
-# Estimated runtime: 9 minutes (intervals only) + test execution time
+```
+Results/<TestGroup>_iPerf3_Linux_<ts>/
+└── <Scenario>_Linux/
+    ├── iPerf3_Linux_<Scenario>_iteration_<n>_SNMP_before_<ts>.txt
+    ├── iPerf3_Linux_<Scenario>_iteration_<n>_SNMP_after_<ts>.txt
+    ├── Kafka_DS_Latency_Report_<Scenario>_iteration_<n>_<ts>.xlsx  (vcmts)
+    ├── Kafka_Raw_Messages_<Scenario>_iteration_<n>_<ts>.txt
+    ├── SNMP_US_Latency_Report_<Scenario>_Linux_iteration_<n>_<ts>.xlsx
+    └── iteration_<n>/
+        ├── <Dir>_<Group>_<Scenario>_4TCP_CL.json
+        └── <Dir>_<Group>_<Scenario>_1TCP_LL.json
 ```
 
-## Common Configuration Files
+### cm_collector session (continuous polling)
 
-### PacketStorm RTT Configurations (vCMTS)
-- `vcmts10ms.json` - 10ms RTT configuration
-- `vcmts20ms.json` - 20ms RTT configuration  
-- `vcmts30ms.json` - 30ms RTT configuration
-- `vcmts40ms.json` - 40ms RTT configuration
-- `vcmts50ms.json` - 50ms RTT configuration
-
-### PacketStorm RTT Configurations (iCMTS)
-- `icmts10ms.json` - 10ms RTT configuration
-- `icmts20ms.json` - 20ms RTT configuration  
-- `icmts30ms.json` - 30ms RTT configuration
-- `icmts40ms.json` - 40ms RTT configuration
-- `icmts50ms.json` - 50ms RTT configuration
-
-### ByteBlower Project Files
-- `Port_2_example.bbp` - Port 2 iCMTS configuration
-- `Port_7_example.bbp` - Port 7 iCMTS configuration
-- `Port_15_example.bbp` - Port 15 iCMTS configuration
-- `Port_16_example.bbp` - Port 16 vCMTS configuration
-- `Port_20_example.bbp` - Port 20 vCMTS configuration
-
-#### Standard Scenarios Available in .bbp Files:
-- **US_Classic_Only**: Upstream Classic service flow only
-- **DS_Classic_Only**: Downstream Classic service flow only
-- **US_Combined**: Upstream Classic + Low Latency combined
-- **DS_Combined**: Downstream Classic + Low Latency combined
-- **US_LL_Only**: Upstream Low Latency service flow only
-- **DS_LL_Only**: Downstream Low Latency service flow only
-- **US_UDP_NC**: Upstream UDP non-conforming traffic
-- **DS_UDP_NC**: Downstream UDP non-conforming traffic
-- **US_TCP_NC**: Upstream TCP non-conforming traffic
-- **DS_TCP_NC**: Downstream TCP non-conforming traffic
-
-## Files
-
-- `config.yaml`: Main configuration file (create from config.yaml.example)
-- `config.yaml.example`: Example configuration with all settings documented
-- `config_loader.py`: Configuration file loader module
-- `netperf_orchestrator.py`: Main CLI tool
-- `netperf`: Wrapper script for easy execution
-- `byteblower_logic.py`: ByteBlower execution logic
-- `packetstorm_logic.py`: PacketStorm execution logic
-- `iperf3_logic.py`: iPerf3 execution logic
-- `speedtest_logic.py`: SpeedTest execution logic
-- `samknows_logic.py`: SamKnows ThousandEyes instant-test API logic
-- `snmp_collector.py`: SNMP data collection module (upstream latency via SNMP before/after)
-- `cmts_collector.py`: CMTS Kafka metrics collector (downstream latency via real-time Kafka stream)
-- `latency_calculator.py`: Latency bin report generator from SNMP data
-- `latency_bin_template.py`: Blank Excel template generator for latency bins
-- `logger.py`: Logging utility
-- `log_rotator.py`: Log rotation utility
-- `SETUP_GUIDE.md`: Setup and installation guide
-- `README.md`: This file
-
-## SpeedTest Integration
-
-The tool supports running Ookla SpeedTest on multiple client platforms with SNMP metrics collection before and after each client test.
-
-### Supported Clients
-- **Linux**: Ubuntu/Debian client with speedtest CLI
-- **macOS**: macOS client with speedtest CLI via Homebrew
-- **NVIDIA**: Windows NVIDIA client with speedtest.exe
-
-### Features
-- 3 iterations per client with 10-second intervals
-- SNMP metrics collection before and after each client test
-- Automatic SSH execution via sshpass
-- Results collection and local storage
-- Platform-specific command handling (Windows/Unix)
-- All results consolidated in single folder
-- Excel spreadsheet with all SNMP metrics
-
-### Client Credentials
-- Linux: `lld@<CLIENT_IP>` (password: `<password>`)
-- macOS: `lld_mac_client@<CLIENT_IP>` (password: `<password>`)
-- NVIDIA: `Administrator@<CLIENT_IP>` (password: `<password>`)
-
-### Output Structure
 ```
-Results/SCN_Speedtest_20250115_160000/
-├── SNMP_before_SCN_Speedtest_linux_*.csv
-├── SCN_Speedtest_linux_20250115_160000.txt
-├── SNMP_after_SCN_Speedtest_linux_*.csv
-├── SNMP_before_SCN_Speedtest_macos_*.csv
-├── SCN_Speedtest_macos_20250115_160000.txt
-├── SNMP_after_SCN_Speedtest_macos_*.csv
-├── SNMP_before_SCN_Speedtest_nvidia_*.csv
-├── SCN_Speedtest_nvidia_20250115_160000.txt
-├── SNMP_after_SCN_Speedtest_nvidia_*.csv
-└── SCN_Speedtest_Results.xlsx (consolidated SNMP data)
+Results/<mac>_<cmts_type>/<ts>/
+├── snmp_us_<mac>_<ts>.csv
+├── snmp_ds_<mac>_<ts>.csv          (icmts only)
+├── kafka_<mac>_<ts>.csv            (vcmts only)
+├── SNMP_poll_<n>_<ts>.txt          (one per poll)
+├── Kafka_Raw_Messages_<mac>_<ts>.txt
+├── TimeSeries_<cmts_type>_<mac>_<ts>.xlsx
+└── <TestGroup>_<ts>_Report.pdf
 ```
 
-### Implementation
-- **Module**: `speedtest_logic.py` - Core SpeedTest execution with per-client SNMP integration
-- **SNMP Target**: `<MODEM_IPV6>` (CMTS)
-- **Execution Flow**: For each client: SNMP Before → SpeedTest (3 iterations) → SNMP After
-- **Excel Consolidation**: All SNMP CSV files merged into single Excel workbook with separate sheets per test
+## Arguments
+
+| Argument | Description |
+|---|---|
+| `--cmts-type` | **Required.** `vcmts` or `icmts` |
+| `-byteblower` | Enable ByteBlower mode |
+| `--bbp` | `.bbp` file from `bb_flows/` (required with `-byteblower`) |
+| `--scenario` | Scenario name(s), comma-separated |
+| `-test-group-name` | Results folder prefix |
+| `-packetstorm` | Enable PacketStorm RTT emulation |
+| `--rtt` | PacketStorm config file (required with `-packetstorm`) |
+| `-iperf3` | Enable iPerf3 Linux mode |
+| `-iperf3-darwin` | Enable iPerf3 macOS mode |
+| `--clientIP` | Client IP (required with `-iperf3` / `-iperf3-darwin`) |
+| `--output` | iPerf3 output format: `json` or `txt` (default: `json`) |
+| `-speedtest` | Enable SpeedTest mode |
+| `--client` | SpeedTest clients: `linux`, `macos`, `nvidia` (default: all) |
+| `-thousandeyes` | Enable ThousandEyes/SamKnows instant-test mode |
+| `--unit-id` | SamKnows unit ID (required with `-thousandeyes`) |
+| `--report-formats` | ByteBlower report formats (default: `html pdf csv xls xlsx json docx`) |
+| `-iteration` | Number of iterations (default: `1`) |
+
+## Architecture
+
+### Files
+
+| File | Purpose |
+|---|---|
+| `netperf_orchestrator.py` | Main CLI entry point |
+| `netperf` | Wrapper script |
+| `byteblower_logic.py` | ByteBlower subprocess execution |
+| `iperf3_logic.py` | iPerf3 SSH execution (Linux + macOS) |
+| `speedtest_logic.py` | Ookla SpeedTest SSH execution |
+| `thousandeyes_logic.py` | ThousandEyes/SamKnows instant-test API |
+| `packetstorm_logic.py` | PacketStorm RTT API |
+| `snmp_collector.py` | SNMP before/after collection + latency report |
+| `kafka_collector.py` | Kafka consumer for vCMTS `dp_flow_*` metrics |
+| `cm_collector.py` | Continuous SNMP + Kafka polling threads |
+| `cmts_modem_info.py` | SSH to CMTS to resolve modem IPv6 |
+| `metrics_pdf_report.py` | PDF report generator (page summary + charts) |
+| `config_loader.py` | YAML config loader |
+| `logger.py` | Logging utility |
+| `log_rotator.py` | Log rotation utility |
+| `get_device_ips.py` | Standalone diagnostic: resolve modem IPv6 from CMTS |
+| `config.yaml` | Environment configuration (not committed) |
+| `config.yaml.example` | Documented config template |
+| `bb_flows/` | ByteBlower `.bbp` project files |
+
+### Latency data sources
+
+| Direction | CMTS type | Collector | Report |
+|---|---|---|---|
+| Upstream | both | `snmp_collector.py` (before/after) | `SNMP_US_Latency_Report_*.xlsx` |
+| Downstream | vcmts | `kafka_collector.py` (real-time) | `Kafka_DS_Latency_Report_*.xlsx` |
+| Downstream | icmts | `snmp_collector.py` (before/after) | `SNMP_DS_Latency_Report_*.xlsx` |
+| Both (continuous) | both | `cm_collector.py` (per-poll) | `TimeSeries_*.xlsx` + `*_Report.pdf` |
+
+### Test flow
+
+1. Prompt for CM MAC → SSH to CMTS → resolve modem IPv6
+2. `start_cm_collector` — spawn SNMP + Kafka polling threads
+3. For each iteration: SNMP before → start Kafka → run traffic → stop Kafka → SNMP after → latency report
+4. `stop_cm_collector` — stop threads → write `TimeSeries_*.xlsx`
+5. `generate_pdf_report` — call `metrics_pdf_report.py` → write `*_Report.pdf`
+6. Zip results folder
 
 ## Version History
 
-### v1.5 (2026-07-01)
-- **NEW**: SamKnows/ThousandEyes instant-test integration (`samknows_logic.py`)
-- **NEW**: `-thousandeyes` CLI flag with `--unit-id` (required) for SamKnows unit selection
-- **NEW**: Always runs all 3 tests per iteration: `http_get_mt` (DS), `http_post_mt` (US), `udp_jitter`
-- **NEW**: Full SNMP before/after and Kafka CMTS collection during SamKnows tests
-- **NEW**: JSON result output with throughput (Mbps) and jitter/latency (µs) summary
-- **NEW**: `requests` added to dependencies for SamKnows API calls
-- **NEW**: `samknows` section in `config.yaml` for API URL, token, and app name
+### v1.6 (current)
+- Renamed `cmts_collector.py` → `kafka_collector.py`; all imports updated
+- Added `metrics_pdf_report.py` to LLD project (previously only in CM_Collector)
+- Fixed `result_files` undefined variable in `iperf3_logic.py` `run_scenario`
+- Added `_write_snmp_txt()` — writes `SNMP_poll_<n>_<ts>.txt` per poll matching existing format
+- Added `session_dir` to `cfg` dict in `start_cm_collector`
 
-### v1.4 (2026-06-07)
-- **NEW**: CMTS Kafka telemetry collector (`cmts_collector.py`) for real-time downstream latency
-- **NEW**: Automatic downstream `dp_flow_*` metric collection during tests via Harmonic vCMTS Kafka stream
-- **NEW**: CMTS latency report (`CMTS_Latency_Report_*.xlsx`) with P50/P99/P99.9, AQM drops, throughput
-- **NEW**: TimeSeries sheet in CMTS report for latency-over-time charting
-- **NEW**: `kafka` section in `config.yaml` for broker/topic configuration
-- **ENHANCED**: Orchestrator auto-starts/stops Kafka collection around test iterations
-- **ENHANCED**: Direction auto-detected from scenario name (US_* → upstream, DS_* → downstream)
-- **UPDATED**: Dependencies now include `kafka-python` and `zstandard` for Kafka/zstd support
+### v1.5
+- Added `cm_collector.py` — continuous SNMP + Kafka polling threads
+- Added `generate_excel_timeseries()` — TimeSeries Excel workbook
+- Added `start_cm_collector` / `stop_cm_collector` / `generate_pdf_report` to orchestrator
+- Added `metrics_pdf_report.py` — PDF with `page_summary` (throughput, weighted avg latency, P50/P99/P99.9, AQM drops, loss%)
+- Replaced inline `_lookup_ipv6_from_cmts` with `cmts_modem_info.collect_cmts_data`
+- Kafka `kafka_collector_thread` writes `Kafka_Raw_Messages_<mac>_<ts>.txt` on stop
 
-### v1.3 (2025-01-16)
-- **NEW**: Configuration file system (`config.yaml`) for environment portability
-- **NEW**: All hardcoded paths, IPs, and credentials externalized to config file
-- **NEW**: `config_loader.py` module for centralized configuration management
-- **NEW**: `config.yaml.example` with fully documented settings
-- **NEW**: `SETUP_GUIDE.md` with comprehensive setup instructions
-- **ENHANCED**: Easy migration between different test environments
-- **IMPROVED**: Security with file-based credential management
-- **UPDATED**: All modules (byteblower, packetstorm, iperf3, speedtest, snmp) use config file
+### v1.4
+- Added `kafka_collector.py` (was `cmts_collector.py`) — real-time vCMTS Kafka telemetry
+- Added `cmts_modem_info.py` — SSH CMTS lookup for modem IPv6
+- Added `Kafka_*_Latency_Report_*.xlsx` with P50/P99/P99.9, AQM drops, throughput, TimeSeries sheet
+- `kafka` section added to `config.yaml`
 
-### v1.2 (2025-01-15)
-- **CONSOLIDATED**: All documentation merged into single README.md
-- **REMOVED**: Separate PACKETSTORM_API.md and SPEEDTEST_INTEGRATION.md files
-- **UPDATED**: Complete PacketStorm API documentation with all endpoints
-- **ENHANCED**: SpeedTest section with output structure and implementation details
+### v1.3
+- Added `config.yaml` / `config_loader.py` — all credentials and paths externalized
+- Added `config.yaml.example` and `SETUP_GUIDE.md`
 
-### v1.1 (2025-01-15)
-- **NEW**: SpeedTest integration with multi-client support
-- **NEW**: `-speedtest` flag for running Ookla SpeedTest
-- **NEW**: `--client` parameter to select specific clients (linux, macos, nvidia)
-- **NEW**: `speedtest_logic.py` module for SpeedTest execution with SNMP metrics collection
-- **NEW**: SNMP data collection before/after SpeedTest execution
-- Default client selection: all three (linux, macos, nvidia)
+### v1.2
+- Consolidated documentation into single README
 
-### v1.0 (2025-01-03)
-- Changed default iterations from 3 to 1
-- Smart folder structure (no iteration subfolders for single iterations)
-- RTT information included in result folder names
-- Added automated test runner for Service Class Name (SCN) RTT tests
-- Iteration folders now start from 1 instead of 0
-- Enhanced README with examples and folder structure diagrams
-- **NEW**: Linux iPerf3 integration with SSH key automation
-- **NEW**: macOS iPerf3-darwin integration with Apple QUIC and L4S support
-- **NEW**: Support for all 6 iPerf3 test scenarios (US/DS Classic/Combined/LL_Only)
-- **NEW**: Automatic result collection from remote Linux and macOS clients
-- **NEW**: iPerf3 output format selection (JSON or TXT with --output parameter)
-- **NEW**: Platform-specific SSH authentication and directory handling
-- **NEW**: Comprehensive usage examples for all scenarios and combinations
+### v1.1
+- Added SpeedTest integration (`speedtest_logic.py`) with multi-client support
 
-## Devices
+### v1.0
+- ByteBlower, iPerf3 Linux/macOS, PacketStorm, SNMP collection
+- Smart folder structure, RTT naming, iteration subfolders
 
-### Cable Modem
-| Device | CM MAC | Service | IP |
-|--------|--------|---------|----|
-| HSI021 (vCMTS) | 206a.9492.23b8 | HSI021 | — |
-| HSI018 (iCMTS) | 0cb9.379c.64b4 | HSI018 | — |
+## Author
 
-### CPE Devices (behind 206a.9492.23b8 — vCMTS)
-| Device | CPE MAC | IP |
-|--------|---------|----|
-| Mac Mini | 2c82.17db.30ed | 96.37.176.6 |
-| macOS (Mac Studio) | 9c76.0e4b.b90b | 96.37.176.11 |
-| NVIDIA | a0ce.c8b7.cdb8 | 96.37.176.5 |
-| Linux Client 2 | c047.0efd.445c | 96.37.176.8 |
-
-### CPE Devices (behind 0cb9.379c.64b4 — iCMTS)
-| Device | CPE MAC | IP | IPv6 |
-|--------|---------|----|----- |
-| Linux Client 1 | d046.0c8e.0233 | 71.85.92.22 | 2600:6ce3:f00:0:fde3:d492:e73e:ccaf |
-
-## Dependencies
-
-Requires access to the lld_automation project at `/home/aphillips/Projects/lld_automation`
-
-
-## 🏗️ Architecture
-
-### Technology Stack
-- **Language:** Python 3.8+
-- **Testing:** ByteBlower CLI, iPerf3, Ookla SpeedTest
-- **Network:** PacketStorm RTT emulation, SNMP v2c
-- **Data:** YAML config, CSV/Excel reports
-
-### Components
-```
-netperf-orchestrator/
-├── netperf_orchestrator.py  # Main CLI tool
-├── netperf                  # Wrapper script
-├── byteblower_logic.py     # ByteBlower orchestration
-├── iperf3_logic.py         # iPerf3 execution
-├── packetstorm_logic.py    # RTT configuration
-├── speedtest_logic.py      # SpeedTest execution
-├── samknows_logic.py       # SamKnows instant-test API
-├── snmp_collector.py       # SNMP data collection (upstream)
-├── cmts_collector.py       # CMTS Kafka metrics (downstream)
-├── latency_calculator.py   # Latency bin report from SNMP
-├── config_loader.py        # Configuration management
-├── logger.py               # Logging system
-└── bb_flows/               # ByteBlower flow definitions
-```
-
-### Test Flow
-1. **Configuration** - Load settings from `config.yaml`
-2. **Execution** - Run test via CLI with parameters
-3. **SNMP Collection** - Automatic before/after capture (upstream latency bins)
-4. **CMTS Kafka Collection** - Real-time downstream `dp_flow_*` metrics during test
-5. **Results** - Organized folder structure with RTT naming
-6. **Reports** - HTML/PDF/CSV/JSON/Excel generation + CMTS latency report
-
-### Latency Data Sources
-
-| Direction | CMTS Type | Source | Collector | Report |
-|-----------|-----------|--------|-----------|--------|
-| Upstream | Both | SNMP (before/after) | `snmp_collector.py` | `SNMP_US_Latency_Report_*.xlsx` |
-| Downstream | vCMTS | Kafka real-time stream | `cmts_collector.py` | `CMTS_Latency_Report_*.xlsx` |
-| Downstream | iCMTS | SNMP (before/after) | `snmp_collector.py` | `SNMP_DS_Latency_Report_*.xlsx` |
-
-The CMTS Kafka collector captures Prometheus-format metrics from the Harmonic vCMTS telemetry stream every 30 seconds, including:
-- `dp_flow_QueueLatencyAvgUsec` / `dp_flow_QueueLatencyMaxUsec` — average and max queue latency
-- `dp_flow_QueueLatencyBinPktCount` — 16-bin latency histogram for P50/P99/P99.9 calculation
-- `dp_flow_AqmDroppedPackets` / `dp_flow_AqmMarkedCongestedPackets` — AQM congestion metrics
-- `dp_flow_SanctionedPackets` — sanctioned packet counts
-- `K_Samis1_DeltaPacketsPassed` / `K_Samis1_DeltaOctetsPassed` — throughput deltas
-- `snmp_docsQosServiceFlowPackets` / `snmp_docsQosServiceFlowOctets` — cumulative flow stats
-
----
-
-## 🔧 Development
-
-### Prerequisites
-- Python 3.8+
-- ByteBlower CLI installed
-- iPerf3 installed on test clients/servers
-- PacketStorm access (optional)
-- SNMP v2c enabled on test devices
-
-### Installation
-```bash
-git clone git@github.com:birdyphillips/netperf-orchestrator.git
-cd netperf-orchestrator
-pip install -r requirements.txt
-cp config.yaml.example config.yaml
-# Edit config.yaml with your settings
-```
-
----
-
-## 🤝 Contributing
-
-Contributions welcome! Please:
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
----
-
-## 📝 License
-
-MIT License - see LICENSE file for details
-
----
-
-## 👤 Author
-
-**birdyphillips**
-- GitHub: [@birdyphillips](https://github.com/birdyphillips)
-- Repository: [netperf-orchestrator](https://github.com/birdyphillips/netperf-orchestrator)
-
----
-
-## ⭐ Support
-
-If you find this project useful, please consider giving it a star on GitHub!
+**birdyphillips** — [@birdyphillips](https://github.com/birdyphillips)

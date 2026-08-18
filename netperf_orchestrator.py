@@ -1,10 +1,11 @@
-#!/home/aphillips/Projects/LLD_TEST_CLT_v1.4_20260115_160000_linux_compatible/venv/bin/python3
+#!/home/aphillips/Projects/LLD_TEST_CLT_Dev_linux_compatible/venv/bin/python3
 
 import argparse
 import sys
 import subprocess
 import os
 import glob
+import re
 import time
 from datetime import datetime
 
@@ -28,12 +29,27 @@ from speedtest_logic import SpeedTestLogic
 from thousandeyes_logic import ThousandEyesLogic
 from logger import Logger
 from snmp_collector import collect_snmp_data, generate_latency_report, find_snmp_files, parse_modem_info
+from cmts_modem_info import normalize_mac, collect_cmts_data
 
 try:
-    from cmts_collector import CmtsCollector
+    from kafka_collector import CmtsCollector
     CMTS_AVAILABLE = True
 except ImportError:
     CMTS_AVAILABLE = False
+
+try:
+    from cm_collector import (
+        snmp_collector_thread, kafka_collector_thread,
+        _make_session_dir, _write_csv_comment,
+        SNMP_CSV_FIELDS, KAFKA_CSV_FIELDS,
+        DEFAULT_SNMP_POLL_INTERVAL, DEFAULT_KAFKA_BROKER, DEFAULT_KAFKA_TOPIC,
+        DEFAULT_SNMP_JUMPSERVER, DEFAULT_SNMP_USERNAME,
+        DEFAULT_MODEM_COMMUNITY, DEFAULT_ICMTS_COMMUNITY, DEFAULT_ICMTS_TARGET_IP,
+        DEFAULT_SNMP_TIMEOUT, DEFAULT_SNMP_RETRIES,
+    )
+    CM_COLLECTOR_AVAILABLE = True
+except ImportError:
+    CM_COLLECTOR_AVAILABLE = False
 
 class NetperfCLI:
     def __init__(self, cmts_type="vcmts"):
@@ -41,28 +57,28 @@ class NetperfCLI:
         self.cmts_type = cmts_type
         self.logger.info(f"CMTS type: {cmts_type} ({'Kafka for DS latency' if cmts_type == 'vcmts' else 'SNMP for DS latency'})")
 
-        # Prompt for CM MAC (downstream CMTS Kafka collector — vcmts only)
-        if cmts_type == "vcmts":
-            from cmts_modem_info import normalize_mac
-            while True:
-                mac_input = input("Enter CM MAC address (or press Enter to skip CMTS collection): ").strip()
-                if not mac_input:
-                    self.cm_mac = None
-                    self.logger.warning("No CM MAC — downstream CMTS Kafka collection will be skipped")
-                    break
-                try:
-                    self.cm_mac = normalize_mac(mac_input)
-                    break
-                except ValueError:
-                    print(f"Invalid MAC address: '{mac_input}'. Expected format: aabbccddeeff or aa:bb:cc:dd:ee:ff")
-                    print("Tip: if you meant to enter an IPv6 address, press Enter to skip and provide it at the next prompt.")
-        else:
-            self.cm_mac = None
-        
-        # Auto-lookup IPv6 from CMTS using CM MAC
+        # Prompt for CM MAC
+        while True:
+            mac_input = input("Enter CM MAC address (or press Enter to skip CMTS collection): ").strip()
+            if not mac_input:
+                self.cm_mac = None
+                self.logger.warning("No CM MAC — CMTS collection will be skipped")
+                break
+            try:
+                self.cm_mac = normalize_mac(mac_input)
+                break
+            except ValueError:
+                print(f"Invalid MAC address: '{mac_input}'. Expected format: aabbccddeeff or aa:bb:cc:dd:ee:ff")
+
+        # Auto-lookup IPv6 from CMTS using cmts_modem_info
         self.target_ip = None
+        self._cmts_lookup_file = None
         if self.cm_mac:
-            self.target_ip = self._lookup_ipv6_from_cmts(self.cm_mac)
+            self.target_ip = self._lookup_ipv6_from_cmts(self.cm_mac, output_dir='Results/.cmts_lookup_tmp')
+            # find the file written so we can move it later
+            import glob as _g
+            _files = _g.glob('Results/.cmts_lookup_tmp/*.txt')
+            self._cmts_lookup_file = _files[-1] if _files else None
             if not self.target_ip:
                 answer = input("Cable modem not found on CMTS. Continue without SNMP? [y/N]: ").strip().lower()
                 if answer != 'y':
@@ -72,86 +88,176 @@ class NetperfCLI:
             print(f"Modem IPv6: {self.target_ip}")
         else:
             self.logger.warning("No modem IPv6 — upstream SNMP collection will be skipped")
-        
-        self.output_dir = None
+
+        self.output_dir   = None
         self.cmts_collector = None
+        # cm_collector continuous polling state
+        self._cm_stop_event      = None
+        self._cm_threads         = []
+        self._cm_session_dir     = None
+        self._cm_csv_paths       = {}
+        self._cm_kafka_csv       = None
+        self._cm_session_dir_ref = None
+        self._cm_scenario_ref    = None
+        self._cm_kafka_ready     = None
     
-    def _lookup_ipv6_from_cmts(self, mac):
-        """SSH to CMTS and run scm command to get the modem IPv6 address.
-        vcmts: 'scm <mac> ip'     — IPv6 in table column
-        icmts: 'scm <mac> detail' — IPv6= on Uptime line
-        Returns the IPv6 string or None if lookup fails."""
-        import re
-        import paramiko
-        import time
+    def _lookup_ipv6_from_cmts(self, mac, output_dir=None):
+        """Use cmts_modem_info.collect_cmts_data to SSH to CMTS and resolve modem IPv6."""
         try:
             from config_loader import config
-            jumpserver = config.snmp_jumpserver
-            username   = config.snmp_username
-            key_path   = os.path.expanduser(config.ssh_key_path)
-            cmts_pass  = config.vcmts_password
-
-            # Pick CMTS host and command based on type
-            if self.cmts_type == 'icmts':
-                cmts_host = 'cts01k1dccc'
-                scm_cmd   = f"scm {mac} detail"
-            else:
-                cmts_host = 'apc01k1dccc'
-                scm_cmd   = f"scm {mac} ip"
-
-            self.logger.info(f"Looking up IPv6 for {mac} via {cmts_host}...")
-
-            ssh = paramiko.SSHClient()
-            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            if os.path.exists(key_path):
-                ssh.connect(jumpserver, username=username, key_filename=key_path, timeout=10)
-            else:
-                ssh.connect(jumpserver, username=username, timeout=10)
-
-            shell = ssh.invoke_shell()
-            shell.send(f"ssh -o StrictHostKeyChecking=no {username}@{cmts_host}\n")
-            time.sleep(2)
-            buf = shell.recv(4096).decode(errors='ignore')
-            # Handle up to 3 password attempts (tacacs may prompt multiple times)
-            for _ in range(3):
-                if 'password' in buf.lower():
-                    shell.send(cmts_pass + '\n')
-                    time.sleep(2)
-                    buf = shell.recv(4096).decode(errors='ignore')
-                else:
-                    break
-            shell.send(scm_cmd + '\n')
-            time.sleep(3)
-            output = ''
-            for _ in range(30):
-                if shell.recv_ready():
-                    output += shell.recv(4096).decode(errors='ignore')
-                    time.sleep(0.3)
-                else:
-                    time.sleep(0.3)
-                    if not shell.recv_ready():
-                        break
-            shell.send('exit\n')
-            shell.close()
-            ssh.close()
-
-            # icmts: parse IPv6=<addr> from detail output
-            if self.cmts_type == 'icmts':
-                match = re.search(r'IPv6=([0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4}){5,7})', output)
-            else:
-                match = re.search(r'([0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4}){5,7})', output)
-
-            if not match:
-                self.logger.warning(f"No IPv6 found in scm output")
-
-            if match:
-                ipv6 = match.group(1)
+            cmts_host = config.get('cmts_hosts', default=[{}])[0].get('name', '')
+            if not cmts_host:
+                cmts_host = 'apc01k1dccc' if self.cmts_type == 'vcmts' else 'cts01k1dccc'
+            self.logger.info(f"Looking up IPv6 for {mac} via {cmts_host} ({self.cmts_type})...")
+            ipv6 = collect_cmts_data(cmts_host, mac, self.cmts_type,
+                                     output_dir=output_dir or 'Results')
+            if ipv6:
                 print(f"Modem IPv6 (auto-detected): {ipv6}")
-                return ipv6
-            self.logger.warning("scm ran but no IPv6 found")
+            else:
+                self.logger.warning("cmts_modem_info ran but no IPv6 found")
+            return ipv6
         except Exception as e:
             self.logger.warning(f"CMTS IPv6 lookup failed: {e}")
         return None
+
+    def start_cm_collector(self, test_name, output_dir=None):
+        """Prepare cm_collector config. Threads start on first set_cm_collector_dir call."""
+        if not CM_COLLECTOR_AVAILABLE:
+            self.logger.warning("cm_collector not available — skipping continuous polling")
+            return
+        if not self.cm_mac or not self.target_ip:
+            return
+        if self._cm_stop_event and not self._cm_stop_event.is_set():
+            self.logger.debug("cm_collector already running — skipping duplicate start")
+            return
+        mac_norm  = self.cm_mac.replace('.', '').replace(':', '').lower()
+        mac_colon = ':'.join(mac_norm[i:i+2] for i in range(0, 12, 2))
+        self._cm_session_dir     = output_dir if output_dir else _make_session_dir(mac_norm, self.cmts_type, datetime.now().strftime('%Y%m%d_%H%M%S'))
+        self._cm_mac_norm        = mac_norm
+        self._cm_mac_colon       = mac_colon
+        self._cm_session_dir_ref = [self._cm_session_dir]
+        self._cm_scenario_ref    = ['']
+        self._cm_stop_event      = __import__('threading').Event()
+        self._cm_kafka_ready     = __import__('threading').Event()
+        self._cm_poll_ref        = [1]
+        self._cm_cfg_base = {
+            'mac_norm': mac_norm, 'mac_colon': mac_colon,
+            'cmts_type': self.cmts_type,
+            'target_ip': self.target_ip,
+            'session_dir': self._cm_session_dir,
+            'session_dir_ref': self._cm_session_dir_ref,
+            'scenario_ref':    self._cm_scenario_ref,
+            'kafka_ready_event': self._cm_kafka_ready,
+            'modem_community': DEFAULT_MODEM_COMMUNITY,
+            'icmts_community': DEFAULT_ICMTS_COMMUNITY,
+            'icmts_target': DEFAULT_ICMTS_TARGET_IP if self.cmts_type == 'icmts' else '',
+            'kafka_broker': DEFAULT_KAFKA_BROKER,
+            'kafka_topic':  DEFAULT_KAFKA_TOPIC,
+            'snmp_jumpserver':   DEFAULT_SNMP_JUMPSERVER,
+            'snmp_username':     DEFAULT_SNMP_USERNAME,
+            'snmp_timeout':      DEFAULT_SNMP_TIMEOUT,
+            'snmp_retries':      DEFAULT_SNMP_RETRIES,
+            'snmp_poll_interval': DEFAULT_SNMP_POLL_INTERVAL,
+        }
+        # threads are started by set_cm_collector_dir once the scenario dir is known
+
+    def set_cm_collector_dir(self, scenario_dir, scenario_name):
+        """Point all cm_collector output into scenario_dir.
+        First call starts the threads; subsequent calls just redirect poll .txt output."""
+        if self._cm_session_dir_ref is None:
+            return
+        os.makedirs(scenario_dir, exist_ok=True)
+        self._cm_session_dir_ref[0] = scenario_dir
+        self._cm_scenario_ref[0]    = scenario_name
+
+        if self._cm_threads:
+            # threads already running — poll .txt redirect is enough
+            return
+
+        # First call — build CSV paths inside scenario_dir and start threads
+        mac_norm = self._cm_mac_norm
+        dir_ts_m = re.search(r'(\d{8}_\d{6})', os.path.basename(self._cm_session_dir))
+        ts_str   = dir_ts_m.group(1) if dir_ts_m else datetime.now().strftime('%Y%m%d_%H%M%S')
+
+        self._cm_csv_paths = {'us': os.path.join(scenario_dir, f'snmp_us_{mac_norm}_{ts_str}.csv')}
+        if self.cmts_type == 'icmts':
+            self._cm_csv_paths['ds'] = os.path.join(scenario_dir, f'snmp_ds_{mac_norm}_{ts_str}.csv')
+        self._cm_kafka_csv = os.path.join(scenario_dir, f'kafka_{mac_norm}_{ts_str}.csv') \
+                             if self.cmts_type == 'vcmts' else None
+
+        import threading
+        cfg = self._cm_cfg_base
+        snmp_t = threading.Thread(
+            target=snmp_collector_thread,
+            args=(cfg, self._cm_stop_event, self._cm_csv_paths, self._cm_poll_ref),
+            daemon=True,
+        )
+        self._cm_threads.append(snmp_t)
+        if self.cmts_type == 'vcmts' and self._cm_kafka_csv:
+            kafka_t = threading.Thread(
+                target=kafka_collector_thread,
+                args=(cfg, self._cm_stop_event, self._cm_kafka_csv),
+                daemon=True,
+            )
+            self._cm_threads.append(kafka_t)
+        for t in self._cm_threads:
+            t.start()
+        self.logger.info(f"cm_collector started → {scenario_dir}")
+
+    def stop_cm_collector(self):
+        """Stop cm_collector threads, write Excel timeseries, return session dir."""
+        if not self._cm_stop_event:
+            return None
+        self._cm_stop_event.set()
+        for t in self._cm_threads:
+            t.join(timeout=15)
+        self._cm_threads = []
+        self._cm_stop_event = None
+        session_dir      = self._cm_session_dir_ref[0] if self._cm_session_dir_ref else self._cm_session_dir
+        cm_csv_paths     = self._cm_csv_paths
+        cm_kafka_csv     = self._cm_kafka_csv
+        self._cm_session_dir     = None
+        self._cm_csv_paths       = {}
+        self._cm_kafka_csv       = None
+        self._cm_session_dir_ref = None
+        self._cm_scenario_ref    = None
+        self.logger.info(f"cm_collector stopped — session: {session_dir}")
+        if session_dir and CM_COLLECTOR_AVAILABLE:
+            try:
+                mac_norm  = self.cm_mac.replace('.', '').replace(':', '').lower() if self.cm_mac else ''
+                mac_colon = ':'.join(mac_norm[i:i+2] for i in range(0, 12, 2)) if mac_norm else ''
+                from cm_collector import generate_excel_timeseries
+                generate_excel_timeseries(
+                    session_dir, mac_colon, self.cmts_type,
+                    kafka_csv=cm_kafka_csv,
+                    snmp_us_csv=cm_csv_paths.get('us'),
+                )
+            except Exception as e:
+                self.logger.warning(f"Excel timeseries failed: {e}")
+        return session_dir
+
+    def generate_pdf_report(self, session_dir, session_name):
+        """Generate PDF report from cm_collector session CSVs."""
+        if not session_dir or not os.path.isdir(session_dir):
+            return
+        try:
+            import subprocess
+            script = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'metrics_pdf_report.py')
+            if not os.path.exists(script):
+                self.logger.warning("metrics_pdf_report.py not found — skipping PDF")
+                return
+            result = subprocess.run(
+                [sys.executable, script, session_dir, '--name', session_name],
+                capture_output=True, text=True, timeout=120,
+            )
+            if result.returncode == 0:
+                for line in result.stdout.splitlines():
+                    if 'PDF saved' in line:
+                        self.logger.info(line.strip())
+            else:
+                self.logger.warning(f"PDF report failed:\n{result.stderr.strip()}\n{result.stdout.strip()}")
+        except Exception as e:
+            self.logger.warning(f"PDF report generation failed: {e}")
 
     def start_cmts_collection(self, direction="downstream"):
         """Start CMTS Kafka metrics collection in background.
@@ -265,6 +371,18 @@ class NetperfCLI:
             # Create parent output directory with test group name, traffic type, RTT and timestamp
             parent_output_dir = f"Results/{test_group_name}_{traffic_type}{rtt_suffix}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
             os.makedirs(parent_output_dir, exist_ok=True)
+
+            # Move cmts_lookup file into this test's results directory
+            if self._cmts_lookup_file and os.path.exists(self._cmts_lookup_file):
+                import shutil
+                lookup_dir = os.path.join(parent_output_dir, 'cmts_lookup')
+                os.makedirs(lookup_dir, exist_ok=True)
+                shutil.move(self._cmts_lookup_file, lookup_dir)
+                try:
+                    os.rmdir('Results/.cmts_lookup_tmp')
+                except OSError:
+                    pass
+                self._cmts_lookup_file = None
             
             # Store traffic type and rtt_suffix for subdirectory naming
             self.traffic_type = traffic_type
@@ -340,45 +458,59 @@ class NetperfCLI:
                 sk = ThousandEyesLogic(scenario_name, test_group_name, rtt_suffix, thousandeyes_unit_id)
                 self.output_dir = test_output_dir
                 success = True
-                snmp_dir = test_output_dir
+                snmp_dir = os.path.join(test_output_dir, f'ThousandEyes{rtt_suffix}')
+                os.makedirs(snmp_dir, exist_ok=True)
 
+                self.start_cm_collector(test_name, output_dir=parent_output_dir)
+                self.set_cm_collector_dir(snmp_dir, 'ThousandEyes')
+                self.logger.info("Pre-test baseline collection — 30s")
+                time.sleep(30)
+                self.logger.info(f"Starting test: ThousandEyes iteration {i+1}/{iterations}")
                 for i in range(iterations):
-                    self.run_snmp_collection(f"ThousandEyes_iteration_{i+1}", "before", snmp_dir, "")
-
-                    self.start_cmts_collection(direction="downstream")
-                    self.wait_for_cmts_poll()
-
-                    ds_elapsed = 0
-                    us_elapsed = 0
-                    test_start = time.time()
-
                     ds_ok, ds_elapsed = sk.run_downstream(i, iterations, test_output_dir)
                     if not ds_ok:
                         self.logger.error("ThousandEyes downstream failed — stopping test")
-                        self.stop_cmts_collection(snmp_dir, "ThousandEyes_DS")
+                        self.logger.info("Post-test collection — 30s")
+                        time.sleep(30)
+                        cm_session = self.stop_cm_collector()
+                        self.generate_pdf_report(cm_session, test_name)
                         return False, []
-
                     us_ok, us_elapsed = sk.run_upstream(i, iterations, test_output_dir)
                     if not us_ok:
                         self.logger.error("ThousandEyes upstream failed — stopping test")
-                        self.stop_cmts_collection(snmp_dir, f"ThousandEyes_DS_iteration_{i+1}")
+                        self.logger.info("Post-test collection — 30s")
+                        time.sleep(30)
+                        cm_session = self.stop_cm_collector()
+                        self.generate_pdf_report(cm_session, test_name)
                         return False, []
-
                     sk.run_jitter(i, iterations, test_output_dir)
-
-                    test_elapsed = time.time() - test_start
-                    self.stop_cmts_collection(snmp_dir, f"ThousandEyes_DS_iteration_{i+1}", post_test_polls=2, test_duration_s=ds_elapsed)
-
-                    self.run_snmp_collection(f"ThousandEyes_iteration_{i+1}", "after", snmp_dir, "")
-                    self._run_latency_report(snmp_dir, iteration=i+1, prefix="ThousandEyes", duration_s=us_elapsed)
+                self.logger.info("Post-test tail collection — 30s")
+                time.sleep(30)
+                cm_session = self.stop_cm_collector()
+                self.generate_pdf_report(cm_session, test_name)
             elif speedtest_only:
                 self.logger.info(f"SpeedTest mode - clients: {speedtest_clients}")
                 st = SpeedTestLogic(speedtest_clients, test_group_name)
                 self.output_dir = test_output_dir
-                if not st.run_iterations(iterations):
+                snmp_dir = os.path.join(test_output_dir, f'SpeedTest{rtt_suffix}')
+                os.makedirs(snmp_dir, exist_ok=True)
+                self.start_cm_collector(test_name, output_dir=parent_output_dir)
+                self.set_cm_collector_dir(snmp_dir, 'SpeedTest')
+                self.logger.info("Pre-test baseline collection — 30s")
+                time.sleep(30)
+                self.logger.info(f"Starting test: SpeedTest")
+                if not st.run_iterations(iterations, output_dir=snmp_dir):
                     self.logger.error("SpeedTest failed — stopping test")
+                    self.logger.info("Post-test collection — 30s")
+                    time.sleep(30)
+                    cm_session = self.stop_cm_collector()
+                    self.generate_pdf_report(cm_session, test_name)
                     return False, []
                 success = True
+                self.logger.info("Post-test tail collection — 30s")
+                time.sleep(30)
+                cm_session = self.stop_cm_collector()
+                self.generate_pdf_report(cm_session, test_name)
             elif packetstorm_only:
                 self.logger.info(f"PacketStorm only mode - config: {rtt_file}")
                 ps = PacketStormLogic(rtt_file)
@@ -393,11 +525,11 @@ class NetperfCLI:
                 # Determine CMTS collection direction from scenario name
                 cmts_dir = "upstream" if scenario_name.lower().startswith("us") else "downstream"
                 
+                self.start_cm_collector(test_name, output_dir=parent_output_dir)
+                self.set_cm_collector_dir(snmp_dir, scenario_name)
                 for i in range(iterations):
                     iter_dir = os.path.join(snmp_dir, f"iteration_{i+1}") if iterations > 1 else snmp_dir
                     os.makedirs(iter_dir, exist_ok=True)
-                    self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "before", iter_dir, "")
-                    # Print modem info from first SNMP before file
                     if i == 0:
                         snmp_files = glob.glob(os.path.join(iter_dir, "*_SNMP_before_*.txt"))
                         if snmp_files:
@@ -412,18 +544,23 @@ class NetperfCLI:
                                     print(f"    CM MAC:  {self.cm_mac}")
                                 if self.target_ip:
                                     print(f"    CM IPv6: {self.target_ip}")
-                    self.start_cmts_collection(direction=cmts_dir)
-                    self.wait_for_cmts_poll()
+                    self.logger.info("Pre-test baseline collection — 30s")
+                    time.sleep(30)
+                    self.logger.info(f"Starting test: {scenario_name} iteration {i+1}/{iterations}")
                     test_start = time.time()
                     bb_ok, bb_duration = bb.run_scenario(i, iterations, test_output_dir)
                     if not bb_ok:
                         self.logger.error("ByteBlower failed — stopping test")
-                        self.stop_cmts_collection(iter_dir, scenario_name)
+                        self.logger.info("Post-test collection — 30s")
+                        time.sleep(30)
+                        cm_session = self.stop_cm_collector()
+                        self.generate_pdf_report(cm_session, test_name)
                         return False, []
                     test_elapsed = bb_duration or (time.time() - test_start)
-                    self.stop_cmts_collection(iter_dir, f"{scenario_name}_iteration_{i+1}", test_duration_s=test_elapsed)
-                    self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", iter_dir, "")
-                    self._run_latency_report(iter_dir, iteration=i+1, duration_s=test_elapsed)
+                    self.logger.info("Post-test tail collection — 30s")
+                    time.sleep(30)
+                cm_session = self.stop_cm_collector()
+                self.generate_pdf_report(cm_session, test_name)
             elif iperf3_only or iperf3_darwin:
                 platform_override = 'macos' if iperf3_darwin else None
                 platform_suffix = "_macOS" if iperf3_darwin else "_Linux"
@@ -446,22 +583,28 @@ class NetperfCLI:
                 # Determine CMTS collection direction from scenario name
                 cmts_dir = "upstream" if scenario_name.lower().startswith("us") else "downstream"
                 
+                self.start_cm_collector(test_name, output_dir=parent_output_dir)
+                self.set_cm_collector_dir(snmp_dir, scenario_name)
                 for i in range(iterations):
-                    self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "before", snmp_dir, "")
-                    self.start_cmts_collection(direction=cmts_dir)
-                    self.wait_for_cmts_poll()
+                    self.logger.info("Pre-test baseline collection — 30s")
+                    time.sleep(30)
+                    self.logger.info(f"Starting test: {scenario_name} iteration {i+1}/{iterations}")
                     test_start = time.time()
                     ip3_ok, ip3_duration = iperf3.run_scenario(i, iterations)
                     if not ip3_ok:
                         self.logger.error("iPerf3 failed — stopping test")
-                        self.stop_cmts_collection(snmp_dir, scenario_name)
                         iperf3.stop_iperf3_servers()
+                        self.logger.info("Post-test collection — 30s")
+                        time.sleep(30)
+                        cm_session = self.stop_cm_collector()
+                        self.generate_pdf_report(cm_session, test_name)
                         return False, []
                     test_elapsed = ip3_duration or (time.time() - test_start)
-                    self.stop_cmts_collection(snmp_dir, f"{scenario_name}_iteration_{i+1}", test_duration_s=test_elapsed)
-                    self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", snmp_dir, "")
-                    self._run_latency_report(snmp_dir, iteration=i+1, duration_s=test_elapsed)
+                    self.logger.info("Post-test tail collection — 30s")
+                    time.sleep(30)
                 iperf3.stop_iperf3_servers()
+                cm_session = self.stop_cm_collector()
+                self.generate_pdf_report(cm_session, test_name)
             else:
                 ps = PacketStormLogic(rtt_file)
                 
@@ -487,21 +630,14 @@ class NetperfCLI:
                         cmts_dir = "upstream" if scenario_name.lower().startswith("us") else "downstream"
                         
                         for i in range(iterations):
-                            self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "before", snmp_dir, "")
-                            self.start_cmts_collection(direction=cmts_dir)
-                            self.wait_for_cmts_poll()
                             test_start = time.time()
                             ip3_ok, ip3_duration = iperf3.run_scenario(i, iterations)
                             if not ip3_ok:
                                 self.logger.error("iPerf3 failed — stopping test")
-                                self.stop_cmts_collection(snmp_dir, scenario_name)
                                 iperf3.stop_iperf3_servers()
                                 ps.stop_config()
                                 return False, []
                             test_elapsed = ip3_duration or (time.time() - test_start)
-                            self.stop_cmts_collection(snmp_dir, f"{scenario_name}_iteration_{i+1}", test_duration_s=test_elapsed)
-                            self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", snmp_dir, "")
-                            self._run_latency_report(snmp_dir, iteration=i+1, duration_s=test_elapsed)
                         iperf3.stop_iperf3_servers()
                         success = success and ps.stop_config()
                 else:
@@ -513,23 +649,14 @@ class NetperfCLI:
                         snmp_dir = os.path.join(test_output_dir, scenario_name + rtt_suffix)
                         os.makedirs(snmp_dir, exist_ok=True)
                         
-                        cmts_dir = "upstream" if scenario_name.lower().startswith("us") else "downstream"
-                        
                         for i in range(iterations):
-                            self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "before", snmp_dir, "")
-                            self.start_cmts_collection(direction=cmts_dir)
-                            self.wait_for_cmts_poll()
                             test_start = time.time()
                             bb_ok, bb_duration = bb.run_scenario(i, iterations, test_output_dir)
                             if not bb_ok:
                                 self.logger.error("ByteBlower failed — stopping test")
-                                self.stop_cmts_collection(snmp_dir, scenario_name)
                                 ps.stop_config()
                                 return False, []
                             test_elapsed = bb_duration or (time.time() - test_start)
-                            self.stop_cmts_collection(snmp_dir, f"{scenario_name}_iteration_{i+1}", test_duration_s=test_elapsed)
-                            self.run_snmp_collection(f"{test_name}_iteration_{i+1}", "after", snmp_dir, "")
-                            self._run_latency_report(snmp_dir, iteration=i+1, duration_s=test_elapsed)
                         success = success and ps.stop_config()
             
             # Collect SNMP files from scenario directory

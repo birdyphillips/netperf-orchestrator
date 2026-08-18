@@ -1,7 +1,7 @@
 # LLD Test CLI Tool - Python Dependencies
 
-# Configuration file parsing
-pyyaml>=6.0
+# Configuration
+PyYAML>=6.0
 
 # SSH and remote execution
 paramiko>=2.11.0
@@ -9,16 +9,18 @@ paramiko>=2.11.0
 # Data processing and Excel export
 pandas>=1.5.0
 openpyxl>=3.0.10
+numpy>=1.24.0
 
-# Kafka consumer for CMTS telemetry
+# PDF report generation
+matplotlib>=3.6.0
+
+# Kafka consumer for CMTS telemetry (vcmts mode)
 kafka-python>=2.0.0
 zstandard>=0.20.0
 
-# HTTP client for SamKnows API
+# HTTP client for SamKnows/ThousandEyes API
 requests>=2.28.0
 
-# MySQL database
-mysql-connector-python>=8.0
-
-# Optional: For enhanced logging
-# colorlog>=6.7.0
+# System tools (install via apt, not pip)
+# sshpass
+# openssh-client

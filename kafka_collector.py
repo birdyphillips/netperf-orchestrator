@@ -13,7 +13,7 @@ Usage as a module (from netperf_orchestrator.py):
     collector.generate_report(output_dir, test_name)
 
 Usage standalone:
-    python cmts_collector.py --mac 206a949223b8 --duration 120 --output results/
+    python kafka_collector.py --mac 206a949223b8 --duration 120 --output results/
 """
 import os
 import re
@@ -761,11 +761,31 @@ class CmtsCollector:
             return []
         traffic_ts = self._get_traffic_timestamps(sf_index)
         pts = sorted(snmp_samples, key=lambda x: x[0])
-        # Keep only points at or adjacent to traffic timestamps so we get
-        # the before→after bracket around the traffic window
         traffic_pts = [p for p in pts if p[0] in traffic_ts]
         if len(traffic_pts) < 2:
-            traffic_pts = pts  # fall back to all
+            traffic_pts = pts
+
+        # If no bin data was available, traffic_ts == seen_timestamps (all polls).
+        # In that case trim leading/trailing low-rate intervals using a rate threshold
+        # (keep only intervals whose per-interval rate >= 10% of the peak interval rate).
+        has_bin_data = any(
+            sum(bins.values()) > 0
+            for (sf, ts), bins in self.bin_snapshots.items()
+            if sf == sf_index
+        )
+        if not has_bin_data and len(traffic_pts) >= 3:
+            rates = []
+            for i in range(1, len(traffic_pts)):
+                d = traffic_pts[i][1] - traffic_pts[i-1][1]
+                iv = (traffic_pts[i][0] - traffic_pts[i-1][0]) / 1000.0
+                rates.append((d * 8 / (iv * 1_000_000)) if iv > 0 else 0)
+            peak = max(rates)
+            threshold = peak * 0.10
+            # find first and last interval above threshold
+            first = next((i for i, r in enumerate(rates) if r >= threshold), 0)
+            last  = len(rates) - 1 - next((i for i, r in enumerate(reversed(rates)) if r >= threshold), 0)
+            traffic_pts = traffic_pts[first:last + 2]  # +2: last interval needs both endpoints
+
         rows = []
         for i in range(1, len(traffic_pts)):
             delta = int(traffic_pts[i][1] - traffic_pts[i-1][1])

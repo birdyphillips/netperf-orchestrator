@@ -1,10 +1,9 @@
-#!/home/aphillips/Projects/LLD_TEST_CLT_v1.4_20260115_160000_linux_compatible/venv/bin/python3
+#!/home/aphillips/Projects/LLD_TEST_CLT_Dev_linux_compatible/venv/bin/python3
 import subprocess
 import time
 import os
 from datetime import datetime
 from logger import Logger
-from snmp_collector import collect_snmp_data
 from config_loader import config
 import glob
 
@@ -73,17 +72,6 @@ class SpeedTestLogic:
         
         self.logger.info(f"Starting speedtest on {client_name.upper()} ({host}) - {iterations} iteration(s)")
         
-        target_ip = "2605:1c00:50f2:203:a49d:6fa2:3d34:7329"
-        snmp_test_name = f"{self.test_group_name}_{client_name}"
-        
-        # SNMP collection before
-        self.logger.info(f"Running SNMP collection - before {snmp_test_name}")
-        try:
-            collect_snmp_data(target_ip, snmp_test_name, "before", output_dir)
-            self.logger.info(f"✓ SNMP before collection completed for {client_name}")
-        except Exception as e:
-            self.logger.error(f"✗ SNMP before collection failed for {client_name}: {e}")
-        
         success_count = 0
         is_windows = client_name.lower() == "nvidia"
         
@@ -122,14 +110,6 @@ class SpeedTestLogic:
             if iteration < iterations:
                 time.sleep(10)
         
-        # SNMP collection after
-        self.logger.info(f"Running SNMP collection - after {snmp_test_name}")
-        try:
-            collect_snmp_data(target_ip, snmp_test_name, "after", output_dir)
-            self.logger.info(f"✓ SNMP after collection completed for {client_name}")
-        except Exception as e:
-            self.logger.error(f"✗ SNMP after collection failed for {client_name}: {e}")
-        
         self.logger.info(f"Completed {client_name}: {success_count}/{iterations} iterations successful")
         return success_count
     
@@ -137,8 +117,9 @@ class SpeedTestLogic:
         # SNMP consolidation removed - files kept as individual txt files
         pass
     
-    def run_iterations(self, iterations=1):
-        output_dir = f"Results/{self.output_prefix}"
+    def run_iterations(self, iterations=1, output_dir=None):
+        if output_dir is None:
+            output_dir = os.path.join('Results', self.output_prefix)
         os.makedirs(output_dir, exist_ok=True)
         
         self.logger.info(f"\n{'='*60}")

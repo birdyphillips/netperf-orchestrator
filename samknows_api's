@@ -1,0 +1,103 @@
+andre_token=01ab-78172fcf-06fe-4dae-b6ca-e1482e545187
+
+
+import requests
+import json
+
+url = "https://api.thousandeyes.com/v7/samknows/instant-test/units/82670821/tests"
+
+payload = json.dumps({
+  "test": "http_get_mt",
+  "appName": "lld_automation"
+})
+headers = {
+  'Authorization': 'Bearer 01ab-78172fcf-06fe-4dae-b6ca-e1482e545187',
+  'Content-Type': 'application/json'
+}
+
+response = requests.request("POST", url, headers=headers, data=payload)
+
+print(response.text)
+
+reponse
+{
+    "code": "OK",
+    "message": "Request successful",
+    "data": {
+        "success": true,
+        "unit_id": 82670821,
+        "mac": "A4973376F567",
+        "test": "http_get_mt",
+        "bytes_sec": 71563547,
+        "target": "sam01sw1shcc.charterlab.com",
+        "utc_datetime": "2026-07-01T18:29:25Z"
+    }
+}
+
+import requests
+import json
+
+url = "https://api.thousandeyes.com/v7/samknows/instant-test/units/82670821/tests"
+
+payload = json.dumps({
+  "test": "http_post_mt",
+  "appName": "lld_automation"
+})
+headers = {
+  'Authorization': 'Bearer 01ab-78172fcf-06fe-4dae-b6ca-e1482e545187',
+  'Content-Type': 'application/json'
+}
+
+response = requests.request("POST", url, headers=headers, data=payload)
+
+print(response.text)
+
+
+repsones= {
+    "code": "OK",
+    "message": "Request successful",
+    "data": {
+        "success": true,
+        "unit_id": 82670821,
+        "mac": "A4973376F567",
+        "test": "http_post_mt",
+        "bytes_sec": 65610715,
+        "target": "sam01sw1shcc.charterlab.com",
+        "utc_datetime": "2026-07-01T18:35:24Z"
+    }
+}
+
+import requests
+import json
+
+url = "https://api.thousandeyes.com/v7/samknows/instant-test/units/82670821/tests"
+
+payload = json.dumps({
+  "test": "udp_jitter",
+  "appName": "lld_automation"
+})
+headers = {
+  'Authorization': 'Bearer 01ab-78172fcf-06fe-4dae-b6ca-e1482e545187',
+  'Content-Type': 'application/json'
+}
+
+response = requests.request("POST", url, headers=headers, data=payload)
+
+print(response.text)
+
+
+{
+    "code": "OK",
+    "message": "Request successful",
+    "data": {
+        "success": true,
+        "unit_id": 82670821,
+        "mac": "A4973376F567",
+        "test": "udp_jitter",
+        "down_jitter": 154,
+        "latency": 7516,
+        "target": "sam01sw1shcc.charterlab.com",
+        "up_jitter": 601,
+        "utc_datetime": "2026-07-01T18:36:05Z"
+    }
+}
