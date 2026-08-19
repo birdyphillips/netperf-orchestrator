@@ -340,7 +340,7 @@ class NetperfCLI:
             self.logger.error(f"SNMP collection failed: {e}")
             return False
     
-    def execute(self, bbp_file, rtt_files, iterations, scenarios, test_group_name=None, client_ip=None, output_format="json", byteblower_only=False, packetstorm_only=False, iperf3_only=False, iperf3_darwin=False, speedtest_only=False, speedtest_clients=None, thousandeyes_only=False, thousandeyes_unit_id=None, report_formats="html pdf csv xls xlsx json docx"):
+    def execute(self, bbp_file, rtt_files, iterations, scenarios, test_group_name=None, client_ip=None, output_format="json", byteblower_only=False, packetstorm_only=False, iperf3_only=False, iperf3_darwin=False, speedtest_only=False, speedtest_clients=None, thousandeyes_only=False, thousandeyes_unit_id=None, report_formats="html pdf csv xls xlsx json docx", granular=False):
         """Execute workflow based on selected modes"""
         try:
             scenario_list = [s.strip() for s in scenarios.split(',')] if scenarios else ['default']
@@ -393,8 +393,9 @@ class NetperfCLI:
             all_success = True
             all_snmp_files = []
 
-            # --- Multi-scenario: single polling session spans all scenarios ---
-            if multi_scenario:
+            # --- Multi-scenario: single polling session spans all scenarios (default) ---
+            # --- --granular: poll each scenario independently ---
+            if multi_scenario and not granular:
                 combined_name = '_'.join(scenario_list)
                 # Start polling once into parent dir; first set_cm_collector_dir call starts threads
                 self.start_cm_collector(combined_name, output_dir=parent_output_dir)
@@ -420,6 +421,20 @@ class NetperfCLI:
                 time.sleep(30)
                 cm_session = self.stop_cm_collector()
                 self.generate_pdf_report(cm_session, combined_name)
+            elif multi_scenario and granular:
+                # Each scenario gets its own polling session
+                for rtt_file in rtt_list:
+                    for scenario in scenario_list:
+                        success, snmp_files = self._run_single_test(
+                            bbp_file, rtt_file, iterations, scenario,
+                            test_group_name, client_ip, output_format,
+                            byteblower_only, packetstorm_only, iperf3_only,
+                            iperf3_darwin, speedtest_only, speedtest_clients,
+                            thousandeyes_only, thousandeyes_unit_id, report_formats,
+                            parent_output_dir, rtt_list,
+                        )
+                        all_success = all_success and success
+                        all_snmp_files.extend(snmp_files)
             else:
                 # Single scenario — polling runs per scenario by default
                 for scenario in scenario_list:
@@ -824,6 +839,7 @@ def main():
     parser.add_argument('--unit-id', default=None, help='ThousandEyes unit ID (overrides config.yaml)')
     parser.add_argument('--report-formats', default='html pdf csv xls xlsx json docx', help='ByteBlower report formats (default: all formats)')
     parser.add_argument('-iteration', type=int, default=1, help='Number of iterations (default: 1)')
+    parser.add_argument('--granular', action='store_true', help='Multi-scenario: poll each scenario independently instead of one shared session')
     
     args = parser.parse_args()
     
@@ -860,6 +876,7 @@ def main():
         thousandeyes_only=getattr(args, 'thousandeyes', False),
         thousandeyes_unit_id=getattr(args, 'unit_id', None),
         report_formats=getattr(args, 'report_formats', 'html pdf csv xls xlsx json docx'),
+        granular=args.granular,
     )
 
 if __name__ == '__main__':
