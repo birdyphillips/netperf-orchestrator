@@ -206,6 +206,12 @@ _RE_OID_TXT = re.compile(
     r'(\d+(?:\.\d+)*)\s*=\s*(\S+):\s*(.*)'
 )
 
+# Used by _pivot_snmp_output to extract OID suffix and value for CSV pivot
+_RE_OID_SFID = re.compile(
+    r'SNMPv2-SMI::enterprises\.4491\.2\.1\.21\.1\.'
+    r'(\d+(?:\.\d+)*)\s*=\s*\S+:\s*(.*)'
+)
+
 
 def _label_snmp_line(line):
     """Replace raw OID prefix with human-readable field name, keep sfid suffix and value."""
