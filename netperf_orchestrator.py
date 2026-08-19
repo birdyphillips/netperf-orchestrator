@@ -345,7 +345,8 @@ class NetperfCLI:
         try:
             scenario_list = [s.strip() for s in scenarios.split(',')] if scenarios else ['default']
             rtt_list = [r.strip() for r in rtt_files.split(',')] if rtt_files else ['default.json']
-            
+            multi_scenario = len(scenario_list) > 1
+
             # Determine traffic type
             if thousandeyes_only:
                 traffic_type = "ThousandEyes"
@@ -359,16 +360,15 @@ class NetperfCLI:
                 traffic_type = "SpeedTest"
             else:
                 traffic_type = "PacketStorm"
-            
+
             # Extract RTT suffix from first RTT file
             rtt_suffix = ""
             if rtt_list[0] and rtt_list[0] != 'default.json':
-                import re
                 rtt_match = re.search(r'(\d+)ms', rtt_list[0])
                 if rtt_match:
                     rtt_suffix = f"_RTT_{rtt_match.group(1)}ms"
-            
-            # Create parent output directory with test group name, traffic type, RTT and timestamp
+
+            # Create parent output directory
             parent_output_dir = f"Results/{test_group_name}_{traffic_type}{rtt_suffix}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
             os.makedirs(parent_output_dir, exist_ok=True)
 
@@ -383,24 +383,58 @@ class NetperfCLI:
                 except OSError:
                     pass
                 self._cmts_lookup_file = None
-            
-            # Store traffic type and rtt_suffix for subdirectory naming
+
             self.traffic_type = traffic_type
             self.rtt_suffix = rtt_suffix
-            
-            if len(scenario_list) > 1 or len(rtt_list) > 1:
+
+            if multi_scenario or len(rtt_list) > 1:
                 self.logger.info(f"Multi-scenario run: {len(scenario_list)} scenarios x {len(rtt_list)} RTT configs → {parent_output_dir}")
-            
+
             all_success = True
             all_snmp_files = []
-            
-            # Run combinations
-            for scenario in scenario_list:
+
+            # --- Multi-scenario: single polling session spans all scenarios ---
+            if multi_scenario:
+                combined_name = '_'.join(scenario_list)
+                # Start polling once into parent dir; first set_cm_collector_dir call starts threads
+                self.start_cm_collector(combined_name, output_dir=parent_output_dir)
+                self.set_cm_collector_dir(parent_output_dir, combined_name)
+                self.logger.info(f"Pre-test baseline collection — 30s")
+                time.sleep(30)
+
                 for rtt_file in rtt_list:
-                    success, snmp_files = self._run_single_test(bbp_file, rtt_file, iterations, scenario, test_group_name, client_ip, output_format, byteblower_only, packetstorm_only, iperf3_only, iperf3_darwin, speedtest_only, speedtest_clients, thousandeyes_only, thousandeyes_unit_id, report_formats, parent_output_dir, rtt_list)
-                    all_success = all_success and success
-                    all_snmp_files.extend(snmp_files)
-            
+                    for scenario in scenario_list:
+                        success, snmp_files = self._run_single_test(
+                            bbp_file, rtt_file, iterations, scenario,
+                            test_group_name, client_ip, output_format,
+                            byteblower_only, packetstorm_only, iperf3_only,
+                            iperf3_darwin, speedtest_only, speedtest_clients,
+                            thousandeyes_only, thousandeyes_unit_id, report_formats,
+                            parent_output_dir, rtt_list,
+                            polling_managed=True,  # skip per-scenario start/stop/baseline
+                        )
+                        all_success = all_success and success
+                        all_snmp_files.extend(snmp_files)
+
+                self.logger.info("Post-test tail collection — 30s")
+                time.sleep(30)
+                cm_session = self.stop_cm_collector()
+                self.generate_pdf_report(cm_session, combined_name)
+            else:
+                # Single scenario — original per-scenario polling behaviour
+                for scenario in scenario_list:
+                    for rtt_file in rtt_list:
+                        success, snmp_files = self._run_single_test(
+                            bbp_file, rtt_file, iterations, scenario,
+                            test_group_name, client_ip, output_format,
+                            byteblower_only, packetstorm_only, iperf3_only,
+                            iperf3_darwin, speedtest_only, speedtest_clients,
+                            thousandeyes_only, thousandeyes_unit_id, report_formats,
+                            parent_output_dir, rtt_list,
+                        )
+                        all_success = all_success and success
+                        all_snmp_files.extend(snmp_files)
+
             self._zip_results(parent_output_dir)
 
             if all_success:
@@ -409,13 +443,15 @@ class NetperfCLI:
             else:
                 self.logger.error("Some workflows completed with errors")
                 return 1
-                
+
         except Exception as e:
             self.logger.error(f"Workflow failed: {e}")
             return 1
     
-    def _run_single_test(self, bbp_file, rtt_file, iterations, scenario_name, test_group_name, client_ip, output_format, byteblower_only, packetstorm_only, iperf3_only, iperf3_darwin, speedtest_only, speedtest_clients, thousandeyes_only, thousandeyes_unit_id, report_formats, parent_output_dir, rtt_list):
-        """Run a single test scenario"""
+    def _run_single_test(self, bbp_file, rtt_file, iterations, scenario_name, test_group_name, client_ip, output_format, byteblower_only, packetstorm_only, iperf3_only, iperf3_darwin, speedtest_only, speedtest_clients, thousandeyes_only, thousandeyes_unit_id, report_formats, parent_output_dir, rtt_list, polling_managed=False):
+        """Run a single test scenario.
+        polling_managed=True: caller owns start/stop/baseline/tail — skip them here.
+        """
         try:
             success = True
             snmp_files = []
@@ -460,57 +496,63 @@ class NetperfCLI:
                 success = True
                 snmp_dir = os.path.join(test_output_dir, f'ThousandEyes{rtt_suffix}')
                 os.makedirs(snmp_dir, exist_ok=True)
-
-                self.start_cm_collector(test_name, output_dir=parent_output_dir)
-                self.set_cm_collector_dir(snmp_dir, 'ThousandEyes')
-                self.logger.info("Pre-test baseline collection — 30s")
-                time.sleep(30)
+                if not polling_managed:
+                    self.start_cm_collector(test_name, output_dir=parent_output_dir)
+                    self.set_cm_collector_dir(snmp_dir, 'ThousandEyes')
+                    self.logger.info("Pre-test baseline collection — 30s")
+                    time.sleep(30)
                 self.logger.info(f"Starting test: ThousandEyes iteration {i+1}/{iterations}")
                 for i in range(iterations):
                     ds_ok, ds_elapsed = sk.run_downstream(i, iterations, test_output_dir)
                     if not ds_ok:
                         self.logger.error("ThousandEyes downstream failed — stopping test")
-                        self.logger.info("Post-test collection — 30s")
-                        time.sleep(30)
-                        cm_session = self.stop_cm_collector()
-                        self.generate_pdf_report(cm_session, test_name)
+                        if not polling_managed:
+                            self.logger.info("Post-test collection — 30s")
+                            time.sleep(30)
+                            cm_session = self.stop_cm_collector()
+                            self.generate_pdf_report(cm_session, test_name)
                         return False, []
                     us_ok, us_elapsed = sk.run_upstream(i, iterations, test_output_dir)
                     if not us_ok:
                         self.logger.error("ThousandEyes upstream failed — stopping test")
-                        self.logger.info("Post-test collection — 30s")
-                        time.sleep(30)
-                        cm_session = self.stop_cm_collector()
-                        self.generate_pdf_report(cm_session, test_name)
+                        if not polling_managed:
+                            self.logger.info("Post-test collection — 30s")
+                            time.sleep(30)
+                            cm_session = self.stop_cm_collector()
+                            self.generate_pdf_report(cm_session, test_name)
                         return False, []
                     sk.run_jitter(i, iterations, test_output_dir)
-                self.logger.info("Post-test tail collection — 30s")
-                time.sleep(30)
-                cm_session = self.stop_cm_collector()
-                self.generate_pdf_report(cm_session, test_name)
+                if not polling_managed:
+                    self.logger.info("Post-test tail collection — 30s")
+                    time.sleep(30)
+                    cm_session = self.stop_cm_collector()
+                    self.generate_pdf_report(cm_session, test_name)
             elif speedtest_only:
                 self.logger.info(f"SpeedTest mode - clients: {speedtest_clients}")
                 st = SpeedTestLogic(speedtest_clients, test_group_name)
                 self.output_dir = test_output_dir
                 snmp_dir = os.path.join(test_output_dir, f'SpeedTest{rtt_suffix}')
                 os.makedirs(snmp_dir, exist_ok=True)
-                self.start_cm_collector(test_name, output_dir=parent_output_dir)
-                self.set_cm_collector_dir(snmp_dir, 'SpeedTest')
-                self.logger.info("Pre-test baseline collection — 30s")
-                time.sleep(30)
+                if not polling_managed:
+                    self.start_cm_collector(test_name, output_dir=parent_output_dir)
+                    self.set_cm_collector_dir(snmp_dir, 'SpeedTest')
+                    self.logger.info("Pre-test baseline collection — 30s")
+                    time.sleep(30)
                 self.logger.info(f"Starting test: SpeedTest")
                 if not st.run_iterations(iterations, output_dir=snmp_dir):
                     self.logger.error("SpeedTest failed — stopping test")
-                    self.logger.info("Post-test collection — 30s")
+                    if not polling_managed:
+                        self.logger.info("Post-test collection — 30s")
+                        time.sleep(30)
+                        cm_session = self.stop_cm_collector()
+                        self.generate_pdf_report(cm_session, test_name)
+                    return False, []
+                success = True
+                if not polling_managed:
+                    self.logger.info("Post-test tail collection — 30s")
                     time.sleep(30)
                     cm_session = self.stop_cm_collector()
                     self.generate_pdf_report(cm_session, test_name)
-                    return False, []
-                success = True
-                self.logger.info("Post-test tail collection — 30s")
-                time.sleep(30)
-                cm_session = self.stop_cm_collector()
-                self.generate_pdf_report(cm_session, test_name)
             elif packetstorm_only:
                 self.logger.info(f"PacketStorm only mode - config: {rtt_file}")
                 ps = PacketStormLogic(rtt_file)
@@ -521,12 +563,10 @@ class NetperfCLI:
                 success = True
                 snmp_dir = os.path.join(test_output_dir, scenario_name + rtt_suffix)
                 os.makedirs(snmp_dir, exist_ok=True)
-                
-                # Determine CMTS collection direction from scenario name
                 cmts_dir = "upstream" if scenario_name.lower().startswith("us") else "downstream"
-                
-                self.start_cm_collector(test_name, output_dir=parent_output_dir)
-                self.set_cm_collector_dir(snmp_dir, scenario_name)
+                if not polling_managed:
+                    self.start_cm_collector(test_name, output_dir=parent_output_dir)
+                    self.set_cm_collector_dir(snmp_dir, scenario_name)
                 for i in range(iterations):
                     iter_dir = os.path.join(snmp_dir, f"iteration_{i+1}") if iterations > 1 else snmp_dir
                     os.makedirs(iter_dir, exist_ok=True)
@@ -544,67 +584,70 @@ class NetperfCLI:
                                     print(f"    CM MAC:  {self.cm_mac}")
                                 if self.target_ip:
                                     print(f"    CM IPv6: {self.target_ip}")
-                    self.logger.info("Pre-test baseline collection — 30s")
-                    time.sleep(30)
+                    if not polling_managed:
+                        self.logger.info("Pre-test baseline collection — 30s")
+                        time.sleep(30)
                     self.logger.info(f"Starting test: {scenario_name} iteration {i+1}/{iterations}")
                     test_start = time.time()
                     bb_ok, bb_duration = bb.run_scenario(i, iterations, test_output_dir)
                     if not bb_ok:
                         self.logger.error("ByteBlower failed — stopping test")
-                        self.logger.info("Post-test collection — 30s")
-                        time.sleep(30)
-                        cm_session = self.stop_cm_collector()
-                        self.generate_pdf_report(cm_session, test_name)
+                        if not polling_managed:
+                            self.logger.info("Post-test collection — 30s")
+                            time.sleep(30)
+                            cm_session = self.stop_cm_collector()
+                            self.generate_pdf_report(cm_session, test_name)
                         return False, []
                     test_elapsed = bb_duration or (time.time() - test_start)
-                    self.logger.info("Post-test tail collection — 30s")
-                    time.sleep(30)
-                cm_session = self.stop_cm_collector()
-                self.generate_pdf_report(cm_session, test_name)
+                    if not polling_managed:
+                        self.logger.info("Post-test tail collection — 30s")
+                        time.sleep(30)
+                if not polling_managed:
+                    cm_session = self.stop_cm_collector()
+                    self.generate_pdf_report(cm_session, test_name)
             elif iperf3_only or iperf3_darwin:
                 platform_override = 'macos' if iperf3_darwin else None
                 platform_suffix = "_macOS" if iperf3_darwin else "_Linux"
                 self.logger.info(f"iPerf3 only mode - client: {client_ip}, scenario: {scenario_name}")
                 iperf3 = IPerf3Logic(client_ip, scenario_name, test_group_name, rtt_suffix, output_format, platform_override, test_output_dir)
                 self.output_dir = test_output_dir
-                
-                # Setup SSH and servers once
                 if not iperf3.setup_ssh_keys():
                     self.logger.error("SSH key setup failed")
                     return False, []
                 if not iperf3.setup_iperf3_servers():
                     self.logger.error("iPerf3 server setup failed")
                     return False, []
-                
                 success = True
                 snmp_dir = os.path.join(test_output_dir, scenario_name + platform_suffix + rtt_suffix)
                 os.makedirs(snmp_dir, exist_ok=True)
-                
-                # Determine CMTS collection direction from scenario name
                 cmts_dir = "upstream" if scenario_name.lower().startswith("us") else "downstream"
-                
-                self.start_cm_collector(test_name, output_dir=parent_output_dir)
-                self.set_cm_collector_dir(snmp_dir, scenario_name)
+                if not polling_managed:
+                    self.start_cm_collector(test_name, output_dir=parent_output_dir)
+                    self.set_cm_collector_dir(snmp_dir, scenario_name)
                 for i in range(iterations):
-                    self.logger.info("Pre-test baseline collection — 30s")
-                    time.sleep(30)
+                    if not polling_managed:
+                        self.logger.info("Pre-test baseline collection — 30s")
+                        time.sleep(30)
                     self.logger.info(f"Starting test: {scenario_name} iteration {i+1}/{iterations}")
                     test_start = time.time()
                     ip3_ok, ip3_duration = iperf3.run_scenario(i, iterations)
                     if not ip3_ok:
                         self.logger.error("iPerf3 failed — stopping test")
                         iperf3.stop_iperf3_servers()
-                        self.logger.info("Post-test collection — 30s")
-                        time.sleep(30)
-                        cm_session = self.stop_cm_collector()
-                        self.generate_pdf_report(cm_session, test_name)
+                        if not polling_managed:
+                            self.logger.info("Post-test collection — 30s")
+                            time.sleep(30)
+                            cm_session = self.stop_cm_collector()
+                            self.generate_pdf_report(cm_session, test_name)
                         return False, []
                     test_elapsed = ip3_duration or (time.time() - test_start)
-                    self.logger.info("Post-test tail collection — 30s")
-                    time.sleep(30)
+                    if not polling_managed:
+                        self.logger.info("Post-test tail collection — 30s")
+                        time.sleep(30)
                 iperf3.stop_iperf3_servers()
-                cm_session = self.stop_cm_collector()
-                self.generate_pdf_report(cm_session, test_name)
+                if not polling_managed:
+                    cm_session = self.stop_cm_collector()
+                    self.generate_pdf_report(cm_session, test_name)
             else:
                 ps = PacketStormLogic(rtt_file)
                 
