@@ -378,8 +378,15 @@ def _run_snmp_via_ssh(jumpserver, username, cmds, lbls):
                         timeout=config.ssh_connect_timeout)
         for label, cmd in zip(lbls, cmds):
             try:
-                _, stdout, _ = ssh.exec_command(cmd)
-                results.append((label, stdout.read().decode(errors='replace')))
+                _, stdout, stderr = ssh.exec_command(cmd)
+                stdout.channel.recv_exit_status()  # wait for command to finish
+                out = stdout.read().decode(errors='replace')
+                err = stderr.read().decode(errors='replace').strip()
+                if err:
+                    print(f'  [SNMP] [{label}] stderr: {err[:200]}')
+                if not out.strip():
+                    print(f'  [SNMP] [{label}] WARNING — empty output')
+                results.append((label, out))
             except Exception as e:
                 print(f'  ✗ [{label}] {e}')
                 results.append((label, ''))
