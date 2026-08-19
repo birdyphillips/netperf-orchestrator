@@ -340,7 +340,7 @@ class NetperfCLI:
             self.logger.error(f"SNMP collection failed: {e}")
             return False
     
-    def execute(self, bbp_file, rtt_files, iterations, scenarios, test_group_name=None, client_ip=None, output_format="json", byteblower_only=False, packetstorm_only=False, iperf3_only=False, iperf3_darwin=False, speedtest_only=False, speedtest_clients=None, thousandeyes_only=False, thousandeyes_unit_id=None, report_formats="html pdf csv xls xlsx json docx"):
+    def execute(self, bbp_file, rtt_files, iterations, scenarios, test_group_name=None, client_ip=None, output_format="json", byteblower_only=False, packetstorm_only=False, iperf3_only=False, iperf3_darwin=False, speedtest_only=False, speedtest_clients=None, thousandeyes_only=False, thousandeyes_unit_id=None, report_formats="html pdf csv xls xlsx json docx", granular=False):
         """Execute workflow based on selected modes"""
         try:
             scenario_list = [s.strip() for s in scenarios.split(',')] if scenarios else ['default']
@@ -421,7 +421,7 @@ class NetperfCLI:
                 cm_session = self.stop_cm_collector()
                 self.generate_pdf_report(cm_session, combined_name)
             else:
-                # Single scenario — original per-scenario polling behaviour
+                # Single scenario — granular=True owns polling per scenario; False runs unmanaged
                 for scenario in scenario_list:
                     for rtt_file in rtt_list:
                         success, snmp_files = self._run_single_test(
@@ -431,6 +431,7 @@ class NetperfCLI:
                             iperf3_darwin, speedtest_only, speedtest_clients,
                             thousandeyes_only, thousandeyes_unit_id, report_formats,
                             parent_output_dir, rtt_list,
+                            polling_managed=not granular,
                         )
                         all_success = all_success and success
                         all_snmp_files.extend(snmp_files)
@@ -824,6 +825,7 @@ def main():
     parser.add_argument('--unit-id', default=None, help='ThousandEyes unit ID (overrides config.yaml)')
     parser.add_argument('--report-formats', default='html pdf csv xls xlsx json docx', help='ByteBlower report formats (default: all formats)')
     parser.add_argument('-iteration', type=int, default=1, help='Number of iterations (default: 1)')
+    parser.add_argument('--granular', action='store_true', help='Single-scenario mode: own polling session per scenario (baseline → test → tail → PDF)')
     
     args = parser.parse_args()
     
@@ -859,7 +861,8 @@ def main():
         speedtest_clients=speedtest_clients,
         thousandeyes_only=getattr(args, 'thousandeyes', False),
         thousandeyes_unit_id=getattr(args, 'unit_id', None),
-        report_formats=getattr(args, 'report_formats', 'html pdf csv xls xlsx json docx')
+        report_formats=getattr(args, 'report_formats', 'html pdf csv xls xlsx json docx'),
+        granular=args.granular,
     )
 
 if __name__ == '__main__':
