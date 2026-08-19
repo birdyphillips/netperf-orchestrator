@@ -135,7 +135,101 @@ _OID_PARAM_MAP = {
     '2.1.44': 'ps_max_rate_64',
 }
 
-_RE_OID_SFID = re.compile(r'21\.1\.(\d+(?:\.\d+)*)\s*=\s*\S+:\s*(.*)')
+# Human-readable labels for OID suffixes in .txt poll files
+_OID_LABEL_MAP = {
+    # SF Table (.21.1.3)
+    '3.1.6':  'sf_agg_sfid',         '3.1.7':  'sf_direction',
+    '3.1.8':  'sf_primary',          '3.1.9':  'sf_sid_cluster',
+    '3.1.10': 'sf_active',           '3.1.11': 'sf_admitted',
+    '3.1.12': 'sf_pkts_dropped',     '3.1.13': 'sf_buffer_size',
+    '3.1.14': 'sf_max_burst',        '3.1.15': 'sf_max_rate',
+    '3.1.16': 'sf_aqm_target',       '3.1.17': 'sf_buffer_size_bytes',
+    '3.1.18': 'sf_scn',              '3.1.19': 'sf_agg_sfid_2',
+    '3.1.20': 'sf_active_2',         '3.1.21': 'sf_admitted_2',
+    # Param Set (.21.1.2)
+    '2.1.4':  'ps_scn',              '2.1.5':  'ps_priority',
+    '2.1.6':  'ps_max_rate_bps',     '2.1.7':  'ps_max_burst',
+    '2.1.8':  'ps_max_concat_burst', '2.1.9':  'ps_min_reserved_rate',
+    '2.1.10': 'ps_min_reserved_pkt', '2.1.11': 'ps_active_timeout',
+    '2.1.12': 'ps_admitted_timeout', '2.1.13': 'ps_direction',
+    '2.1.14': 'ps_tos_overwrite',    '2.1.20': 'ps_aqm_flags',
+    '2.1.21': 'ps_aqm_reserved',     '2.1.22': 'ps_aqm_drop_policy',
+    '2.1.24': 'ps_aqm_target_delay', '2.1.25': 'ps_aqm_config',
+    '2.1.27': 'ps_aqm_interval',     '2.1.28': 'ps_aqm_burst',
+    '2.1.29': 'ps_aqm_ecn',          '2.1.30': 'ps_aqm_drop_rate',
+    '2.1.31': 'ps_aqm_num_bins',     '2.1.32': 'ps_aqm_bin_width',
+    '2.1.37': 'ps_aqm_reserved2',    '2.1.38': 'ps_aqm_enable',
+    '2.1.39': 'ps_min_buffer',       '2.1.40': 'ps_target_buffer',
+    '2.1.41': 'ps_max_buffer',       '2.1.42': 'ps_aqm_mode',
+    '2.1.43': 'ps_aqm_latency_target_usec', '2.1.44': 'ps_max_rate_64',
+    '2.1.47': 'ps_aqm_type',         '2.1.48': 'ps_aqm_reserved3',
+    '2.1.49': 'ps_aqm_reserved4',    '2.1.50': 'ps_aqm_reserved5',
+    '2.1.51': 'ps_aqm_interval2',    '2.1.52': 'ps_aqm_bin_count',
+    '2.1.53': 'ps_aqm_reserved6',    '2.1.54': 'ps_aqm_ecn_mode',
+    # Flow Stats (.21.1.4)
+    '4.1.1':  'flow_pkts',           '4.1.2':  'flow_octets',
+    '4.1.3':  'flow_elapsed_time',   '4.1.4':  'flow_time_active',
+    '4.1.6':  'flow_policed_drop',   '4.1.7':  'flow_policed_delay',
+    '4.1.8':  'flow_aqm_drop',
+    # Lat Edges (.21.1.29.1)
+    '29.1.1.1':  'lat_sfid_type',    '29.1.1.2':  'lat_bin_scn',
+    '29.1.1.3':  'lat_edge_bin1_usec',  '29.1.1.4':  'lat_edge_bin2_usec',
+    '29.1.1.5':  'lat_edge_bin3_usec',  '29.1.1.6':  'lat_edge_bin4_usec',
+    '29.1.1.7':  'lat_edge_bin5_usec',  '29.1.1.8':  'lat_edge_bin6_usec',
+    '29.1.1.9':  'lat_edge_bin7_usec',  '29.1.1.10': 'lat_edge_bin8_usec',
+    '29.1.1.11': 'lat_edge_bin9_usec',  '29.1.1.12': 'lat_edge_bin10_usec',
+    '29.1.1.13': 'lat_edge_bin11_usec', '29.1.1.14': 'lat_edge_bin12_usec',
+    '29.1.1.15': 'lat_edge_bin13_usec', '29.1.1.16': 'lat_edge_bin14_usec',
+    '29.1.1.17': 'lat_edge_bin15_usec', '29.1.1.18': 'lat_aqm_target_usec',
+    # Lat Stats (.21.1.29.2)
+    '29.2.1.1':  'lat_max_usec',     '29.2.1.2':  'lat_updates',
+    '29.2.1.3':  'lat_bin1_pkts',    '29.2.1.4':  'lat_bin2_pkts',
+    '29.2.1.5':  'lat_bin3_pkts',    '29.2.1.6':  'lat_bin4_pkts',
+    '29.2.1.7':  'lat_bin5_pkts',    '29.2.1.8':  'lat_bin6_pkts',
+    '29.2.1.9':  'lat_bin7_pkts',    '29.2.1.10': 'lat_bin8_pkts',
+    '29.2.1.11': 'lat_bin9_pkts',    '29.2.1.12': 'lat_bin10_pkts',
+    '29.2.1.13': 'lat_bin11_pkts',   '29.2.1.14': 'lat_bin12_pkts',
+    '29.2.1.15': 'lat_bin13_pkts',   '29.2.1.16': 'lat_bin14_pkts',
+    '29.2.1.17': 'lat_bin15_pkts',   '29.2.1.18': 'lat_bin16_pkts',
+    # Congestion (.21.1.30)
+    '30.1.1': 'cong_aqm_drop',       '30.1.2': 'cong_scn_marked',
+    '30.1.3': 'cong_ce_marked',      '30.1.4': 'cong_sanctioned',
+    '30.1.5': 'cong_ect0',           '30.1.6': 'cong_ect1',
+    '30.1.7': 'cong_ce_ect1',        '30.1.8': 'cong_arrived_ce',
+    # DS SF Index (.21.1.11)
+    '11.1.1': 'ds_sf_ifindex',       '11.1.2': 'ds_sf_direction',
+    '11.1.3': 'ds_sf_primary',
+}
+
+_RE_OID_TXT = re.compile(
+    r'SNMPv2-SMI::enterprises\.4491\.2\.1\.21\.1\.'
+    r'(\d+(?:\.\d+)*)\s*=\s*(\S+):\s*(.*)'
+)
+
+
+def _label_snmp_line(line):
+    """Replace raw OID prefix with human-readable field name, keep sfid suffix and value."""
+    m = _RE_OID_TXT.match(line.strip())
+    if not m:
+        return line
+    oid_suffix, vtype, value = m.group(1), m.group(2), m.group(3).strip()
+    parts = oid_suffix.split('.')
+
+    # Try progressively shorter prefixes to find a label
+    label = None
+    sfid  = None
+    for cut in range(len(parts), 0, -1):
+        key = '.'.join(parts[:cut])
+        if key in _OID_LABEL_MAP:
+            label = _OID_LABEL_MAP[key]
+            sfid  = '.'.join(parts[cut:])
+            break
+
+    if label is None:
+        return line
+    sfid_str = f'  sfid={parts[-1]}' if parts else ''
+    return f'  {label}{sfid_str} = {value}'
+
 
 # Kafka metric name → KAFKA_CSV_FIELDS column
 _KAFKA_METRIC_MAP = {
@@ -317,15 +411,21 @@ def _write_snmp_txt(session_dir, ts, poll_idx, modem_ip, us_raw, ds_raw, cmts_ty
         f'Target IP: {modem_ip}',
         '=' * 60,
     ]
-    for label, output in us_raw:
-        lines.append(f'\n{label}')
+    for lbl, output in us_raw:
+        lines.append(f'\n{lbl}')
         lines.append('=' * 50)
-        lines.append(output.strip() if output.strip() else '(no data)')
+        if output.strip():
+            lines.extend(_label_snmp_line(l) for l in output.splitlines() if l.strip())
+        else:
+            lines.append('(no data)')
     if ds_raw:
-        for label, output in ds_raw:
-            lines.append(f'\n{label}')
+        for lbl, output in ds_raw:
+            lines.append(f'\n{lbl}')
             lines.append('=' * 50)
-            lines.append(output.strip() if output.strip() else '(no data)')
+            if output.strip():
+                lines.extend(_label_snmp_line(l) for l in output.splitlines() if l.strip())
+            else:
+                lines.append('(no data)')
     with open(path, 'w') as f:
         f.write('\n'.join(lines) + '\n')
 
