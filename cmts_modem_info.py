@@ -219,25 +219,37 @@ def ssh_cmts_collector(username, jumpserver, cmts_host, cmts_password, cm_mac, c
             
         ssh.close()
         
-        # Build organized output based on CMTS type
-        organized_output = []
-        organized_output.append(output_lines[0])  # Title
-        organized_output.append(output_lines[1])  # CMTS Host
-        organized_output.append(output_lines[2])  # CM MAC
-        if cm_ipv6:
-            organized_output.append(f"Cable Modem IPv6: {cm_ipv6}")
-        organized_output.append(output_lines[3])  # Separator
-        
-        # Add sections in order
-        for label in labels:
-            organized_output.append(f"\n{label}")
-            organized_output.append("="*80)
-            organized_output.append(results[label]['output'])
-        
+        # Parse sfid/scn from QoS Bandwidth output
+        sfids = []
+        if cmts_type.lower() == 'vcmts' and 'QoS Bandwidth Information' in labels:
+            qos_output = results['QoS Bandwidth Information']['output']
+            seen = set()
+            for qline in qos_output.splitlines():
+                parts = qline.split()
+                if len(parts) >= 2 and parts[0].isdigit() and parts[-1].isalpha() and not parts[-1].isdigit():
+                    sfid_val = int(parts[0])
+                    scn_val  = parts[-1]
+                    dir_val  = parts[1] if len(parts) > 1 else ''
+                    key = (sfid_val, scn_val)
+                    if key not in seen:
+                        seen.add(key)
+                        sfids.append({'sfid': sfid_val, 'scn': scn_val, 'dir': dir_val})
+
+        # Build JSON summary
+        summary = {
+            'cmts_type':  cmts_type.upper(),
+            'cmts_host':  cmts_host,
+            'cm_mac':     cm_mac,
+            'cm_ipv6':    cm_ipv6 or '',
+            'timestamp':  timestamp,
+            'sfids':      sfids,
+        }
+
         # Write to file if specified
         if output_file:
+            import json
             with open(output_file, 'w') as f:
-                f.write('\n'.join(organized_output))
+                json.dump(summary, f, indent=2)
                 logger.info(f"Results saved to: {output_file}")
                 print(f"Results saved to: {output_file}")
         
@@ -265,11 +277,7 @@ def collect_cmts_data(cmts_host, cm_mac, cmts_type='vcmts', test_name=None, outp
     
     # Create filename
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    cm_mac_clean = cm_mac.replace('.', '').replace(':', '')
-    if test_name:
-        filename = os.path.join(output_dir, f"{test_name}_{cmts_type}_{cm_mac_clean}_{timestamp}.txt")
-    else:
-        filename = os.path.join(output_dir, f"{cmts_type}_{cm_mac_clean}_{timestamp}.txt")
+    filename = os.path.join(output_dir, 'modem_summary.json')
     
     logger.info(f"Collecting {cmts_type.upper()} service flow data for CM: {cm_mac}")
     print(f"Collecting {cmts_type.upper()} service flow data for CM: {cm_mac}")

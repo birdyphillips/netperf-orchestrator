@@ -1,4 +1,4 @@
-"""NetPerf Orchestrator Database Package."""
+"""DELTA Database Package."""
 
 from .db_config import get_connection, DBConnection, init_db
 from .db_models import (

@@ -1,4 +1,4 @@
-"""MySQL connection pool for NetPerf Orchestrator."""
+"""MySQL connection pool for DELTA."""
 
 import mysql.connector
 from mysql.connector import pooling
@@ -20,14 +20,14 @@ def get_pool():
     if _pool is None:
         cfg = _load_config()
         _pool = pooling.MySQLConnectionPool(
-            pool_name="netperf_pool",
+            pool_name="delta_pool",
             pool_size=5,
             pool_reset_session=True,
             host=cfg.get('host', 'localhost'),
             port=cfg.get('port', 3306),
-            user=cfg.get('user', 'netperf'),
+            user=cfg.get('user', 'delta'),
             password=cfg.get('password', ''),
-            database=cfg.get('database', 'netperf'),
+            database=cfg.get('database', 'delta'),
             autocommit=False
         )
     return _pool

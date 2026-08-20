@@ -1,0 +1,199 @@
+{
+    "success": true,
+    "data": [
+        {
+            "request_id": "74375fa25744",
+            "ip": "2602:101:909:302:7637:5fff:fea2:5744",
+            "cm_mac": "74375fa25744",
+            "region": "mtgmal",
+            "device_type": "ecm",
+            "embedded_components": "ECM:EDVA",
+            "dlqs_info": {
+                "type": "DHCPv6",
+                "timestamps": {
+                    "transaction": "2026-08-19T13:19:53Z",
+                    "leaseStart": "2025-12-14T22:30:34Z",
+                    "leaseEnd": "2026-08-26T13:19:53Z",
+                    "leaseRenewal": "2026-08-19T13:19:53Z"
+                },
+                "timestampsEpoch": {
+                    "transaction": 1787145593,
+                    "leaseStart": 1765751434,
+                    "leaseEnd": 1787750393,
+                    "leaseRenewal": 1787145593
+                },
+                "mac": "74:37:5f:a2:57:44",
+                "modemMac": "74:37:5f:a2:57:44",
+                "deviceId": "00:03:00:01:74:37:5f:a2:57:44",
+                "deviceType": "cm",
+                "deviceTypeDetailed": "charternet|bac118020003000174375fa25744|device-class=cm axess-acs-url=https://axess-proxy.cpe.charter.com:7547/tr69 diplexer-mode-cm iperf-header=IPERF iperf-ipv6 iperf-udp ipv6-cm ipv6-cpe smh speedtest=iperf3 tr69 tr69class=cm smh-scn=WFT004 ipv6-smb bandedge-override=low iperf-P=2 iperf-d-b=1250M iperf-u-b=0 sercomm-unified-fw ipv6-mta lldCertified",
+                "dhcpServerIp": "150.181.101.21",
+                "relayAgentInfo": "2602:101:909:302::1",
+                "provisioning": {
+                    "region": "mtgmal",
+                    "server": {
+                        "host": "rdu03.cpe.charter.com",
+                        "port": 50000,
+                        "group": "mtgmal"
+                    }
+                },
+                "bootFile": "bac118020003000174375fa25744",
+                "ispCode": null,
+                "scope": "2602:101:909:302::/64",
+                "deviceInfo": {
+                    "type": "ECM",
+                    "embeddedComponents": "ECM:EDVA",
+                    "serialNumber": "2306DASP12862",
+                    "hardwareVersion": "1.4",
+                    "firmwareVersion": "01.06.70-UNI-C3R",
+                    "bootromVersion": "CGR2.86C.703059.R.2204260958",
+                    "model": "ES2251",
+                    "vendor": "Sercomm Corporation",
+                    "vendorOui": "30:30:43:30:30:32"
+                },
+                "legacyFootprint": "L-CHTR",
+                "dlcpVersion": "4.5.2",
+                "vci": "docsis3.1",
+                "ia": {
+                    "type": "IA_NA",
+                    "id": 1604474692
+                },
+                "ip": "2602:101:909:302:7637:5fff:fea2:5744"
+            },
+            "response": {
+                "Uptime": 342561,
+                "walked_data": {
+                    "2229": {
+                        "docsQosServiceFlowPkts": 0,
+                        "docsQosServiceFlowOctets": 0,
+                        "docsQosServiceFlowPolicedDropPkts": 0,
+                        "docsQosServiceFlowPolicedDelayPkts": 0,
+                        "docsQosServiceFlowAQMDroppedPkts": 0,
+                        "docsQosServiceFlowBufferSize": 4000,
+                        "docsQosSfCongestionAqmDroppedPkts": 0,
+                        "docsQosSfCongestionSanctionedPkts": 0,
+                        "docsQosSfCongestionTotalEct0Pkts": 0,
+                        "docsQosParamSetMaxTrafficRate": 128000,
+                        "docsQosParamSetMaxTrafficBurst": 6000000,
+                        "docsQosParamSetMaxConcatBurst": 0,
+                        "docsQosParamSetAqmLatencyTarget": 10,
+                        "docsQosParamSetMinimumBuffer": 0,
+                        "docsQosParamSetTargetBuffer": 0,
+                        "docsQosParamSetMaximumBuffer": 0,
+                        "docsQosParamSetServiceClassName": "usvoip",
+                        "docsQosParamSetPriority": 5
+                    },
+                    "5268": {
+                        "docsQosServiceFlowPkts": 59826563,
+                        "docsQosServiceFlowOctets": 11880784029,
+                        "docsQosServiceFlowPolicedDropPkts": 30,
+                        "docsQosServiceFlowPolicedDelayPkts": 0,
+                        "docsQosServiceFlowAQMDroppedPkts": 7224,
+                        "docsQosServiceFlowBufferSize": 750000,
+                        "docsQosSfCongestionAqmDroppedPkts": 0,
+                        "docsQosSfCongestionSanctionedPkts": 0,
+                        "docsQosSfCongestionTotalEct0Pkts": 0,
+                        "docsQosParamSetMaxTrafficRate": 24000000,
+                        "docsQosParamSetMaxTrafficBurst": 6000000,
+                        "docsQosParamSetMaxConcatBurst": 0,
+                        "docsQosParamSetAqmLatencyTarget": 10,
+                        "docsQosParamSetMinimumBuffer": 0,
+                        "docsQosParamSetTargetBuffer": 0,
+                        "docsQosParamSetMaximumBuffer": 0,
+                        "docsQosParamSetServiceClassName": "usHSI016",
+                        "docsQosParamSetPriority": 1
+                    },
+                    "5574": {
+                        "docsQosServiceFlowPkts": 2,
+                        "docsQosServiceFlowOctets": 172,
+                        "docsQosServiceFlowPolicedDropPkts": 0,
+                        "docsQosServiceFlowPolicedDelayPkts": 0,
+                        "docsQosServiceFlowAQMDroppedPkts": 0,
+                        "docsQosServiceFlowBufferSize": 5500000,
+                        "docsQosSfCongestionAqmDroppedPkts": 0,
+                        "docsQosSfCongestionSanctionedPkts": 0,
+                        "docsQosSfCongestionTotalEct0Pkts": 0,
+                        "docsQosParamSetMaxTrafficRate": 880000000,
+                        "docsQosParamSetMaxTrafficBurst": 6000000,
+                        "docsQosParamSetMaxConcatBurst": 0,
+                        "docsQosParamSetAqmLatencyTarget": 10,
+                        "docsQosParamSetMinimumBuffer": 0,
+                        "docsQosParamSetTargetBuffer": 0,
+                        "docsQosParamSetMaximumBuffer": 0,
+                        "docsQosParamSetServiceClassName": "usWFT004",
+                        "docsQosParamSetPriority": 0
+                    },
+                    "52862": {
+                        "docsQosServiceFlowPkts": 0,
+                        "docsQosServiceFlowOctets": 0,
+                        "docsQosServiceFlowPolicedDropPkts": 0,
+                        "docsQosServiceFlowPolicedDelayPkts": 0,
+                        "docsQosServiceFlowAQMDroppedPkts": 0,
+                        "docsQosServiceFlowBufferSize": 0,
+                        "docsQosParamSetMaxTrafficRate": 600000000,
+                        "docsQosParamSetMaxTrafficBurst": 3000,
+                        "docsQosParamSetMaxConcatBurst": 0,
+                        "docsQosParamSetAqmLatencyTarget": 20,
+                        "docsQosParamSetMinimumBuffer": 0,
+                        "docsQosParamSetTargetBuffer": 0,
+                        "docsQosParamSetMaximumBuffer": 0,
+                        "docsQosParamSetServiceClassName": "dsHSI016",
+                        "docsQosParamSetPriority": 1
+                    },
+                    "52931": {
+                        "docsQosServiceFlowPkts": 0,
+                        "docsQosServiceFlowOctets": 0,
+                        "docsQosServiceFlowPolicedDropPkts": 0,
+                        "docsQosServiceFlowPolicedDelayPkts": 0,
+                        "docsQosServiceFlowAQMDroppedPkts": 0,
+                        "docsQosServiceFlowBufferSize": 0,
+                        "docsQosParamSetMaxTrafficRate": 10000000,
+                        "docsQosParamSetMaxTrafficBurst": 3000,
+                        "docsQosParamSetMaxConcatBurst": 12000,
+                        "docsQosParamSetAqmLatencyTarget": 20,
+                        "docsQosParamSetMinimumBuffer": 0,
+                        "docsQosParamSetTargetBuffer": 0,
+                        "docsQosParamSetMaximumBuffer": 0,
+                        "docsQosParamSetServiceClassName": "dsvoip",
+                        "docsQosParamSetPriority": 5
+                    },
+                    "52932": {
+                        "docsQosServiceFlowPkts": 0,
+                        "docsQosServiceFlowOctets": 0,
+                        "docsQosServiceFlowPolicedDropPkts": 0,
+                        "docsQosServiceFlowPolicedDelayPkts": 0,
+                        "docsQosServiceFlowAQMDroppedPkts": 0,
+                        "docsQosServiceFlowBufferSize": 0,
+                        "docsQosParamSetMaxTrafficRate": 120000000,
+                        "docsQosParamSetMaxTrafficBurst": 3000,
+                        "docsQosParamSetMaxConcatBurst": 0,
+                        "docsQosParamSetAqmLatencyTarget": 20,
+                        "docsQosParamSetMinimumBuffer": 0,
+                        "docsQosParamSetTargetBuffer": 0,
+                        "docsQosParamSetMaximumBuffer": 0,
+                        "docsQosParamSetServiceClassName": "dsVID001",
+                        "docsQosParamSetPriority": 3
+                    },
+                    "52933": {
+                        "docsQosServiceFlowPkts": 0,
+                        "docsQosServiceFlowOctets": 0,
+                        "docsQosServiceFlowPolicedDropPkts": 0,
+                        "docsQosServiceFlowPolicedDelayPkts": 0,
+                        "docsQosServiceFlowAQMDroppedPkts": 0,
+                        "docsQosServiceFlowBufferSize": 0,
+                        "docsQosParamSetMaxTrafficRate": 1200000000,
+                        "docsQosParamSetMaxTrafficBurst": 3000,
+                        "docsQosParamSetMaxConcatBurst": 0,
+                        "docsQosParamSetAqmLatencyTarget": 20,
+                        "docsQosParamSetMinimumBuffer": 0,
+                        "docsQosParamSetTargetBuffer": 0,
+                        "docsQosParamSetMaximumBuffer": 0,
+                        "docsQosParamSetServiceClassName": "dsWFT004",
+                        "docsQosParamSetPriority": 0
+                    }
+                }
+            },
+            "snmp_task_id": "c8df3c01-5ebb-43e1-825c-25aed81c6da3"
+        }
+    ]
+}

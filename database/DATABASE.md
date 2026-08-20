@@ -4,7 +4,7 @@
 | User | Password | Database |
 |------|----------|----------|
 | root | charter | - |
-| netperf | charter | netperf |
+| delta | charter | delta |
 
 ## Connection
 
@@ -12,14 +12,14 @@
 # root
 mysql -u root -p
 
-# netperf
-mysql -u netperf -p netperf
+# delta
+mysql -u delta -p delta
 ```
 
 ## Load Schema
 
 ```bash
-mysql -u netperf -p netperf < /home/aphillips/Projects/LLD_TEST_CLT_Dev_linux_compatible/database/schema.sql
+mysql -u delta -p delta < /home/aphillips/Projects/DELTA/database/schema.sql
 ```
 
 ## Schema Overview
@@ -51,7 +51,7 @@ Kafka CMTS downstream latency metrics. Time-series metric values per SFID.
 ## Verify Tables
 
 ```sql
-USE netperf;
+USE delta;
 SHOW TABLES;
 ```
 

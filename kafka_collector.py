@@ -5,7 +5,7 @@ Collects dp_flow_* metrics from the Harmonic vCMTS Kafka telemetry stream
 during a test window and generates a latency bin report (Excel) matching
 the format produced by latency_calculator.py for SNMP-based upstream data.
 
-Usage as a module (from netperf_orchestrator.py):
+Usage as a module (from delta_orchestrator.py):
     collector = CmtsCollector(broker, topic, mac)
     collector.start()
     # ... run traffic test ...
@@ -63,6 +63,8 @@ METRIC_NAMES = [
     "K_Samis1_DeltaPacketsPassed",
     "K_Samis1_DeltaOctetsPassed",
     "K_Samis1_ServiceTimeCreated",
+    "K_Samis1_Sfid",
+    "K_DocsQos_Params",
     "snmp_docsQosServiceFlowPackets",
     "snmp_docsQosServiceFlowOctets",
 ]
@@ -113,6 +115,10 @@ class CmtsCollector:
         self.bin_snapshots = defaultdict(lambda: defaultdict(int))
         # Bin edges per sfIndex read from Kafka labels: {sfIndex: [edge0, edge1, ..., edge16]}
         self._sf_bin_edges = {}
+        # sfIndex → sfid (integer string)
+        self._sfindex_to_sfid = {}
+        # sfIndex → scn (service class name)
+        self._sfindex_to_scn = {}
         # Raw Kafka messages matching our MAC for debugging
         self._raw_messages = []
         self._started_at = None
@@ -135,6 +141,8 @@ class CmtsCollector:
         self.samples.clear()
         self.bin_snapshots.clear()
         self._sf_bin_edges.clear()
+        self._sfindex_to_sfid.clear()
+        self._sfindex_to_scn.clear()
         self._raw_messages.clear()
         self._started_at = time.time()
         self._thread = threading.Thread(target=self._consume_loop, daemon=True)
@@ -231,7 +239,30 @@ class CmtsCollector:
         if labels.get('cmMacAddr', '').lower() != self.mac_colon:
             return
 
-        # Direction filter
+        # K_Samis1_Sfid and K_DocsQos_Params carry sfid/scn but may not match
+        # the direction filter — handle them before the direction check.
+        if metric_name == 'K_Samis1_Sfid':
+            sf_index = labels.get('sfIndex', '')
+            if sf_index:
+                try:
+                    self._sfindex_to_sfid[sf_index] = str(int(float(value_str)))
+                except ValueError:
+                    pass
+                scn = labels.get('scn', '')
+                if scn:
+                    self._sfindex_to_scn[sf_index] = scn
+            self._raw_messages.append(line)
+            return
+
+        if metric_name == 'K_DocsQos_Params':
+            sf_index = labels.get('sfIndex', '')
+            scn = labels.get('scn', '')
+            if sf_index and scn:
+                self._sfindex_to_scn[sf_index] = scn
+            self._raw_messages.append(line)
+            return
+
+        # Direction filter for all other metrics
         if labels.get('dir', '') != self.direction:
             return
 
@@ -462,7 +493,7 @@ class CmtsCollector:
             p999a = self._calc_percentile_avg(bin_deltas, 0.999, sf_edges)
             weighted_avg = self._calc_weighted_avg(bin_deltas, sf_edges)
 
-            self._cell(ws, row, 1, f"sfIndex {sf}")
+            self._cell(ws, row, 1, self._sf_label(sf))
             self._cell(ws, row, 2, total_pkts, fill=self._CALC_FILL)
             self._cell(ws, row, 3, round(weighted_avg, 4), fill=self._RESULT_FILL, fmt="0.0000")
             self._cell(ws, row, 4, round(avg_lat, 4), fill=self._RESULT_FILL, fmt="0.0000")
@@ -507,7 +538,7 @@ class CmtsCollector:
         total = sum(bin_deltas)
 
         ws.merge_cells("A1:H1")
-        ws["A1"] = f"CMTS {self.direction.upper()} LATENCY \u2014 sfIndex {sf_index}"
+        ws["A1"] = f"CMTS {self.direction.upper()} LATENCY — {self._sf_label(sf_index)}"
         ws["A1"].font = Font(bold=True, size=14)
         ws["A1"].alignment = self._CENTER
 
@@ -649,7 +680,7 @@ class CmtsCollector:
             for entry in all_rows:
                 ts_before_dt = datetime.utcfromtimestamp(entry["ts_before"] / 1000)
                 ts_after_dt = datetime.utcfromtimestamp(entry["timestamp_ms"] / 1000)
-                self._cell(ws, row, 1, f"sfIndex {sf}")
+                self._cell(ws, row, 1, self._sf_label(sf))
                 self._cell(ws, row, 2, ts_before_dt.strftime("%Y-%m-%d %H:%M:%S.%f"))
                 self._cell(ws, row, 3, ts_after_dt.strftime("%Y-%m-%d %H:%M:%S.%f"))
                 self._cell(ws, row, 4, int(entry["before"]))
@@ -662,7 +693,7 @@ class CmtsCollector:
 
             # SF total row
             sf_throughput = (sf_total_delta * 8) / (test_duration_s * 1_000_000) if test_duration_s > 0 else 0
-            self._cell(ws, row, 1, f"sfIndex {sf}", font=self._BOLD)
+            self._cell(ws, row, 1, self._sf_label(sf), font=self._BOLD)
             self._cell(ws, row, 5, "TOTAL", font=self._BOLD)
             self._cell(ws, row, 6, sf_total_delta, font=self._BOLD, fill=self._CALC_FILL)
             self._cell(ws, row, 8, round(sf_throughput, 4), font=self._BOLD, fill=self._CALC_FILL, fmt="0.0000")
@@ -719,6 +750,19 @@ class CmtsCollector:
 
         for i, w in enumerate([14, 12, 12, 40, 20], 1):
             ws.column_dimensions[get_column_letter(i)].width = w
+
+    def _sf_label(self, sf_index):
+        """Return 'sfid (scn)' if known, else 'sfIndex N'."""
+        sf_index = str(sf_index)
+        sfid = self._sfindex_to_sfid.get(sf_index)
+        scn  = self._sfindex_to_scn.get(sf_index)
+        if sfid and scn:
+            return f'{sfid} ({scn})'
+        if sfid:
+            return f'{sfid} (unknown)'
+        if scn:
+            return f'sfIndex {sf_index} ({scn})'
+        return f'sfIndex {sf_index}'
 
     def _get_polling_interval_s(self):
         """Return detected polling interval, or 60s if not yet observed."""

@@ -1,4 +1,4 @@
-"""Database insert and query helpers for NetPerf Orchestrator."""
+"""Database insert and query helpers for DELTA."""
 
 from .db_config import DBConnection
 

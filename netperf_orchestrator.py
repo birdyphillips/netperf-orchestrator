@@ -38,7 +38,7 @@ except ImportError:
     CMTS_AVAILABLE = False
 
 try:
-    from cm_collector import (
+    from cm_data_collector import (
         snmp_collector_thread, kafka_collector_thread,
         _make_session_dir, _write_csv_comment,
         SNMP_CSV_FIELDS, KAFKA_CSV_FIELDS,
@@ -77,7 +77,7 @@ class NetperfCLI:
             self.target_ip = self._lookup_ipv6_from_cmts(self.cm_mac, output_dir='Results/.cmts_lookup_tmp')
             # find the file written so we can move it later
             import glob as _g
-            _files = _g.glob('Results/.cmts_lookup_tmp/*.txt')
+            _files = _g.glob('Results/.cmts_lookup_tmp/*.json')
             self._cmts_lookup_file = _files[-1] if _files else None
             if not self.target_ip:
                 answer = input("Cable modem not found on CMTS. Continue without SNMP? [y/N]: ").strip().lower()
@@ -174,15 +174,18 @@ class NetperfCLI:
             # threads already running — poll .txt redirect is enough
             return
 
-        # First call — build CSV paths inside scenario_dir and start threads
+        # First call — build CSV paths inside scenario_dir/raw_data and start threads
         mac_norm = self._cm_mac_norm
         dir_ts_m = re.search(r'(\d{8}_\d{6})', os.path.basename(self._cm_session_dir))
         ts_str   = dir_ts_m.group(1) if dir_ts_m else datetime.now().strftime('%Y%m%d_%H%M%S')
 
-        self._cm_csv_paths = {'us': os.path.join(scenario_dir, f'snmp_us_{mac_norm}_{ts_str}.csv')}
+        raw_dir  = os.path.join(scenario_dir, 'raw_data')
+        os.makedirs(raw_dir, exist_ok=True)
+
+        self._cm_csv_paths = {'us': os.path.join(raw_dir, f'snmp_us_{mac_norm}_{ts_str}.csv')}
         if self.cmts_type == 'icmts':
-            self._cm_csv_paths['ds'] = os.path.join(scenario_dir, f'snmp_ds_{mac_norm}_{ts_str}.csv')
-        self._cm_kafka_csv = os.path.join(scenario_dir, f'kafka_{mac_norm}_{ts_str}.csv') \
+            self._cm_csv_paths['ds'] = os.path.join(raw_dir, f'snmp_ds_{mac_norm}_{ts_str}.csv')
+        self._cm_kafka_csv = os.path.join(raw_dir, f'kafka_{mac_norm}_{ts_str}.csv') \
                              if self.cmts_type == 'vcmts' else None
 
         import threading
@@ -222,18 +225,6 @@ class NetperfCLI:
         self._cm_session_dir_ref = None
         self._cm_scenario_ref    = None
         self.logger.info(f"cm_collector stopped — session: {session_dir}")
-        if session_dir and CM_COLLECTOR_AVAILABLE:
-            try:
-                mac_norm  = self.cm_mac.replace('.', '').replace(':', '').lower() if self.cm_mac else ''
-                mac_colon = ':'.join(mac_norm[i:i+2] for i in range(0, 12, 2)) if mac_norm else ''
-                from cm_collector import generate_excel_timeseries
-                generate_excel_timeseries(
-                    session_dir, mac_colon, self.cmts_type,
-                    kafka_csv=cm_kafka_csv,
-                    snmp_us_csv=cm_csv_paths.get('us'),
-                )
-            except Exception as e:
-                self.logger.warning(f"Excel timeseries failed: {e}")
         return session_dir
 
     def generate_pdf_report(self, session_dir, session_name):
@@ -372,12 +363,10 @@ class NetperfCLI:
             parent_output_dir = f"Results/{test_group_name}_{traffic_type}{rtt_suffix}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
             os.makedirs(parent_output_dir, exist_ok=True)
 
-            # Move cmts_lookup file into this test's results directory
+            # Move modem summary into this test's results directory
             if self._cmts_lookup_file and os.path.exists(self._cmts_lookup_file):
                 import shutil
-                lookup_dir = os.path.join(parent_output_dir, 'cmts_lookup')
-                os.makedirs(lookup_dir, exist_ok=True)
-                shutil.move(self._cmts_lookup_file, lookup_dir)
+                shutil.move(self._cmts_lookup_file, os.path.join(parent_output_dir, 'modem_summary.json'))
                 try:
                     os.rmdir('Results/.cmts_lookup_tmp')
                 except OSError:

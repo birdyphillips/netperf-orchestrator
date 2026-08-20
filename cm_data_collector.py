@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-cm_collector.py  —  Continuous SNMP + Kafka polling collector for LLD test sessions.
+cm_data_collector.py  —  Continuous SNMP + Kafka polling collector for LLD test sessions.
 
   vCMTS  →  Kafka (DS + US latency/throughput) + SNMP (modem-side US stats)
   iCMTS  →  SNMP only (modem US + iCMTS DS)
@@ -13,13 +13,16 @@ Output structure:
     Results/
     └── <MAC>_<cmts_type>/
         └── <YYYYMMDD_HHMMSS>/
-            ├── snmp_us_<MAC>_<ts>.csv
-            ├── snmp_ds_<MAC>_<ts>.csv   (iCMTS only)
-            └── kafka_<MAC>_<ts>.csv     (vCMTS only)
+            ├── raw_data/
+            │   ├── snmp_us_<MAC>_<ts>.csv
+            │   ├── snmp_ds_<MAC>_<ts>.csv   (iCMTS only)
+            │   ├── kafka_<MAC>_<ts>.csv     (vCMTS only)
+            │   ├── Kafka_Raw_Messages_<MAC>_<ts>.txt
+            │   └── snmp_polls/
 
 Usage:
-    python cm_collector.py
-    python cm_collector.py --debug
+    python cm_data_collector.py
+    python cm_data_collector.py --debug
 """
 import re
 import csv
@@ -89,7 +92,10 @@ KAFKA_CSV_FIELDS = [
     'lat_bin05', 'lat_bin06', 'lat_bin07', 'lat_bin08',
     'lat_bin09', 'lat_bin10', 'lat_bin11', 'lat_bin12',
     'lat_bin13', 'lat_bin14', 'lat_bin15', 'lat_bin16',
-    'bin01_lower_msec', 'bin16_upper_msec',
+    'lat_bin_edge01', 'lat_bin_edge02', 'lat_bin_edge03', 'lat_bin_edge04',
+    'lat_bin_edge05', 'lat_bin_edge06', 'lat_bin_edge07', 'lat_bin_edge08',
+    'lat_bin_edge09', 'lat_bin_edge10', 'lat_bin_edge11', 'lat_bin_edge12',
+    'lat_bin_edge13', 'lat_bin_edge14', 'lat_bin_edge15', 'lat_bin_edge16',
     'max_rate_bps', 'aqm_target_msecs',
 ]
 
@@ -298,13 +304,28 @@ def _write_csv_comment(f, mac_colon, cmts_type):
 def _build_snmp_commands(modem_ip, icmts_ip, modem_community, icmts_community, timeout, retries):
     """Return (us_cmds, us_lbls, ds_cmds, ds_lbls) for the given targets."""
     t, r = timeout, retries
+    base = f'snmpwalk -v 2c -c {modem_community} -t {t} -r {r} {modem_ip}'
+    # Walk only the specific param-set columns needed (type 2 = active),
+    # instead of the entire .21.1.2 subtree which includes all 3 types × 54 columns.
+    param_oids = [
+        '1.3.6.1.4.1.4491.2.1.21.1.2.1.4.2',   # ps_scn
+        '1.3.6.1.4.1.4491.2.1.21.1.2.1.5.2',   # ps_priority
+        '1.3.6.1.4.1.4491.2.1.21.1.2.1.6.2',   # ps_max_rate
+        '1.3.6.1.4.1.4491.2.1.21.1.2.1.7.2',   # ps_max_burst
+        '1.3.6.1.4.1.4491.2.1.21.1.2.1.8.2',   # ps_max_concat_burst
+        '1.3.6.1.4.1.4491.2.1.21.1.2.1.39.2',  # ps_min_buffer
+        '1.3.6.1.4.1.4491.2.1.21.1.2.1.40.2',  # ps_target_buffer
+        '1.3.6.1.4.1.4491.2.1.21.1.2.1.41.2',  # ps_max_buffer
+        '1.3.6.1.4.1.4491.2.1.21.1.2.1.43.2',  # ps_aqm_latency_target
+        '1.3.6.1.4.1.4491.2.1.21.1.2.1.44.2',  # ps_max_rate_64
+    ]
     us_cmds = [
-        f"snmpwalk -v 2c -c {modem_community} -t {t} -r {r} {modem_ip} 1.3.6.1.4.1.4491.2.1.21.1.3",
-        f"snmpwalk -v 2c -c {modem_community} -t {t} -r {r} {modem_ip} 1.3.6.1.4.1.4491.2.1.21.1.2",
-        f"snmpwalk -v 2c -c {modem_community} -t {t} -r {r} {modem_ip} 1.3.6.1.4.1.4491.2.1.21.1.4",
-        f"snmpwalk -v 2c -c {modem_community} -t {t} -r {r} {modem_ip} 1.3.6.1.4.1.4491.2.1.21.1.29.1",
-        f"snmpwalk -v 2c -c {modem_community} -t {t} -r {r} {modem_ip} 1.3.6.1.4.1.4491.2.1.21.1.29.2",
-        f"snmpwalk -v 2c -c {modem_community} -t {t} -r {r} {modem_ip} 1.3.6.1.4.1.4491.2.1.21.1.30",
+        f"{base} 1.3.6.1.4.1.4491.2.1.21.1.3",
+        ' && '.join(f"{base} {o}" for o in param_oids),
+        f"{base} 1.3.6.1.4.1.4491.2.1.21.1.4",
+        f"{base} 1.3.6.1.4.1.4491.2.1.21.1.29.1",
+        f"{base} 1.3.6.1.4.1.4491.2.1.21.1.29.2",
+        f"{base} 1.3.6.1.4.1.4491.2.1.21.1.30",
     ]
     us_lbls = ['US SF Table', 'US Param Set', 'US Flow Stats',
                'US Lat Edges', 'US Lat Stats', 'US Congestion']
@@ -343,11 +364,14 @@ def _pivot_snmp_output(raw_output_pairs, ts, poll_idx, target_ip, target_label, 
             parts = m.group(1).split('.')
             val   = m.group(2).strip()
 
-            # .2 param set: col.ifindex.paramset_type.sfid — only active (type=2)
-            if parts[0] == '2' and len(parts) >= 5:
-                if parts[-2] != '2':
-                    continue
-                field = _OID_PARAM_MAP.get('.'.join(parts[:-3]))
+            # .2 param set: targeted walks return col.2.ifindex.sfid or col.2.sfid
+            # The .2 (active type) is already in the OID prefix, so parts[0]=='2' with
+            # len>=3 means: [type=2, ifindex, sfid] or [type=2, sfid]
+            if parts[0] == '2' and len(parts) >= 3:
+                # Full form: 2.1.col.2.ifindex.sfid → handled by _OID_PARAM_MAP key '2.1.col'
+                # Targeted form: col.2.ifindex.sfid → parts[-1] is sfid
+                field = _OID_PARAM_MAP.get('.'.join(parts[:-3])) or \
+                        _OID_PARAM_MAP.get('.'.join(parts[:-2]))
                 if field:
                     _row(parts[-1])[field] = val
                 continue
@@ -361,68 +385,91 @@ def _pivot_snmp_output(raw_output_pairs, ts, poll_idx, target_ip, target_label, 
     return list(sfid_rows.values())
 
 
-def _run_snmp_via_ssh(jumpserver, username, cmds, lbls):
-    """Run SNMP commands on jump server in parallel, return [(label, output), ...]."""
+def _ssh_connect(jumpserver, username):
+    """Open and return a new Paramiko SSH client connection."""
     import paramiko
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    key_path = config.ssh_key_path
+    if os.path.exists(key_path):
+        ssh.connect(jumpserver, username=username, key_filename=key_path,
+                    timeout=config.ssh_connect_timeout)
+    else:
+        ssh.connect(jumpserver, username=username,
+                    password=DEFAULT_TACACS_PASSWORD or None,
+                    timeout=config.ssh_connect_timeout)
+    return ssh
+
+
+def _run_snmp_via_ssh(jumpserver, username, cmds, lbls):
+    """Run SNMP commands using 2 SSH connections — commands split evenly across them."""
     from concurrent.futures import ThreadPoolExecutor, as_completed
-    try:
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        key_path = config.ssh_key_path
-        if os.path.exists(key_path):
-            ssh.connect(jumpserver, username=username, key_filename=key_path,
-                        timeout=config.ssh_connect_timeout)
-        else:
-            ssh.connect(jumpserver, username=username,
-                        password=DEFAULT_TACACS_PASSWORD or None,
-                        timeout=config.ssh_connect_timeout)
 
-        def _run(label, cmd):
-            _, stdout, stderr = ssh.exec_command(cmd)
-            stdout.channel.recv_exit_status()
-            out = stdout.read().decode(errors='replace')
-            err = stderr.read().decode(errors='replace').strip()
-            if err:
-                print(f'  [SNMP] [{label}] stderr: {err[:200]}')
-            if not out.strip():
-                print(f'  [SNMP] [{label}] WARNING — empty output')
-            return label, out
+    # Split commands into 2 batches; each batch runs sequentially on its own connection
+    mid = (len(cmds) + 1) // 2
+    batches = [(cmds[:mid], lbls[:mid]), (cmds[mid:], lbls[mid:])]
 
-        results_map = {}
-        with ThreadPoolExecutor(max_workers=len(cmds)) as ex:
-            futures = {ex.submit(_run, lbl, cmd): lbl for lbl, cmd in zip(lbls, cmds)}
-            for fut in as_completed(futures):
-                try:
-                    label, out = fut.result()
+    def _run_batch(batch_cmds, batch_lbls):
+        ssh = _ssh_connect(jumpserver, username)
+        results = []
+        try:
+            for label, cmd in zip(batch_lbls, batch_cmds):
+                _, stdout, stderr = ssh.exec_command(cmd)
+                stdout.channel.recv_exit_status()
+                out = stdout.read().decode(errors='replace')
+                err = stderr.read().decode(errors='replace').strip()
+                if err:
+                    print(f'  [SNMP] [{label}] stderr: {err[:200]}')
+                if not out.strip():
+                    print(f'  [SNMP] [{label}] WARNING — empty output')
+                results.append((label, out))
+        finally:
+            ssh.close()
+        return results
+
+    results_map = {}
+    with ThreadPoolExecutor(max_workers=2) as ex:
+        futures = [ex.submit(_run_batch, bc, bl) for bc, bl in batches if bc]
+        for fut in as_completed(futures):
+            try:
+                for label, out in fut.result():
                     results_map[label] = out
-                except Exception as e:
-                    lbl = futures[fut]
-                    print(f'  ✗ [{lbl}] {e}')
-                    results_map[lbl] = ''
-        ssh.close()
-        return [(lbl, results_map.get(lbl, '')) for lbl in lbls]
-    except Exception as e:
-        print(f'[SNMP] SSH connect failed: {e}')
-        return [(lbl, '') for lbl in lbls]
+            except Exception as e:
+                print(f'  [SNMP] ✗ batch failed: {e}')
+    return [(lbl, results_map.get(lbl, '')) for lbl in lbls]
 
 
 def _run_snmp_local(cmds, lbls):
-    """Run SNMP commands locally via subprocess, return [(label, output), ...]."""
+    """Run SNMP commands locally in parallel (2 workers) via subprocess."""
     import subprocess
-    results = []
-    for label, cmd in zip(lbls, cmds):
-        try:
-            proc = subprocess.run(cmd, shell=True, capture_output=True, timeout=120)
-            results.append((label, proc.stdout.decode(errors='replace')))
-        except Exception as e:
-            print(f'  ✗ [{label}] {e}')
-            results.append((label, ''))
-    return results
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    mid = (len(cmds) + 1) // 2
+    batches = [(cmds[:mid], lbls[:mid]), (cmds[mid:], lbls[mid:])]
+
+    def _run_batch(batch_cmds, batch_lbls):
+        results = []
+        for label, cmd in zip(batch_lbls, batch_cmds):
+            try:
+                proc = subprocess.run(cmd, shell=True, capture_output=True, timeout=120)
+                results.append((label, proc.stdout.decode(errors='replace')))
+            except Exception as e:
+                print(f'  [SNMP] ✗ [{label}] {e}')
+                results.append((label, ''))
+        return results
+
+    results_map = {}
+    with ThreadPoolExecutor(max_workers=2) as ex:
+        futures = [ex.submit(_run_batch, bc, bl) for bc, bl in batches if bc]
+        for fut in as_completed(futures):
+            for label, out in fut.result():
+                results_map[label] = out
+    return [(lbl, results_map.get(lbl, '')) for lbl in lbls]
 
 
 def _write_snmp_txt(session_dir, ts, poll_idx, modem_ip, us_raw, ds_raw, cmts_type, label=None):
-    """Write one raw SNMP .txt file per poll into session_dir/snmp_polls/."""
-    polls_dir = os.path.join(session_dir, 'snmp_polls')
+    """Write one raw SNMP .txt file per poll into session_dir/raw_data/snmp_polls/."""
+    polls_dir = os.path.join(session_dir, 'raw_data', 'snmp_polls')
     os.makedirs(polls_dir, exist_ok=True)
     ts_file   = datetime.now().strftime('%Y%m%d_%H%M%S')
     prefix    = f'{label}_' if label else ''
@@ -564,7 +611,7 @@ def kafka_collector_thread(cfg, stop_event, csv_path):
         consumer = KafkaConsumer(
             cfg['kafka_topic'],
             bootstrap_servers=cfg['kafka_broker'],
-            group_id=f'lld_cm_collector_{int(time.time())}',
+            group_id=f'lld_cm_data_collector_{int(time.time())}',
             auto_offset_reset='latest',
             enable_auto_commit=True,
         )
@@ -699,10 +746,9 @@ def kafka_collector_thread(cfg, stop_event, csv_path):
                         bin_n = labels.get('bin', '')
                         if bin_n:
                             row[f'lat_bin{bin_n}'] = value_str
-                            if bin_n == '01':
-                                row['bin01_lower_msec'] = labels.get('edgeLowerMsec', '')
-                            if bin_n == '16':
-                                row['bin16_upper_msec'] = labels.get('edgeUpperMsec', '')
+                            upper = labels.get('edgeUpperMsec', '')
+                            if upper:
+                                row[f'lat_bin_edge{bin_n}'] = upper
                         continue
 
                     col = _KAFKA_METRIC_MAP.get(metric)

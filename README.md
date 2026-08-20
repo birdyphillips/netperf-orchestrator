@@ -1,9 +1,11 @@
-# NetPerf Orchestrator
+# DELTA — DOCSIS Enhanced Latency & Throughput Analyzer
 
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
-[![GitHub](https://img.shields.io/badge/GitHub-netperf--orchestrator-black.svg)](https://github.com/birdyphillips/netperf-orchestrator)
+[![GitHub](https://img.shields.io/badge/GitHub-delta--docsis-black.svg)](https://github.com/birdyphillips/delta-docsis)
 
 CLI-based DOCSIS 3.1 / 4.0 network performance testing tool for automated traffic generation, SNMP latency collection, Kafka telemetry capture, and PDF/Excel report generation.
+
+> DELTA — DOCSIS Enhanced Latency & Throughput Analyzer
 
 ## Features
 
@@ -35,7 +37,7 @@ CLI-based DOCSIS 3.1 / 4.0 network performance testing tool for automated traffi
 ### 1. Clone and configure
 
 ```bash
-git clone git@github.com:birdyphillips/netperf-orchestrator.git
+git clone git@github.com:birdyphillips/delta-docsis.git
 cd netperf-orchestrator
 cp config.yaml.example config.yaml
 nano config.yaml   # fill in your environment

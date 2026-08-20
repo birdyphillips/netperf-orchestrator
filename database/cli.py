@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CLI to manage the NetPerf MySQL database.
+"""CLI to manage the DELTA MySQL database.
 
 Usage:
     python -m database.cli init          # Create tables
