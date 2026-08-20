@@ -49,6 +49,10 @@ class ThousandEyesLogic:
         # All tests run every time (DS throughput, US throughput, jitter/latency)
         self.test_sequence = ["http_get_mt", "http_post_mt", "udp_jitter"]
 
+        # Per-iteration result storage (populated by run_downstream/run_upstream)
+        self._last_ds_result = None
+        self._last_us_result = None
+
     def _build_url(self):
         return f"{self.api_url}/units/{self.unit_id}/tests"
 
@@ -178,9 +182,9 @@ class ThousandEyesLogic:
 
         # Collect all results from this iteration
         results = {}
-        if hasattr(self, '_last_ds_result') and self._last_ds_result:
+        if self._last_ds_result:
             results["http_get_mt"] = self._last_ds_result
-        if hasattr(self, '_last_us_result') and self._last_us_result:
+        if self._last_us_result:
             results["http_post_mt"] = self._last_us_result
         if data:
             results["udp_jitter"] = data
@@ -211,9 +215,9 @@ class ThousandEyesLogic:
         self._save_results(output_dir, iteration, results)
 
         if all_passed:
-            self.logger.info(f"✓ Iteration {iteration + 1} completed - {len(results)}/5 tests passed")
+            self.logger.info(f"✓ Iteration {iteration + 1} completed - {len(results)}/3 tests passed")
         else:
-            self.logger.error(f"✗ Iteration {iteration + 1} - {len(results)}/5 tests passed")
+            self.logger.error(f"✗ Iteration {iteration + 1} - {len(results)}/3 tests passed")
 
         if iteration < total_iterations - 1:
             time.sleep(10)

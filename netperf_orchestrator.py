@@ -174,18 +174,15 @@ class NetperfCLI:
             # threads already running — poll .txt redirect is enough
             return
 
-        # First call — build CSV paths inside scenario_dir/raw_data and start threads
+        # First call — build CSV paths directly inside scenario_dir
         mac_norm = self._cm_mac_norm
         dir_ts_m = re.search(r'(\d{8}_\d{6})', os.path.basename(self._cm_session_dir))
         ts_str   = dir_ts_m.group(1) if dir_ts_m else datetime.now().strftime('%Y%m%d_%H%M%S')
 
-        raw_dir  = os.path.join(scenario_dir, 'raw_data')
-        os.makedirs(raw_dir, exist_ok=True)
-
-        self._cm_csv_paths = {'us': os.path.join(raw_dir, f'snmp_us_{mac_norm}_{ts_str}.csv')}
+        self._cm_csv_paths = {'us': os.path.join(scenario_dir, f'snmp_us_{mac_norm}_{ts_str}.csv')}
         if self.cmts_type == 'icmts':
-            self._cm_csv_paths['ds'] = os.path.join(raw_dir, f'snmp_ds_{mac_norm}_{ts_str}.csv')
-        self._cm_kafka_csv = os.path.join(raw_dir, f'kafka_{mac_norm}_{ts_str}.csv') \
+            self._cm_csv_paths['ds'] = os.path.join(scenario_dir, f'snmp_ds_{mac_norm}_{ts_str}.csv')
+        self._cm_kafka_csv = os.path.join(scenario_dir, f'kafka_{mac_norm}_{ts_str}.csv') \
                              if self.cmts_type == 'vcmts' else None
 
         import threading
@@ -237,8 +234,16 @@ class NetperfCLI:
             if not os.path.exists(script):
                 self.logger.warning("metrics_pdf_report.py not found — skipping PDF")
                 return
+            # Build a meaningful name: "TestGroup — TrafficType_Scenario"
+            # e.g. "HSI021_Thousandeyes — ThousandEyes"
+            #      "HSI029_RTT_0 — ByteBlower_DS_Classic"
+            traffic_type = getattr(self, 'traffic_type', '')
+            if traffic_type and not session_name.startswith(traffic_type):
+                pdf_name = f"{session_name} — {traffic_type}"
+            else:
+                pdf_name = session_name
             result = subprocess.run(
-                [sys.executable, script, session_dir, '--name', session_name],
+                [sys.executable, script, session_dir, '--name', pdf_name],
                 capture_output=True, text=True, timeout=120,
             )
             if result.returncode == 0:
@@ -494,19 +499,24 @@ class NetperfCLI:
                     test_name = f"ByteBlower_{scenario_name}"
             
             if thousandeyes_only:
-                self.logger.info(f"ThousandEyes mode - all tests (http_get_mt, http_post_mt, udp_accelerated_dl, udp_accelerated_ul, udp_jitter)")
+                self.logger.info(f"ThousandEyes mode - all tests (http_get_mt, http_post_mt, udp_jitter)")
                 sk = ThousandEyesLogic(scenario_name, test_group_name, rtt_suffix, thousandeyes_unit_id)
                 self.output_dir = test_output_dir
                 success = True
-                snmp_dir = os.path.join(test_output_dir, f'ThousandEyes{rtt_suffix}')
-                os.makedirs(snmp_dir, exist_ok=True)
+                snmp_dir = test_output_dir
                 if not polling_managed:
                     self.start_cm_collector(test_name, output_dir=parent_output_dir)
                     self.set_cm_collector_dir(snmp_dir, 'ThousandEyes')
-                    self.logger.info("Pre-test baseline collection — 30s")
-                    time.sleep(30)
-                self.logger.info(f"Starting test: ThousandEyes iteration {i+1}/{iterations}")
+                    # Wait for Kafka first poll before starting tests
+                    if self._cm_kafka_ready is not None:
+                        self.logger.info("Waiting for first Kafka poll...")
+                        if not self._cm_kafka_ready.wait(timeout=180):
+                            self.logger.warning("Kafka ready timeout — proceeding anyway")
+                    else:
+                        self.logger.info("Pre-test baseline collection — 30s")
+                        time.sleep(30)
                 for i in range(iterations):
+                    self.logger.info(f"Starting test: ThousandEyes iteration {i+1}/{iterations}")
                     ds_ok, ds_elapsed = sk.run_downstream(i, iterations, test_output_dir)
                     if not ds_ok:
                         self.logger.error("ThousandEyes downstream failed — stopping test")
@@ -515,7 +525,7 @@ class NetperfCLI:
                             time.sleep(30)
                             cm_session = self.stop_cm_collector()
                             self.generate_pdf_report(cm_session, test_name)
-                        return False, []
+                        sys.exit(1)
                     us_ok, us_elapsed = sk.run_upstream(i, iterations, test_output_dir)
                     if not us_ok:
                         self.logger.error("ThousandEyes upstream failed — stopping test")
@@ -524,7 +534,7 @@ class NetperfCLI:
                             time.sleep(30)
                             cm_session = self.stop_cm_collector()
                             self.generate_pdf_report(cm_session, test_name)
-                        return False, []
+                        sys.exit(1)
                     sk.run_jitter(i, iterations, test_output_dir)
                 if not polling_managed:
                     self.logger.info("Post-test tail collection — 30s")
@@ -535,8 +545,7 @@ class NetperfCLI:
                 self.logger.info(f"SpeedTest mode - clients: {speedtest_clients}")
                 st = SpeedTestLogic(speedtest_clients, test_group_name)
                 self.output_dir = test_output_dir
-                snmp_dir = os.path.join(test_output_dir, f'SpeedTest{rtt_suffix}')
-                os.makedirs(snmp_dir, exist_ok=True)
+                snmp_dir = test_output_dir
                 if not polling_managed:
                     self.start_cm_collector(test_name, output_dir=parent_output_dir)
                     self.set_cm_collector_dir(snmp_dir, 'SpeedTest')
@@ -565,15 +574,13 @@ class NetperfCLI:
                 bb = ByteBlowerLogic(bbp_file, scenario_name, scenario_name, test_group_name, rtt_suffix, report_formats, cm_mac=self.cm_mac, cm_ipv6=self.target_ip)
                 self.output_dir = test_output_dir
                 success = True
-                snmp_dir = os.path.join(test_output_dir, scenario_name + rtt_suffix)
-                os.makedirs(snmp_dir, exist_ok=True)
+                snmp_dir = test_output_dir
                 cmts_dir = "upstream" if scenario_name.lower().startswith("us") else "downstream"
                 if not polling_managed:
                     self.start_cm_collector(test_name, output_dir=parent_output_dir)
                     self.set_cm_collector_dir(snmp_dir, scenario_name)
                 for i in range(iterations):
-                    iter_dir = os.path.join(snmp_dir, f"iteration_{i+1}") if iterations > 1 else snmp_dir
-                    os.makedirs(iter_dir, exist_ok=True)
+                    iter_dir = snmp_dir
                     if i == 0:
                         snmp_files = glob.glob(os.path.join(iter_dir, "*_SNMP_before_*.txt"))
                         if snmp_files:
@@ -622,8 +629,7 @@ class NetperfCLI:
                     self.logger.error("iPerf3 server setup failed")
                     return False, []
                 success = True
-                snmp_dir = os.path.join(test_output_dir, scenario_name + platform_suffix + rtt_suffix)
-                os.makedirs(snmp_dir, exist_ok=True)
+                snmp_dir = test_output_dir
                 cmts_dir = "upstream" if scenario_name.lower().startswith("us") else "downstream"
                 if not polling_managed:
                     self.start_cm_collector(test_name, output_dir=parent_output_dir)
