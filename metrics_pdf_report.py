@@ -182,7 +182,7 @@ def add_footer(fig, mac_fmt, modem_name, session_start, session_end, cmts_type='
 def make_fig():
     fig, ax = plt.subplots(figsize=(11, 5.8), subplot_kw={'facecolor': BG_PANEL})
     fig.patch.set_facecolor(BG_DARK)
-    fig.subplots_adjust(top=0.88, bottom=0.18, left=0.09, right=0.97)
+    fig.subplots_adjust(top=0.88, bottom=0.18, left=0.11, right=0.97)
     style_ax(ax)
     return fig, ax
 
@@ -655,10 +655,11 @@ def page_summary(pdf, us, ds, k_us, k_ds, **m):
             grp = grp.sort_values('captured_utc')
             tp = _peak_mbps_kafka(grp)
             lat_avg = pd.to_numeric(grp.get('lat_avg_usec', pd.Series()), errors='coerce')
+            lat_avg = lat_avg[lat_avg.between(0, 1000)]  # clip collector artifacts
             avg_lat_ms = lat_avg[lat_avg > 0].mean() if not lat_avg[lat_avg > 0].empty else 0
-            # Kafka lat_avg_usec is already in ms — no conversion needed
-            lat_max = pd.to_numeric(grp.get('lat_max_usec', pd.Series()), errors='coerce').max()
-            lat_max_ms = lat_max if pd.notna(lat_max) else 0  # also already ms in Kafka
+            lat_max = pd.to_numeric(grp.get('lat_max_usec', pd.Series()), errors='coerce')
+            lat_max = lat_max[lat_max <= 1000].max()
+            lat_max_ms = lat_max if pd.notna(lat_max) else 0
             bin_cols = [f'lat_bin{i}' for i in range(1, 17)]
             present  = [c for c in bin_cols if c in grp.columns]
             if present:
@@ -933,7 +934,7 @@ def _get_edge_labels(grp, n_bins):
     return labels[:n_bins]
 
 
-def _plot_bin_timeseries(pdf, df, direction, group_col, bin_cols, bar_color, source='SNMP', **m):
+def _plot_bin_timeseries(pdf, df, direction, group_col, bin_cols, bar_color, source='SNMP', **m):  # noqa: E501
     """One chart per SFID: stacked bar of delta bin counts, x-axis = bin edge ranges."""
     _sp = {k: m[k] for k in ('mac_fmt','modem_name','session_start','session_end')}
     _sp['cmts_type'] = m.get('cmts_type', 'icmts')
@@ -943,10 +944,15 @@ def _plot_bin_timeseries(pdf, df, direction, group_col, bin_cols, bar_color, sou
         grp = grp.sort_values('captured_utc').copy()
         if grp.empty:
             continue
-        totals = [(pd.to_numeric(grp[c].iloc[-1], errors='coerce') or 0) -
-                  (pd.to_numeric(grp[c].iloc[0], errors='coerce') or 0)
-                  for c in bin_cols]
-        totals = [max(v, 0) for v in totals]
+        # Kafka bins are per-poll deltas — sum all non-NaN rows
+        # SNMP bins are cumulative — last minus first
+        if source == 'Kafka':
+            totals = [max(pd.to_numeric(grp[c], errors='coerce').fillna(0).sum(), 0)
+                      for c in bin_cols]
+        else:
+            totals = [max((pd.to_numeric(grp[c].iloc[-1], errors='coerce') or 0) -
+                          (pd.to_numeric(grp[c].iloc[0], errors='coerce') or 0), 0)
+                      for c in bin_cols]
         edge_labels = _get_edge_labels(grp, n_bins)
         colors = CHART_COLORS[:n_bins] if n_bins <= len(CHART_COLORS) \
                  else [CHART_COLORS[i % len(CHART_COLORS)] for i in range(n_bins)]
@@ -1120,13 +1126,14 @@ def page_kafka_throughput(pdf, kdf, direction, **m):
 
 def page_kafka_latency_avg(pdf, kdf, direction, **m):
     """Average latency (ms) over time per flow.
-    Kafka lat_avg_usec values are already in ms despite the column name."""
+    Kafka lat_avg_usec values are in ms despite the column name.
+    Outlier polls (>1000 ms) are collector artifacts — clipped out."""
     col = 'lat_avg_usec'
     if col not in kdf.columns:
         return
     kdf = kdf.copy()
-    # Values are already ms — do NOT divide by 1000
     kdf[col] = pd.to_numeric(kdf[col], errors='coerce').fillna(0)
+    kdf[col] = kdf[col].where(kdf[col] <= 1000, other=float('nan'))  # drop collector artifacts
     label   = direction.upper()
     grp_col = 'sfid_label' if 'sfid_label' in kdf.columns else 'sfid'
     fig, ax = make_fig()
@@ -1251,6 +1258,8 @@ def page_latency_scatter(pdf, df, direction, group_col, source='SNMP', **m):
     df[lat_col] = pd.to_numeric(df[lat_col], errors='coerce')
     if lat_col == 'lat_avg_usec' and source == 'SNMP':
         df[lat_col] = df[lat_col] / 1000  # µs → ms
+    elif lat_col == 'lat_avg_usec':  # Kafka: values in ms, clip collector artifacts
+        df[lat_col] = df[lat_col].where(df[lat_col] <= 1000, other=float('nan'))
     has_data = df[lat_col].notna() & (df[lat_col] > 0)
     if not has_data.any():
         return
