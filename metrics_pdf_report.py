@@ -213,6 +213,9 @@ def _smooth_xy(x, y):
     yn = pd.to_numeric(y, errors='coerce').values.astype(float)
     mask = ~np.isnan(yn)
     xc, yc = xn[mask], yn[mask]
+    # also drop non-finite x
+    finite = np.isfinite(xc)
+    xc, yc = xc[finite], yc[finite]
 
     # sort by x, then average duplicate x values
     order = np.argsort(xc)
@@ -259,10 +262,10 @@ def plot_dual(ax, df, col_a, col_b, label_a, label_b, group_col, ylabel):
         rx = grp['captured_utc']
         ra = pd.to_numeric(grp[col_a], errors='coerce')
         rb = pd.to_numeric(grp[col_b], errors='coerce')
-        sx, sa = _smooth_xy(rx, ra)
-        _,  sb = _smooth_xy(rx, rb)
-        ax.plot(sx, sa, linewidth=2,   color=c, label=f'{name} {label_a}')
-        ax.plot(sx, sb, linewidth=1.5, color=c, label=f'{name} {label_b}',
+        sx_a, sa = _smooth_xy(rx, ra)
+        sx_b, sb = _smooth_xy(rx, rb)
+        ax.plot(sx_a, sa, linewidth=2,   color=c, label=f'{name} {label_a}')
+        ax.plot(sx_b, sb, linewidth=1.5, color=c, label=f'{name} {label_b}',
                 linestyle='--', alpha=0.8)
         ax.plot(rx, ra, marker='o', markersize=4, linewidth=0, color=c,
                 markerfacecolor='white', markeredgecolor=c, markeredgewidth=1.5)
@@ -1477,8 +1480,12 @@ def page_latency_percentile(pdf, df, direction, group_col, source='SNMP', **m):
                      if pd.to_numeric(edges_row[c].iloc[0], errors='coerce') > 0]
         else:
             edges = list(range(1, len(present_bins) + 1))
-        # Kafka edges are already ms (upper bound per bin) — build midpoints directly
-        boundaries = [0] + edges + [edges[-1] * 2 if edges else len(present_bins) + 1]
+        # Kafka edges are already ms (upper bound per bin); cap inf edge before building midpoints
+        boundaries = [0] + [e for e in edges if np.isfinite(e)]
+        if len(boundaries) < 2:
+            boundaries = [0] + list(range(1, len(present_bins) + 2))
+        last_finite = boundaries[-1]
+        boundaries.append(last_finite * 2)
         n_mid = min(len(present_bins), len(boundaries) - 1)
         midpoints_ms = [(boundaries[j] + boundaries[j + 1]) / 2 for j in range(n_mid)]
         while len(midpoints_ms) < len(present_bins):
