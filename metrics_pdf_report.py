@@ -654,12 +654,10 @@ def page_summary(pdf, us, ds, k_us, k_ds, **m):
         for sfid, grp in kdf.groupby(grp_col):
             grp = grp.sort_values('captured_utc')
             tp = _peak_mbps_kafka(grp)
-            lat_avg = pd.to_numeric(grp.get('lat_avg_usec', pd.Series()), errors='coerce')
-            lat_avg = lat_avg[lat_avg.between(0, 1000)]  # clip collector artifacts
+            lat_avg = pd.to_numeric(grp.get('lat_avg_usec', pd.Series()), errors='coerce') / 1000
             avg_lat_ms = lat_avg[lat_avg > 0].mean() if not lat_avg[lat_avg > 0].empty else 0
-            lat_max = pd.to_numeric(grp.get('lat_max_usec', pd.Series()), errors='coerce')
-            lat_max = lat_max[lat_max <= 1000].max()
-            lat_max_ms = lat_max if pd.notna(lat_max) else 0
+            lat_max = pd.to_numeric(grp.get('lat_max_usec', pd.Series()), errors='coerce').max()
+            lat_max_ms = lat_max / 1000 if pd.notna(lat_max) else 0
             bin_cols = [f'lat_bin{i}' for i in range(1, 17)]
             present  = [c for c in bin_cols if c in grp.columns]
             if present:
@@ -1126,20 +1124,18 @@ def page_kafka_throughput(pdf, kdf, direction, **m):
 
 def page_kafka_latency_avg(pdf, kdf, direction, **m):
     """Average latency (ms) over time per flow.
-    Kafka lat_avg_usec values are in ms despite the column name.
-    Outlier polls (>1000 ms) are collector artifacts — clipped out."""
+    Kafka lat_avg_usec is in microseconds — divide by 1000 for ms."""
     col = 'lat_avg_usec'
     if col not in kdf.columns:
         return
     kdf = kdf.copy()
-    kdf[col] = pd.to_numeric(kdf[col], errors='coerce').fillna(0)
-    kdf[col] = kdf[col].where(kdf[col] <= 1000, other=float('nan'))  # drop collector artifacts
+    kdf[col] = pd.to_numeric(kdf[col], errors='coerce').fillna(0) / 1000  # µs → ms
     label   = direction.upper()
     grp_col = 'sfid_label' if 'sfid_label' in kdf.columns else 'sfid'
     fig, ax = make_fig()
     plot_line(ax, kdf, col, grp_col, 'Latency (ms)')
     save_page(pdf, fig, ax, f'{label} LATENCY AVG (ms)',
-              f'{m["modem_name"]} ({m["mac_fmt"]})  |  Kafka lat_avg_usec (values in ms)',
+              f'{m["modem_name"]} ({m["mac_fmt"]})  |  Kafka lat_avg_usec ÷ 1000 → ms',
               **{k: m[k] for k in ('mac_fmt','modem_name','session_start','session_end')},
               cmts_type=m.get('cmts_type', 'vcmts'))
 
@@ -1258,8 +1254,8 @@ def page_latency_scatter(pdf, df, direction, group_col, source='SNMP', **m):
     df[lat_col] = pd.to_numeric(df[lat_col], errors='coerce')
     if lat_col == 'lat_avg_usec' and source == 'SNMP':
         df[lat_col] = df[lat_col] / 1000  # µs → ms
-    elif lat_col == 'lat_avg_usec':  # Kafka: values in ms, clip collector artifacts
-        df[lat_col] = df[lat_col].where(df[lat_col] <= 1000, other=float('nan'))
+    elif lat_col == 'lat_avg_usec':  # Kafka: µs → ms
+        df[lat_col] = df[lat_col] / 1000
     has_data = df[lat_col].notna() & (df[lat_col] > 0)
     if not has_data.any():
         return
@@ -1298,7 +1294,7 @@ def page_latency_violin(pdf, df, direction, group_col, bin_cols, source='SNMP', 
     samples_by_sfid = {}
     for sfid, grp in df.groupby(group_col):
         edge_labels = _get_edge_labels(grp, len(bin_cols))
-        usec_to_ms = 1000.0 if source == 'SNMP' else 1.0
+        usec_to_ms = 1000.0  # both SNMP and Kafka lat_avg_usec are in µs
         midpoints = []
         for lbl in edge_labels:
             try:
