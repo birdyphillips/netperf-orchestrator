@@ -1577,7 +1577,7 @@ def page_latency_percentile(pdf, df, direction, group_col, source='SNMP', **m):
 def _dual_panel_fig(pdf, group_col,
                     top_df, top_col, top_ylabel, top_fmt, top_accent,
                     bot_df, bot_col, bot_ylabel, bot_fmt, bot_accent,
-                    header_title, subtitle, annot_text, _sp):
+                    header_title, subtitle, _sp):
     """Render a mirrored dual-panel glow chart and save to pdf.
     top panel grows upward; bottom panel is y-inverted (spikes grow downward).
     """
@@ -1641,10 +1641,9 @@ def _dual_panel_fig(pdf, group_col,
     plt.setp(ax_bot.xaxis.get_majorticklabels(), rotation=30, ha='right', color=SUBTEXT, fontsize=8)
     ax_bot.set_xlabel('Time (UTC)', color=SUBTEXT, fontsize=10)
 
-    fig.text(0.13, 0.915, annot_text, fontsize=8, color=SUBTEXT)
+    fig.subplots_adjust(top=0.88, bottom=0.10, left=0.09, right=0.97, hspace=0.0)
     add_header(fig, header_title, subtitle)
     add_footer(fig, **_sp)
-    fig.tight_layout(rect=[0.02, 0.04, 0.98, 0.90])
     pdf.savefig(fig, facecolor=fig.get_facecolor())
     plt.close(fig)
 
@@ -1724,8 +1723,7 @@ def page_throughput_latency_correlation(pdf, df, direction, source='SNMP', **m):
         tp_df,  'throughput_mbps', 'Throughput (Mbps)', '{x:,.1f}', ACCENT,
         lat_df, '_lat_ms',         'Latency (ms)',       '{x:,.2f}', '#00c6ff',
         f'{dir_label} THROUGHPUT & LATENCY CORRELATION ({source})',
-        f'{m["modem_name"]} ({m["mac_fmt"]})  |  Throughput above X axis  |  Latency inverted below',
-        'Throughput above  |  Latency below (inverted — spikes grow downward)',
+        f'{m["modem_name"]} ({m["mac_fmt"]})  |  Throughput above  |  Latency inverted below',
         _sp,
     )
 
@@ -1753,7 +1751,6 @@ def page_policed_drops_throughput_correlation(pdf, df, direction, **m):
         drop_df, '_policed_delta',  'Policed Drops (pkts/Δ)', '{x:,.0f}', '#fa7b17',
         f'{dir_label} POLICED DROPS vs THROUGHPUT (SNMP)',
         f'{m["modem_name"]} ({m["mac_fmt"]})  |  Throughput above  |  Policed drop delta inverted below',
-        'Throughput above  |  Policed drops below (inverted — spikes = rate limiting events)',
         _sp,
     )
 
@@ -1782,7 +1779,6 @@ def page_aqm_latency_correlation(pdf, df, direction, source='SNMP', **m):
         lat_df, '_lat_ms',    'Latency (ms)',        '{x:,.2f}', '#00c6ff',
         f'{dir_label} AQM DROPS vs LATENCY ({source})',
         f'{m["modem_name"]} ({m["mac_fmt"]})  |  AQM drop delta above  |  Latency inverted below',
-        'AQM drops above  |  Latency below (inverted — correlated spikes indicate queue pressure)',
         _sp,
     )
 
