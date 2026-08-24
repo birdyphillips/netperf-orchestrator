@@ -536,13 +536,10 @@ class IPerf3Logic:
         self.logger.info(f"{'='*60}")
         
         if self.parent_output_dir:
-            platform_suffix = "_macOS" if self.platform_override == 'macos' else "_Linux"
-            rtt_suffix = self.rtt_suffix if self.rtt_suffix else ""
-            scenario_dir = f"{self.scenario_name}{platform_suffix}{rtt_suffix}"
             if total_iterations > 1:
-                output_dir = os.path.join(self.parent_output_dir, scenario_dir, f"iteration_{iteration + 1}")
+                output_dir = os.path.join(self.parent_output_dir, f"iteration_{iteration + 1}")
             else:
-                output_dir = os.path.join(self.parent_output_dir, scenario_dir)
+                output_dir = self.parent_output_dir
         else:
             if total_iterations > 1:
                 output_dir = os.path.join("Results", f"{self.output_prefix}", f"iteration_{iteration + 1}")

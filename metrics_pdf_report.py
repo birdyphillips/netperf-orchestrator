@@ -795,7 +795,7 @@ def _delta_mb(df, col):
     Uses actual captured_utc interval per poll; drops first row per SFID (no valid interval).
     Retains _interval_s column for downstream total-GB calculation.
     """
-    df = df.copy()
+    df = df.copy().sort_values(['sfid', 'captured_utc'])
     df[col] = pd.to_numeric(df[col], errors='coerce')
     df['_interval_s'] = df.groupby('sfid')['captured_utc'].transform(
         lambda s: s.diff().dt.total_seconds())
@@ -824,8 +824,10 @@ def _total_gb_label(df, col):
 
 
 def _delta_col(df, col):
-    """Return df copy with col replaced by per-sfid poll-to-poll delta (clipped ≥ 0)."""
-    df = df.copy()
+    """Return df copy with col replaced by per-sfid poll-to-poll delta (clipped ≥ 0).
+    Always groups by 'sfid' (stable numeric key) so label changes don't break diffs.
+    """
+    df = df.copy().sort_values(['sfid', 'captured_utc'])
     df[col] = pd.to_numeric(df[col], errors='coerce')
     df[col] = df.groupby('sfid')[col].diff().clip(lower=0)
     return df
@@ -869,8 +871,6 @@ def page_us_latency_avg(pdf, us, **m):
         return
 
     us = us.copy().sort_values(['sfid', 'captured_utc'])
-
-    # Diff bins per sfid to get per-poll counts
     for c in present_bins:
         us[c] = pd.to_numeric(us[c], errors='coerce')
         us[c] = us.groupby('sfid')[c].diff().clip(lower=0)
@@ -936,17 +936,22 @@ def _get_edge_labels(grp, n_bins):
 
 
 def _plot_bin_timeseries(pdf, df, direction, group_col, bin_cols, bar_color, source='SNMP', **m):  # noqa: E501
-    """One chart per SFID: stacked bar of delta bin counts, x-axis = bin edge ranges."""
+    """One chart per SFID: bar chart of total bin counts over session, x-axis = bin edge ranges."""
     _sp = {k: m[k] for k in ('mac_fmt','modem_name','session_start','session_end')}
     _sp['cmts_type'] = m.get('cmts_type', 'icmts')
     n_bins = len(bin_cols)
     x = list(range(1, n_bins + 1))
-    for sfid, grp in df.groupby(group_col):
-        grp = grp.sort_values('captured_utc').copy()
+    # Group by sfid_label for display but use sfid for SNMP last-minus-first delta
+    for sfid_lbl, grp in df.groupby(group_col):
+        # Resolve stable sfid for this label group
+        sfid_key = grp['sfid'].iloc[0] if 'sfid' in grp.columns else sfid_lbl
+        sfid_rows = df[df['sfid'] == sfid_key].sort_values('captured_utc') \
+                    if 'sfid' in df.columns else grp.sort_values('captured_utc')
+        grp = sfid_rows.copy()
         if grp.empty:
             continue
         # Kafka bins are per-poll deltas — sum all non-NaN rows
-        # SNMP bins are cumulative — last minus first
+        # SNMP bins are cumulative — last minus first (using sfid-resolved rows)
         if source == 'Kafka':
             totals = [max(pd.to_numeric(grp[c], errors='coerce').fillna(0).sum(), 0)
                       for c in bin_cols]
@@ -978,7 +983,7 @@ def _plot_bin_timeseries(pdf, df, direction, group_col, bin_cols, bar_color, sou
                       facecolor=BG_DARK, edgecolor=GRID_COLOR, labelcolor=TEXT_COLOR)
             fig.subplots_adjust(right=0.72)
         save_page(pdf, fig, ax,
-                  f'{direction} LATENCY BINS ({source}) — {sfid}',
+                  f'{direction} LATENCY BINS ({source}) — {sfid_lbl}',
                   f'{m["modem_name"]} ({m["mac_fmt"]})  |  last poll − first poll delta per bin',
                   **_sp)
 
@@ -994,7 +999,7 @@ def page_us_latency_histogram(pdf, us, **m):
 
 
 def page_us_congestion(pdf, us, **m):
-    """US congestion — AQM drop, CE marked, ECT0/ECT1."""
+    """US congestion — AQM drop, CE marked, ECT0/ECT1 — per-poll deltas grouped by sfid."""
     cong_cols = ['cong_aqm_drop', 'cong_ce_marked', 'cong_ect0', 'cong_ect1',
                  'cong_scn_marked', 'cong_sanctioned']
     present = [c for c in cong_cols if c in us.columns and not us[c].isna().all()]
@@ -1004,18 +1009,25 @@ def page_us_congestion(pdf, us, **m):
     _sp = {k: m[k] for k in ('mac_fmt','modem_name','session_start','session_end')}
     _sp['cmts_type'] = m.get('cmts_type', 'icmts')
 
-    fig, ax = make_fig()
-    plot_dual(ax, us, 'cong_aqm_drop', 'cong_ce_marked',
-              'AQM drop', 'CE marked', 'sfid_label', 'Packets')
-    save_page(pdf, fig, ax, 'US CONGESTION — AQM DROPS & CE MARKED (SNMP)',
-              f'{m["modem_name"]} ({m["mac_fmt"]})', **_sp)
+    # Diff all congestion counters by sfid so every flow is represented correctly
+    us_d = us.copy().sort_values(['sfid', 'captured_utc'])
+    for c in present:
+        us_d[c] = pd.to_numeric(us_d[c], errors='coerce')
+        us_d[c] = us_d.groupby('sfid')[c].diff().clip(lower=0)
 
-    if 'cong_ect0' in us.columns and 'cong_ect1' in us.columns:
+    if 'cong_aqm_drop' in present and 'cong_ce_marked' in present:
         fig, ax = make_fig()
-        plot_dual(ax, us, 'cong_ect0', 'cong_ect1',
-                  'ECT(0)', 'ECT(1)', 'sfid_label', 'Packets')
+        plot_dual(ax, us_d, 'cong_aqm_drop', 'cong_ce_marked',
+                  'AQM drop', 'CE marked', 'sfid_label', 'Packets (delta)')
+        save_page(pdf, fig, ax, 'US CONGESTION — AQM DROPS & CE MARKED (SNMP)',
+                  f'{m["modem_name"]} ({m["mac_fmt"]})  |  per-poll delta per SFID', **_sp)
+
+    if 'cong_ect0' in present and 'cong_ect1' in present:
+        fig, ax = make_fig()
+        plot_dual(ax, us_d, 'cong_ect0', 'cong_ect1',
+                  'ECT(0)', 'ECT(1)', 'sfid_label', 'Packets (delta)')
         save_page(pdf, fig, ax, 'US ECT(0) & ECT(1) PACKETS (SNMP)',
-                  f'{m["modem_name"]} ({m["mac_fmt"]})', **_sp)
+                  f'{m["modem_name"]} ({m["mac_fmt"]})  |  per-poll delta per SFID', **_sp)
 
 
 def page_us_param_set(pdf, us, **m):
@@ -1068,7 +1080,7 @@ def page_ds_flow_stats(pdf, ds, **m):
 
 
 def page_ds_congestion(pdf, ds, **m):
-    """DS congestion — AQM drop, CE marked, ECT0/ECT1."""
+    """DS congestion — AQM drop, CE marked, ECT0/ECT1 — per-poll deltas grouped by sfid."""
     cong_cols = ['cong_aqm_drop', 'cong_ce_marked', 'cong_ect0', 'cong_ect1']
     present   = [c for c in cong_cols if c in ds.columns and not ds[c].isna().all()]
     if not present:
@@ -1077,18 +1089,24 @@ def page_ds_congestion(pdf, ds, **m):
     _sp = {k: m[k] for k in ('mac_fmt','modem_name','session_start','session_end')}
     _sp['cmts_type'] = m.get('cmts_type', 'icmts')
 
-    fig, ax = make_fig()
-    plot_dual(ax, ds, 'cong_aqm_drop', 'cong_ce_marked',
-              'AQM drop', 'CE marked', 'sfid_label', 'Packets')
-    save_page(pdf, fig, ax, 'DS CONGESTION — AQM DROPS & CE MARKED (SNMP)',
-              f'{m["modem_name"]} ({m["mac_fmt"]})', **_sp)
+    ds_d = ds.copy().sort_values(['sfid', 'captured_utc'])
+    for c in present:
+        ds_d[c] = pd.to_numeric(ds_d[c], errors='coerce')
+        ds_d[c] = ds_d.groupby('sfid')[c].diff().clip(lower=0)
+
+    if 'cong_aqm_drop' in present and 'cong_ce_marked' in present:
+        fig, ax = make_fig()
+        plot_dual(ax, ds_d, 'cong_aqm_drop', 'cong_ce_marked',
+                  'AQM drop', 'CE marked', 'sfid_label', 'Packets (delta)')
+        save_page(pdf, fig, ax, 'DS CONGESTION — AQM DROPS & CE MARKED (SNMP)',
+                  f'{m["modem_name"]} ({m["mac_fmt"]})  |  per-poll delta per SFID', **_sp)
 
     if 'cong_ect0' in present and 'cong_ect1' in present:
         fig, ax = make_fig()
-        plot_dual(ax, ds, 'cong_ect0', 'cong_ect1',
-                  'ECT(0)', 'ECT(1)', 'sfid_label', 'Packets')
+        plot_dual(ax, ds_d, 'cong_ect0', 'cong_ect1',
+                  'ECT(0)', 'ECT(1)', 'sfid_label', 'Packets (delta)')
         save_page(pdf, fig, ax, 'DS ECT(0) & ECT(1) PACKETS (SNMP)',
-                  f'{m["modem_name"]} ({m["mac_fmt"]})', **_sp)
+                  f'{m["modem_name"]} ({m["mac_fmt"]})  |  per-poll delta per SFID', **_sp)
 
 
 def page_ds_latency(pdf, ds, **m):
@@ -1107,14 +1125,15 @@ def page_kafka_throughput(pdf, kdf, direction, **m):
     col = 'delta_octets'
     if col not in kdf.columns:
         return
-    kdf = kdf.copy()
     grp_col = 'sfid_label' if 'sfid_label' in kdf.columns else 'sfid'
+    kdf = kdf.copy().sort_values(['sfid', 'captured_utc'])
     kdf['_ts_ms'] = pd.to_numeric(kdf['kafka_timestamp_ms'], errors='coerce')
-    kdf['_interval_s'] = kdf.groupby(grp_col)['_ts_ms'].transform(lambda s: s.diff() / 1000)
+    kdf['_interval_s'] = kdf.groupby('sfid')['_ts_ms'].transform(lambda s: s.diff() / 1000)
     kdf['mbps'] = kdf.apply(
         lambda r: pd.to_numeric(r[col], errors='coerce') * 8 / r['_interval_s'] / 1_000_000
-                  if pd.notna(r['_interval_s']) and r['_interval_s'] > 0 else 0.0, axis=1
-    ).clip(lower=0).fillna(0)
+                  if pd.notna(r['_interval_s']) and r['_interval_s'] > 0 else float('nan'), axis=1
+    ).clip(lower=0)
+    kdf = kdf[kdf['mbps'].notna()]
     label = direction.upper()
     fig, ax = make_fig()
     grp_col = 'sfid_label' if 'sfid_label' in kdf.columns else 'sfid'
@@ -1131,7 +1150,7 @@ def page_kafka_latency_avg(pdf, kdf, direction, **m):
     col = 'lat_avg_usec'
     if col not in kdf.columns:
         return
-    kdf = kdf.copy()
+    kdf = kdf.copy().sort_values(['sfid', 'captured_utc'])
     kdf[col] = pd.to_numeric(kdf[col], errors='coerce').fillna(0) / 1000  # µs → ms
     label   = direction.upper()
     grp_col = 'sfid_label' if 'sfid_label' in kdf.columns else 'sfid'
@@ -1288,11 +1307,12 @@ def page_latency_violin(pdf, df, direction, group_col, bin_cols, source='SNMP', 
     _sp = {k: m[k] for k in ('mac_fmt','modem_name','session_start','session_end')}
     _sp['cmts_type'] = m.get('cmts_type', 'icmts')
 
-    # Diff bin counters per SFID to get per-poll packet deltas
-    df = df.copy().sort_values([group_col, 'captured_utc'])
+    # Diff bin counters by stable sfid key to get per-poll packet deltas for every flow
+    diff_key = 'sfid' if 'sfid' in df.columns else group_col
+    df = df.copy().sort_values([diff_key, 'captured_utc'])
     for c in bin_cols:
         df[c] = pd.to_numeric(df[c], errors='coerce')
-        df[c] = df.groupby(group_col)[c].diff().clip(lower=0)
+        df[c] = df.groupby(diff_key)[c].diff().clip(lower=0)
 
     samples_by_sfid = {}
     for sfid, grp in df.groupby(group_col):
@@ -1359,14 +1379,15 @@ def page_latency_percentile(pdf, df, direction, group_col, source='SNMP', **m):
 
     # ------------------------------------------------------------------ SNMP CDF
     if source == 'SNMP':
-        df = df.copy().sort_values([group_col, 'captured_utc'])
+        diff_key = 'sfid' if 'sfid' in df.columns else group_col
+        df = df.copy().sort_values([diff_key, 'captured_utc'])
         if df.empty:
             return
 
-        # Diff bin counters per SFID → per-poll deltas, then sum across all polls
+        # Diff bin counters by stable sfid key → per-poll deltas, then sum across all polls
         for c in present_bins:
             df[c] = pd.to_numeric(df[c], errors='coerce')
-            df[c] = df.groupby(group_col)[c].diff().clip(lower=0)
+            df[c] = df.groupby(diff_key)[c].diff().clip(lower=0)
 
         fig, ax = make_fig()
         # Remove time-axis formatter — x is latency, not datetime
@@ -1455,14 +1476,15 @@ def page_latency_percentile(pdf, df, direction, group_col, source='SNMP', **m):
         return
 
     # -------------------------------------------------------- non-SNMP: same CDF chart
-    df = df.copy().sort_values([group_col, 'captured_utc'])
+    diff_key = 'sfid' if 'sfid' in df.columns else group_col
+    df = df.copy().sort_values([diff_key, 'captured_utc'])
     if df.empty:
         return
 
-    # Kafka bin counters are already per-poll deltas (not cumulative) — diff anyway to be safe
+    # Kafka bin counters are already per-poll deltas — diff by sfid anyway to be safe
     for c in present_bins:
         df[c] = pd.to_numeric(df[c], errors='coerce')
-        df[c] = df.groupby(group_col)[c].diff().clip(lower=0)
+        df[c] = df.groupby(diff_key)[c].diff().clip(lower=0)
 
     # Kafka uses lat_edge_bin1..16 (16 edges, one per bin upper bound)
     edge_cols_16 = [f'lat_edge_bin{i}' for i in range(1, 17)]
@@ -1547,6 +1569,222 @@ def page_latency_percentile(pdf, df, direction, group_col, source='SNMP', **m):
               f'{direction} LATENCY CDF — P50 to P99.99 ({source})',
               f'{m["modem_name"]} ({m["mac_fmt"]})  |  x=latency (ms)  y=percentile  |  aggregated across all polls',
               **_sp)
+
+
+# ---------------------------------------------------------------------------
+# Shared dual-panel figure builder
+# ---------------------------------------------------------------------------
+def _dual_panel_fig(pdf, group_col,
+                    top_df, top_col, top_ylabel, top_fmt, top_accent,
+                    bot_df, bot_col, bot_ylabel, bot_fmt, bot_accent,
+                    header_title, subtitle, annot_text, _sp):
+    """Render a mirrored dual-panel glow chart and save to pdf.
+    top panel grows upward; bottom panel is y-inverted (spikes grow downward).
+    """
+    import matplotlib.ticker as mticker
+    BG_CARD = '#112844'
+    GLOW_A  = [0.08, 0.18, 1.0]
+    GLOW_W  = [8,    3,    1.8]
+
+    def _glow(ax, x, y, color, label=None):
+        sx, sy = _smooth_xy(pd.Series(list(x)), pd.Series(list(y)))
+        for alpha, lw in zip(GLOW_A, GLOW_W):
+            ax.plot(sx, sy, color=color, linewidth=lw, alpha=alpha,
+                    solid_capstyle='round', solid_joinstyle='round')
+        ax.plot(list(x), list(y), 'o', color=color, markersize=5,
+                markerfacecolor='white', markeredgecolor=color,
+                markeredgewidth=1.4, zorder=5, label=label)
+        ax.fill_between(sx, sy, 0, alpha=0.20, color=color, zorder=1)
+
+    fig, (ax_top, ax_bot) = plt.subplots(
+        2, 1, figsize=(11, 8.5), dpi=150, sharex=True,
+        gridspec_kw={'hspace': 0.0, 'height_ratios': [1, 1]})
+    fig.patch.set_facecolor(BG_DARK)
+    ax_top.set_facecolor(BG_PANEL)
+    ax_bot.set_facecolor(BG_PANEL)
+
+    for i, (name, grp) in enumerate(top_df.groupby(group_col)):
+        _glow(ax_top, grp['captured_utc'], grp[top_col], CHART_COLORS[i % len(CHART_COLORS)], label=str(name))
+    ax_top.set_ylabel(top_ylabel, color=SUBTEXT, fontsize=10, fontweight='bold')
+    ax_top.yaxis.set_major_formatter(mticker.StrMethodFormatter(top_fmt))
+    ax_top.tick_params(axis='y', colors=SUBTEXT, labelsize=8)
+    ax_top.tick_params(axis='x', bottom=False, labelbottom=False)
+    ax_top.spines['top'].set_visible(False)
+    ax_top.spines['right'].set_visible(False)
+    ax_top.spines['bottom'].set_edgecolor(top_accent)
+    ax_top.spines['bottom'].set_linewidth(1.5)
+    ax_top.spines['left'].set_edgecolor(top_accent)
+    ax_top.spines['left'].set_linewidth(1.2)
+    ax_top.grid(True, color=GRID_COLOR, linewidth=0.5, linestyle='--', alpha=0.6)
+    ax_top.set_axisbelow(True)
+    handles, labels = ax_top.get_legend_handles_labels()
+    ax_top.legend(handles, labels, title='SFID', loc='upper right',
+                  frameon=True, facecolor=BG_CARD, edgecolor=top_accent,
+                  labelcolor=TEXT_COLOR, fontsize=8, title_fontsize=9)
+
+    for i, (name, grp) in enumerate(bot_df.groupby(group_col)):
+        _glow(ax_bot, grp['captured_utc'], grp[bot_col], CHART_COLORS[i % len(CHART_COLORS)], label=str(name))
+    ax_bot.invert_yaxis()
+    ax_bot.set_ylabel(bot_ylabel, color=SUBTEXT, fontsize=10, fontweight='bold')
+    ax_bot.yaxis.set_major_formatter(mticker.StrMethodFormatter(bot_fmt))
+    ax_bot.tick_params(axis='y', colors=SUBTEXT, labelsize=8)
+    ax_bot.spines['bottom'].set_visible(False)
+    ax_bot.spines['right'].set_visible(False)
+    ax_bot.spines['top'].set_edgecolor(bot_accent)
+    ax_bot.spines['top'].set_linewidth(1.5)
+    ax_bot.spines['left'].set_edgecolor(bot_accent)
+    ax_bot.spines['left'].set_linewidth(1.2)
+    ax_bot.grid(True, color=GRID_COLOR, linewidth=0.5, linestyle='--', alpha=0.6)
+    ax_bot.set_axisbelow(True)
+    ax_bot.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+    ax_bot.xaxis.set_major_locator(mdates.AutoDateLocator())
+    plt.setp(ax_bot.xaxis.get_majorticklabels(), rotation=30, ha='right', color=SUBTEXT, fontsize=8)
+    ax_bot.set_xlabel('Time (UTC)', color=SUBTEXT, fontsize=10)
+
+    fig.text(0.13, 0.915, annot_text, fontsize=8, color=SUBTEXT)
+    add_header(fig, header_title, subtitle)
+    add_footer(fig, **_sp)
+    fig.tight_layout(rect=[0.02, 0.04, 0.98, 0.90])
+    pdf.savefig(fig, facecolor=fig.get_facecolor())
+    plt.close(fig)
+
+
+def _compute_throughput_mbps(df, group_col):
+    """Add throughput_mbps column from flow_octets deltas; returns modified copy."""
+    import numpy as np
+    diff_col = 'sfid' if 'sfid' in df.columns else group_col
+    df = df.copy().sort_values([diff_col, 'captured_utc'])
+    df['flow_octets'] = pd.to_numeric(df.get('flow_octets', pd.Series(dtype=float)), errors='coerce')
+    df['_interval_s'] = df.groupby(diff_col)['captured_utc'].transform(
+        lambda s: s.diff().dt.total_seconds())
+    df['_delta_oct'] = df.groupby(diff_col)['flow_octets'].diff().clip(lower=0)
+    df['throughput_mbps'] = df.apply(
+        lambda r: r['_delta_oct'] * 8 / r['_interval_s'] / 1e6
+                  if pd.notna(r['_interval_s']) and r['_interval_s'] > 0 else np.nan, axis=1)
+    return df
+
+
+def _compute_latency_ms(df, group_col):
+    """Add _lat_ms column from bin-weighted average or lat_avg_usec; returns modified copy.
+    Always diffs bin counters by the stable 'sfid' column so that sfid_label label
+    changes mid-session (e.g. late SCN resolution) don't break the per-SFID diff.
+    """
+    import numpy as np
+    bin_cols  = [f'lat_bin{i}'      for i in range(1, 17)]
+    edge_cols = [f'lat_edge_bin{i}' for i in range(1, 16)]
+    present_bins  = [c for c in bin_cols  if c in df.columns]
+    present_edges = [c for c in edge_cols if c in df.columns]
+    df = df.copy().sort_values(['sfid', 'captured_utc'] if 'sfid' in df.columns
+                               else [group_col, 'captured_utc'])
+    # Use 'sfid' for the diff grouping — it is the stable numeric key.
+    # sfid_label can change within a session if SCN resolves late, which would
+    # cause groupby(sfid_label).diff() to emit NaN at every label-change boundary.
+    diff_col = 'sfid' if 'sfid' in df.columns else group_col
+    if present_bins:
+        for c in present_bins:
+            df[c] = pd.to_numeric(df[c], errors='coerce')
+            df[c] = df.groupby(diff_col)[c].diff().clip(lower=0)
+        def _wavg(row):
+            edges = [pd.to_numeric(row.get(e), errors='coerce') for e in present_edges]
+            edges = [e for e in edges if pd.notna(e)]
+            if not edges:
+                return np.nan
+            boundaries = [0] + edges + [edges[-1] * 2]
+            midpoints  = [(boundaries[i] + boundaries[i + 1]) / 2
+                          for i in range(len(present_bins))]
+            counts = [float(row.get(c, 0) or 0) for c in present_bins]
+            total  = sum(counts)
+            return np.nan if total == 0 \
+                else sum(mp * ct for mp, ct in zip(midpoints, counts)) / total / 1000
+        df['_lat_ms'] = df.apply(_wavg, axis=1)
+    elif 'lat_avg_usec' in df.columns:
+        df['_lat_ms'] = pd.to_numeric(df['lat_avg_usec'], errors='coerce') / 1000
+    else:
+        df['_lat_ms'] = float('nan')
+    return df
+
+
+def page_throughput_latency_correlation(pdf, df, direction, source='SNMP', **m):
+    """Mirrored dual-panel: throughput (Mbps) above, latency (ms) inverted below."""
+    _sp = {k: m[k] for k in ('mac_fmt', 'modem_name', 'session_start', 'session_end')}
+    _sp['cmts_type'] = m.get('cmts_type', 'icmts')
+    group_col = 'sfid_label' if 'sfid_label' in df.columns else 'sfid'
+    # Sort by sfid+time before any per-SFID computation so both helpers see consistent order
+    sort_key = ['sfid', 'captured_utc'] if 'sfid' in df.columns else [group_col, 'captured_utc']
+    df = df.copy().sort_values(sort_key)
+    df = _compute_throughput_mbps(df, group_col)
+    df = _compute_latency_ms(df, group_col)
+    tp_df  = df.dropna(subset=['throughput_mbps'])
+    lat_df = df.dropna(subset=['_lat_ms'])
+    if tp_df.empty and lat_df.empty:
+        return
+    dir_label = direction.upper()
+    _dual_panel_fig(
+        pdf, group_col,
+        tp_df,  'throughput_mbps', 'Throughput (Mbps)', '{x:,.1f}', ACCENT,
+        lat_df, '_lat_ms',         'Latency (ms)',       '{x:,.2f}', '#00c6ff',
+        f'{dir_label} THROUGHPUT & LATENCY CORRELATION ({source})',
+        f'{m["modem_name"]} ({m["mac_fmt"]})  |  Throughput above X axis  |  Latency inverted below',
+        'Throughput above  |  Latency below (inverted — spikes grow downward)',
+        _sp,
+    )
+
+
+def page_policed_drops_throughput_correlation(pdf, df, direction, **m):
+    """Mirrored dual-panel: throughput (Mbps) above, policed drops (delta pkts) inverted below."""
+    _sp = {k: m[k] for k in ('mac_fmt', 'modem_name', 'session_start', 'session_end')}
+    _sp['cmts_type'] = m.get('cmts_type', 'icmts')
+    group_col = 'sfid_label' if 'sfid_label' in df.columns else 'sfid'
+    if 'flow_policed_drop' not in df.columns or df['flow_policed_drop'].isna().all():
+        return
+    diff_col = 'sfid' if 'sfid' in df.columns else group_col
+    df = df.copy().sort_values([diff_col, 'captured_utc'])
+    df = _compute_throughput_mbps(df, group_col)
+    df['flow_policed_drop'] = pd.to_numeric(df['flow_policed_drop'], errors='coerce')
+    df['_policed_delta'] = df.groupby(diff_col)['flow_policed_drop'].diff().clip(lower=0)
+    tp_df   = df.dropna(subset=['throughput_mbps'])
+    drop_df = df.dropna(subset=['_policed_delta'])
+    if tp_df.empty or drop_df.empty:
+        return
+    dir_label = direction.upper()
+    _dual_panel_fig(
+        pdf, group_col,
+        tp_df,   'throughput_mbps', 'Throughput (Mbps)',      '{x:,.1f}', ACCENT,
+        drop_df, '_policed_delta',  'Policed Drops (pkts/Δ)', '{x:,.0f}', '#fa7b17',
+        f'{dir_label} POLICED DROPS vs THROUGHPUT (SNMP)',
+        f'{m["modem_name"]} ({m["mac_fmt"]})  |  Throughput above  |  Policed drop delta inverted below',
+        'Throughput above  |  Policed drops below (inverted — spikes = rate limiting events)',
+        _sp,
+    )
+
+
+def page_aqm_latency_correlation(pdf, df, direction, source='SNMP', **m):
+    """Mirrored dual-panel: AQM drops (delta pkts) above, latency (ms) inverted below."""
+    _sp = {k: m[k] for k in ('mac_fmt', 'modem_name', 'session_start', 'session_end')}
+    _sp['cmts_type'] = m.get('cmts_type', 'icmts')
+    group_col = 'sfid_label' if 'sfid_label' in df.columns else 'sfid'
+    aqm_col = 'cong_aqm_drop'
+    if aqm_col not in df.columns or df[aqm_col].isna().all():
+        return
+    diff_col = 'sfid' if 'sfid' in df.columns else group_col
+    df = df.copy().sort_values([diff_col, 'captured_utc'])
+    df = _compute_latency_ms(df, group_col)
+    df[aqm_col] = pd.to_numeric(df[aqm_col], errors='coerce')
+    df['_aqm_delta'] = df.groupby(diff_col)[aqm_col].diff().clip(lower=0)
+    aqm_df = df.dropna(subset=['_aqm_delta'])
+    lat_df = df.dropna(subset=['_lat_ms'])
+    if aqm_df.empty or lat_df.empty:
+        return
+    dir_label = direction.upper()
+    _dual_panel_fig(
+        pdf, group_col,
+        aqm_df, '_aqm_delta', 'AQM Drops (pkts/Δ)', '{x:,.0f}', '#ea4335',
+        lat_df, '_lat_ms',    'Latency (ms)',        '{x:,.2f}', '#00c6ff',
+        f'{dir_label} AQM DROPS vs LATENCY ({source})',
+        f'{m["modem_name"]} ({m["mac_fmt"]})  |  AQM drop delta above  |  Latency inverted below',
+        'AQM drops above  |  Latency below (inverted — correlated spikes indicate queue pressure)',
+        _sp,
+    )
 
 
 def page_kafka_congestion(pdf, kdf, direction, **m):
@@ -1780,40 +2018,49 @@ def main():
             ('3',  'ThousandEyes Results',             'DS/US throughput, latency and jitter per iteration'),
             ('4',  'US Flow Throughput (SNMP)',         'Per-poll delta octets → Mbps per US service flow'),
             ('5',  'US Latency Avg (SNMP)',             'Weighted avg latency from bin deltas per poll'),
-            ('6',  'US Latency Scatter (SNMP)',         'Per-poll latency scatter per US SFID'),
-            ('7',  'US Latency CDF (SNMP)',             'CDF: x=latency (ms), y=percentile P50–P99.99 per SFID'),
-            ('8',  'US Latency Bins (SNMP)',            'Last − first poll bin delta per US SFID'),
-            ('9',  'US Latency Violin (SNMP)',          'Latency distribution violin per US SFID'),
-            ('10', 'US Congestion AQM & CE (SNMP)',     'AQM drops and CE marked packets per US flow'),
-            ('11', 'US Param Set Max Rate (SNMP)',      'Active param set max rate (Mbps) per US flow'),
-            ('12', 'DS Throughput (Kafka)',             'Kafka delta_octets → Mbps per DS flow'),
-            ('13', 'DS Latency Avg (Kafka)',            'Kafka average latency per DS flow over time'),
-            ('14', 'DS Latency Scatter (Kafka)',        'Per-poll latency scatter per DS SFID'),
-            ('15', 'DS Latency CDF (Kafka)',            'CDF: x=latency (ms), y=percentile P50–P99.99 per SFID'),
-            ('16', 'DS Latency Bins (Kafka)',           'Kafka last − first bin delta per DS SFID'),
-            ('17', 'DS Latency Violin (Kafka)',         'Latency distribution violin per DS SFID'),
-            ('18', 'DS Congestion (Kafka)',             'Kafka AQM drop and marked packets per DS flow'),
-            ('19', 'Session Summary',                  'Peak throughput, latency, P50/P99, AQM drops per SFID'),
+            ('6',  'US Throughput & Latency Corr.',     'Mirrored chart: throughput above, latency inverted below'),
+            ('7',  'US AQM Drops vs Latency',           'AQM drop delta above, latency inverted below'),
+            ('8',  'US Latency Scatter (SNMP)',         'Per-poll latency scatter per US SFID'),
+            ('9',  'US Latency CDF (SNMP)',             'CDF: x=latency (ms), y=percentile P50–P99.99 per SFID'),
+            ('10', 'US Latency Bins (SNMP)',            'Last − first poll bin delta per US SFID'),
+            ('11', 'US Latency Violin (SNMP)',          'Latency distribution violin per US SFID'),
+            ('12', 'US Congestion AQM & CE (SNMP)',     'AQM drops and CE marked packets per US flow'),
+            ('13', 'US Param Set Max Rate (SNMP)',      'Active param set max rate (Mbps) per US flow'),
+            ('14', 'DS Throughput (Kafka)',             'Kafka delta_octets → Mbps per DS flow'),
+            ('15', 'DS Latency Avg (Kafka)',            'Kafka average latency per DS flow over time'),
+            ('16', 'DS Throughput & Latency Corr.',     'Mirrored chart: throughput above, latency inverted below'),
+            ('17', 'DS AQM Drops vs Latency',           'AQM drop delta above, latency inverted below'),
+            ('18', 'DS Latency Scatter (Kafka)',        'Per-poll latency scatter per DS SFID'),
+            ('19', 'DS Latency CDF (Kafka)',            'CDF: x=latency (ms), y=percentile P50–P99.99 per SFID'),
+            ('20', 'DS Latency Bins (Kafka)',           'Kafka last − first bin delta per DS SFID'),
+            ('21', 'DS Latency Violin (Kafka)',         'Latency distribution violin per DS SFID'),
+            ('22', 'DS Congestion (Kafka)',             'Kafka AQM drop and marked packets per DS flow'),
+            ('23', 'Session Summary',                  'Peak throughput, latency, P50/P99, AQM drops per SFID'),
         ]
     else:
         toc = [
             ('3',  'ThousandEyes Results',             'DS/US throughput, latency and jitter per iteration'),
             ('4',  'US Flow Throughput (SNMP)',         'Per-poll delta octets → Mbps per US service flow'),
             ('5',  'US Latency Avg (SNMP)',             'Weighted avg latency from bin deltas per poll'),
-            ('6',  'US Latency Scatter (SNMP)',         'Per-poll latency scatter per US SFID'),
-            ('7',  'US Latency CDF (SNMP)',             'CDF: x=latency (ms), y=percentile P50–P99.99 per SFID'),
-            ('8',  'US Latency Bins (SNMP)',            'Last − first poll bin delta per US SFID'),
-            ('9',  'US Latency Violin (SNMP)',          'Latency distribution violin per US SFID'),
-            ('10', 'US Congestion AQM & CE (SNMP)',     'AQM drops and CE marked packets per US flow'),
-            ('11', 'US ECT(0) & ECT(1) (SNMP)',        'ECN capable transport packet counts per US flow'),
-            ('12', 'US Param Set Max Rate (SNMP)',      'Active param set max rate (Mbps) per US flow'),
-            ('13', 'DS Flow Throughput (SNMP)',         'Per-poll delta octets → Mbps per DS service flow'),
-            ('14', 'DS Policed Drop & Delay (SNMP)',    'Policed drop and delay packet counts per DS flow'),
-            ('15', 'DS AQM Dropped Packets (SNMP)',     'AQM drop counters per DS service flow'),
-            ('16', 'DS Congestion AQM & CE (SNMP)',     'AQM drops and CE marked packets per DS flow'),
-            ('17', 'DS ECT(0) & ECT(1) (SNMP)',        'ECN capable transport packet counts per DS flow'),
-            ('18', 'DS Latency Bins (SNMP)',            'Last − first poll bin delta per DS SFID'),
-            ('19', 'Session Summary',                  'Peak throughput, latency, P50/P99, AQM drops per SFID'),
+            ('6',  'US Throughput & Latency Corr.',     'Mirrored chart: throughput above, latency inverted below'),
+            ('7',  'US Policed Drops vs Throughput',    'Throughput above, policed drop delta inverted below'),
+            ('8',  'US AQM Drops vs Latency',           'AQM drop delta above, latency inverted below'),
+            ('9',  'US Latency Scatter (SNMP)',         'Per-poll latency scatter per US SFID'),
+            ('10', 'US Latency CDF (SNMP)',             'CDF: x=latency (ms), y=percentile P50–P99.99 per SFID'),
+            ('11', 'US Latency Bins (SNMP)',            'Last − first poll bin delta per US SFID'),
+            ('12', 'US Latency Violin (SNMP)',          'Latency distribution violin per US SFID'),
+            ('13', 'US Congestion AQM & CE (SNMP)',     'AQM drops and CE marked packets per US flow'),
+            ('14', 'US ECT(0) & ECT(1) (SNMP)',        'ECN capable transport packet counts per US flow'),
+            ('15', 'US Param Set Max Rate (SNMP)',      'Active param set max rate (Mbps) per US flow'),
+            ('16', 'DS Flow Throughput (SNMP)',         'Per-poll delta octets → Mbps per DS service flow'),
+            ('17', 'DS Policed Drop & Delay (SNMP)',    'Policed drop and delay packet counts per DS flow'),
+            ('18', 'DS AQM Dropped Packets (SNMP)',     'AQM drop counters per DS service flow'),
+            ('19', 'DS Congestion AQM & CE (SNMP)',     'AQM drops and CE marked packets per DS flow'),
+            ('20', 'DS Throughput & Latency Corr.',     'Mirrored chart: throughput above, latency inverted below'),
+            ('21', 'DS Policed Drops vs Throughput',    'Throughput above, policed drop delta inverted below'),
+            ('22', 'DS AQM Drops vs Latency',           'AQM drop delta above, latency inverted below'),
+            ('23', 'DS Latency Bins (SNMP)',            'Last − first poll bin delta per DS SFID'),
+            ('24', 'Session Summary',                  'Peak throughput, latency, P50/P99, AQM drops per SFID'),
         ]
 
     safe_name = re.sub(r'[^\w\-]', '_', session_name).strip('_')
@@ -1833,6 +2080,9 @@ def main():
         page_us_flow_stats(pdf, us, **m)
 
         page_us_latency_avg(pdf, us, **m)
+        page_throughput_latency_correlation(pdf, us, 'US', source='SNMP', **m)
+        page_policed_drops_throughput_correlation(pdf, us, 'US', **m)
+        page_aqm_latency_correlation(pdf, us, 'US', source='SNMP', **m)
         page_latency_scatter(pdf, us, 'US', 'sfid_label', source='SNMP', **m)
         page_latency_percentile(pdf, us, 'US', 'sfid_label', source='SNMP', **m)
         page_us_latency_histogram(pdf, us, **m)
@@ -1846,6 +2096,8 @@ def main():
             # DS Kafka charts only
             page_kafka_throughput(pdf, k_ds, 'downstream', **m)
             page_kafka_latency_avg(pdf, k_ds, 'downstream', **m)
+            page_throughput_latency_correlation(pdf, k_ds, 'DS', source='Kafka', **m)
+            page_aqm_latency_correlation(pdf, k_ds, 'DS', source='Kafka', **m)
             page_latency_scatter(pdf, k_ds, 'DS', 'sfid_label', source='Kafka', **m)
             page_latency_percentile(pdf, k_ds, 'DS', 'sfid_label', source='Kafka', **m)
             page_kafka_latency_histogram(pdf, k_ds, 'downstream', **m)
@@ -1857,6 +2109,9 @@ def main():
             # DS from SNMP
             page_ds_flow_stats(pdf, ds, **m)
             page_ds_congestion(pdf, ds, **m)
+            page_throughput_latency_correlation(pdf, ds, 'DS', source='SNMP', **m)
+            page_policed_drops_throughput_correlation(pdf, ds, 'DS', **m)
+            page_aqm_latency_correlation(pdf, ds, 'DS', source='SNMP', **m)
             page_ds_latency(pdf, ds, **m)
             page_latency_violin(pdf, ds, 'DS', 'sfid_label',
                                 [c for c in [f'lat_bin{i}' for i in range(1,17)] if c in ds.columns],

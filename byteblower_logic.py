@@ -30,10 +30,9 @@ class ByteBlowerLogic:
         # Create subfolder based on RTT value
         if parent_output_dir:
             if total_iterations > 1:
-                scenario_dir = f"{self.scenario_name}{self.rtt_suffix}"
-                output_dir = f"{parent_output_dir}/{scenario_dir}/iteration_{iteration + 1}/"
+                output_dir = os.path.join(parent_output_dir, f"iteration_{iteration + 1}")
             else:
-                output_dir = f"{parent_output_dir}/{self.scenario_name}/"
+                output_dir = parent_output_dir
         else:
             if total_iterations > 1:
                 output_dir = f"Results/{self.output_prefix}/iteration_{iteration + 1}/"
