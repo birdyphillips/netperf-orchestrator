@@ -672,107 +672,165 @@ def _load_te_results(session_dir):
 
 
 def page_summary(pdf, us, ds, k_us, k_ds, **m):
-    """Summary page: CMTS poll-based throughput & latency table + ThousandEyes results."""
-    cmts_type = m.get('cmts_type', 'icmts')
-    sfid_map  = m.get('sfid_map', {})
+    """Summary page: per-SFID throughput, latency, and congestion counters with % rates."""
+    cmts_type   = m.get('cmts_type', 'icmts')
+    sfid_map    = m.get('sfid_map', {})
     session_dir = m.get('session_dir', '')
     _sp = {k: m[k] for k in ('mac_fmt', 'modem_name', 'session_start', 'session_end')}
     _sp['cmts_type'] = cmts_type
 
-    # Build per-SFID summary rows — throughput = PEAK poll, not session average
-    rows = []  # (sfid_label, direction, source, peak_mbps, avg_lat_ms, max_lat_ms,
-               #  p50_bin, p99_bin, p999_bin, aqm_drops, ce_marked, loss_pct)
+    def _safe_delta(series):
+        """last - first for cumulative counters, clipped to 0."""
+        s = pd.to_numeric(series, errors='coerce').dropna()
+        return max(float(s.iloc[-1]) - float(s.iloc[0]), 0) if len(s) >= 2 else 0.0
 
-    # SNMP US — peak per-poll throughput
+    def _bin_stats(grp, present):
+        """Session-total bin deltas (last - first per bin).
+        Returns (wavg_ms, p50_ms, p99_ms, p999_ms, total_pkts) all in ms."""
+        def _safe_int(v):
+            x = pd.to_numeric(v, errors='coerce')
+            return 0 if pd.isna(x) else int(x)
+        deltas = [max(_safe_int(grp[c].iloc[-1]) - _safe_int(grp[c].iloc[0]), 0)
+                  for c in present]
+        total = sum(deltas)
+        if total == 0:
+            return 0.0, 0.0, 0.0, 0.0, 0
+
+        # Build bin midpoints in ms from edge columns
+        edge_cols_15 = [f'lat_edge_bin{i}' for i in range(1, 16)]
+        edge_cols_16 = [f'lat_edge_bin{i}' for i in range(1, 17)]
+        present_15 = [c for c in edge_cols_15 if c in grp.columns]
+        present_16 = [c for c in edge_cols_16 if c in grp.columns]
+        edge_row = grp[present_16 if present_16 else present_15].dropna(how='all') if (present_16 or present_15) else pd.DataFrame()
+        midpoints_ms = []
+        if not edge_row.empty:
+            ecols = present_16 if present_16 else present_15
+            edges = [pd.to_numeric(edge_row[c].iloc[0], errors='coerce') for c in ecols]
+            edges = [e for e in edges if pd.notna(e)]
+            # SNMP edges are in units of 100µs → multiply by 10 to get ms
+            # Kafka edges are already in ms (much larger values)
+            if edges and edges[0] < 10:  # SNMP: values like 0.5, 1.0, 2.0 (×100µs)
+                edges = [e * 10 for e in edges]
+            boundaries = [0.0] + edges + [edges[-1] * 2 if edges else float(len(present))]
+            for i in range(len(present)):
+                lo = boundaries[i] if i < len(boundaries) else boundaries[-1]
+                hi = boundaries[i+1] if i+1 < len(boundaries) else boundaries[-1] * 2
+                midpoints_ms.append((lo + hi) / 2.0 if pd.notna(lo) and pd.notna(hi) else 0.0)
+        else:
+            # No edge data — fall back to bin index as ms approximation
+            midpoints_ms = [float(i + 1) for i in range(len(present))]
+
+        def _pct_ms(pct):
+            target, cumulative = total * pct, 0
+            for i, count in enumerate(deltas):
+                cumulative += count
+                if cumulative >= target:
+                    return round(midpoints_ms[i] if i < len(midpoints_ms) else float(i + 1), 3)
+            return round(midpoints_ms[-1] if midpoints_ms else float(len(deltas)), 3)
+
+        wavg_ms = sum(float(midpoints_ms[i]) * float(deltas[i])
+                      for i in range(len(deltas))
+                      if pd.notna(midpoints_ms[i]) and pd.notna(deltas[i])) / total
+        return (round(wavg_ms, 3), _pct_ms(0.50), _pct_ms(0.99), _pct_ms(0.999), total)
+
+    # rows: (lbl, dir, src, peak_mbps, avg_mbps, wavg_ms, max_ms,
+    #        p50, p99, p999, aqm, aqm_pct, ce, ce_pct, sanctioned, sanc_pct, loss_pct)
+    rows = []
+
+    # --- SNMP US ---
     if us is not None and not us.empty:
         for sfid, grp in us.groupby('sfid'):
-            grp = grp.sort_values('captured_utc')
-            lbl = sfid_map.get(str(sfid), grp['sfid_label'].iloc[0] if 'sfid_label' in grp.columns else str(sfid))
-            tp = _peak_mbps_snmp(grp)
+            grp  = grp.sort_values('captured_utc')
+            lbl  = sfid_map.get(str(sfid), grp['sfid_label'].iloc[0] if 'sfid_label' in grp.columns else str(sfid))
+            peak_tp = _peak_mbps_snmp(grp)
+            tp_df   = _compute_throughput_mbps(grp.copy(), 'sfid')
+            avg_tp  = tp_df['throughput_mbps'].dropna().mean()
+            avg_tp  = round(avg_tp, 1) if pd.notna(avg_tp) else 0
             lat_max = pd.to_numeric(grp.get('lat_max_usec', pd.Series()), errors='coerce').max()
             lat_max_ms = lat_max / 1000 if pd.notna(lat_max) else 0
             bin_cols = [f'lat_bin{i}' for i in range(1, 17)]
             present  = [c for c in bin_cols if c in grp.columns]
             if present:
-                last = grp.iloc[-1]
-                deltas = [int(pd.to_numeric(last.get(c, 0), errors='coerce') or 0) if pd.notna(pd.to_numeric(last.get(c, 0), errors='coerce')) else 0 for c in present]
-                p50  = _calc_percentile(deltas, 0.50)
-                p99  = _calc_percentile(deltas, 0.99)
-                p999 = _calc_percentile(deltas, 0.999)
-                wavg = _calc_weighted_avg(deltas)
+                wavg, p50, p99, p999, bin_total = _bin_stats(grp, present)
             else:
-                p50 = p99 = p999 = wavg = 0
-            aqm  = pd.to_numeric(grp.get('cong_aqm_drop',  pd.Series(dtype=float)), errors='coerce').sum()
-            ce   = pd.to_numeric(grp.get('cong_ce_marked', pd.Series(dtype=float)), errors='coerce').sum()
-            sanctioned = pd.to_numeric(grp.get('cong_sanctioned', pd.Series(dtype=float)), errors='coerce').sum()
-            rows.append((lbl, 'US', 'SNMP', round(tp, 1), round(wavg, 3),
-                         round(lat_max_ms, 3), p50, p99, p999,
-                         int(aqm or 0), int(ce or 0), int(sanctioned or 0), 0.0))
+                wavg = p50 = p99 = p999 = bin_total = 0
+            aqm        = _safe_delta(grp.get('cong_aqm_drop',   pd.Series(dtype=float)))
+            ce         = _safe_delta(grp.get('cong_ce_marked',  pd.Series(dtype=float)))
+            sanctioned = _safe_delta(grp.get('cong_sanctioned', pd.Series(dtype=float)))
+            ref = bin_total or 1
+            rows.append((lbl, 'US', 'SNMP',
+                         round(peak_tp, 1), avg_tp,
+                         round(wavg, 3), round(lat_max_ms, 3),
+                         p50, p99, p999,
+                         int(aqm), f'{aqm/ref*100:.2f}%',
+                         int(ce),  f'{ce/ref*100:.2f}%',
+                         int(sanctioned), f'{sanctioned/ref*100:.2f}%',
+                         0.0))
 
-    # Kafka US + DS — peak per-poll throughput
+    # --- Kafka US + DS ---
     for kdf, direction, source in [(k_us, 'US', 'Kafka'), (k_ds, 'DS', 'Kafka')]:
         if kdf is None or kdf.empty:
             continue
         grp_col = 'sfid_label' if 'sfid_label' in kdf.columns else 'sfid'
         for sfid, grp in kdf.groupby(grp_col):
             grp = grp.sort_values('captured_utc')
-            tp = _peak_mbps_kafka(grp)
-            lat_avg = pd.to_numeric(grp.get('lat_avg_usec', pd.Series()), errors='coerce') / 1000
+            peak_tp    = _peak_mbps_kafka(grp)
+            kdf_tp     = _compute_throughput_mbps(grp.copy(), grp_col)
+            avg_tp     = kdf_tp['throughput_mbps'].dropna().mean()
+            avg_tp     = round(avg_tp, 1) if pd.notna(avg_tp) else 0
+            lat_avg    = pd.to_numeric(grp.get('lat_avg_usec', pd.Series()), errors='coerce') / 1000
             avg_lat_ms = lat_avg[lat_avg > 0].mean() if not lat_avg[lat_avg > 0].empty else 0
-            lat_max = pd.to_numeric(grp.get('lat_max_usec', pd.Series()), errors='coerce').max()
+            lat_max    = pd.to_numeric(grp.get('lat_max_usec', pd.Series()), errors='coerce').max()
             lat_max_ms = lat_max / 1000 if pd.notna(lat_max) else 0
             bin_cols = [f'lat_bin{i}' for i in range(1, 17)]
             present  = [c for c in bin_cols if c in grp.columns]
             if present:
-                last = grp.iloc[-1]
-                deltas = [int(pd.to_numeric(last.get(c, 0), errors='coerce') or 0) if pd.notna(pd.to_numeric(last.get(c, 0), errors='coerce')) else 0 for c in present]
-                p50  = _calc_percentile(deltas, 0.50)
-                p99  = _calc_percentile(deltas, 0.99)
-                p999 = _calc_percentile(deltas, 0.999)
-                wavg = _calc_weighted_avg(deltas)
+                wavg, p50, p99, p999, bin_total = _bin_stats(grp, present)
             else:
-                p50 = p99 = p999 = wavg = avg_lat_ms
-            aqm_raw = pd.to_numeric(grp.get('cong_aqm_drop', pd.Series(dtype=float)), errors='coerce').dropna()
-            aqm = max(aqm_raw.max() - aqm_raw.min(), 0) if not aqm_raw.empty else 0
-            ce_raw = pd.to_numeric(grp.get('cong_ce_marked', pd.Series(dtype=float)), errors='coerce').dropna()
-            ce = max(ce_raw.max() - ce_raw.min(), 0) if not ce_raw.empty else 0
-            pkts_pass = pd.to_numeric(grp.get('delta_pkts',         pd.Series(dtype=float)), errors='coerce').sum()
-            pkts_drop = pd.to_numeric(grp.get('delta_pkts_dropped', pd.Series(dtype=float)), errors='coerce').sum()
+                wavg, p50, p99, p999, bin_total = avg_lat_ms, 0, 0, 0, 0
+            aqm_s = pd.to_numeric(grp.get('cong_aqm_drop',   pd.Series(dtype=float)), errors='coerce').dropna()
+            ce_s  = pd.to_numeric(grp.get('cong_ce_marked',  pd.Series(dtype=float)), errors='coerce').dropna()
+            san_s = pd.to_numeric(grp.get('cong_sanctioned', pd.Series(dtype=float)), errors='coerce').dropna()
+            aqm        = max(float(aqm_s.max()) - float(aqm_s.min()), 0) if not aqm_s.empty else 0
+            ce         = max(float(ce_s.max())  - float(ce_s.min()),  0) if not ce_s.empty  else 0
+            sanctioned = max(float(san_s.max()) - float(san_s.min()), 0) if not san_s.empty else 0
+            pkts_pass  = pd.to_numeric(grp.get('delta_pkts',         pd.Series(dtype=float)), errors='coerce').sum()
+            pkts_drop  = pd.to_numeric(grp.get('delta_pkts_dropped', pd.Series(dtype=float)), errors='coerce').sum()
             total_pkts = pkts_pass + pkts_drop
-            loss_pct = (pkts_drop / total_pkts * 100) if total_pkts > 0 else 0.0
-            sanctioned_raw = pd.to_numeric(grp.get('cong_sanctioned', pd.Series(dtype=float)), errors='coerce').dropna()
-            sanctioned = max(sanctioned_raw.max() - sanctioned_raw.min(), 0) if not sanctioned_raw.empty else 0
-            rows.append((str(sfid), direction, source, round(tp, 1), round(avg_lat_ms, 3),
-                         round(lat_max_ms, 3), p50, p99, p999,
-                         int(aqm or 0), int(ce or 0), int(sanctioned or 0), round(loss_pct, 3)))
+            loss_pct   = pkts_drop / total_pkts * 100 if total_pkts > 0 else 0.0
+            ref        = bin_total or total_pkts or 1
+            rows.append((str(sfid), direction, source,
+                         round(peak_tp, 1), avg_tp,
+                         round(wavg, 3), round(lat_max_ms, 3),
+                         p50, p99, p999,
+                         int(aqm), f'{aqm/ref*100:.2f}%',
+                         int(ce),  f'{ce/ref*100:.2f}%',
+                         int(sanctioned), f'{sanctioned/ref*100:.2f}%',
+                         round(loss_pct, 3)))
 
     if not rows:
         return
 
     # --- ThousandEyes results ---
     te_results = _load_te_results(session_dir)
-    te_rows = []  # (test_name, direction, mbps, latency_ms, jitter_ms)
+    te_rows = []
     for te in te_results:
         for test_name, data in te.get('results', {}).items():
             if test_name == 'http_get_mt':
-                bps = data.get('bytes_sec', 0)
-                mbps = round(bps * 8 / 1_000_000, 2)
-                te_rows.append(('http_get_mt (DS)', 'DS', f'{mbps} Mbps', '—', '—'))
+                mbps = round(data.get('bytes_sec', 0) * 8 / 1_000_000, 2)
+                te_rows.append(('http_get_mt (DS)', 'DS', f'{mbps} Mbps', '\u2014', '\u2014'))
             elif test_name == 'http_post_mt':
-                bps = data.get('bytes_sec', 0)
-                mbps = round(bps * 8 / 1_000_000, 2)
-                te_rows.append(('http_post_mt (US)', 'US', f'{mbps} Mbps', '—', '—'))
+                mbps = round(data.get('bytes_sec', 0) * 8 / 1_000_000, 2)
+                te_rows.append(('http_post_mt (US)', 'US', f'{mbps} Mbps', '\u2014', '\u2014'))
             elif test_name == 'udp_jitter':
                 lat_ms = round(data.get('latency', 0) / 1000, 3)
                 dj_ms  = round(data.get('down_jitter', 0) / 1000, 3)
                 uj_ms  = round(data.get('up_jitter', 0) / 1000, 3)
-                te_rows.append(('udp_jitter', 'DS/US', '—', f'{lat_ms} ms', f'↓{dj_ms} ↑{uj_ms} ms'))
+                te_rows.append(('udp_jitter', 'DS/US', '\u2014', f'{lat_ms} ms', f'\u2193{dj_ms} \u2191{uj_ms} ms'))
 
-    # --- Layout: CMTS table top, TE table bottom (if present) ---
+    # --- Layout ---
     fig = plt.figure(figsize=(11, 8.5))
     fig.patch.set_facecolor(BG_DARK)
-
-    # Determine vertical split
     te_table_h = 0.22 if te_rows else 0
     cmts_top   = 0.08 + te_table_h
     cmts_h     = 0.78 - te_table_h
@@ -781,21 +839,28 @@ def page_summary(pdf, us, ds, k_us, k_ds, **m):
     ax.set_facecolor(BG_PANEL)
     ax.axis('off')
 
-    col_labels = ['SFID / Service Class', 'Dir', 'Src', 'Peak\nMbps', 'WAvg\n(ms)', 'Max\n(ms)',
-                  'P50\nbin', 'P99\nbin', 'P99.9\nbin', 'AQM\nDrop', 'CE\nMark', 'Sanctioned', 'Loss%']
-    col_widths = [0.18, 0.05, 0.05, 0.06, 0.06, 0.06, 0.05, 0.05, 0.06, 0.06, 0.06, 0.07, 0.05]
+    col_labels = ['SFID / Service Class', 'Dir', 'Src',
+                  'Peak\nMbps', 'Avg\nMbps', 'WAvg\n(ms)', 'Max\n(ms)',
+                  'P50\n(ms)', 'P99\n(ms)', 'P99.9\n(ms)',
+                  'AQM\nDrop', 'AQM%',
+                  'CE\nMark', 'CE%',
+                  'Sanc.', 'Sanc%', 'Loss%']
+    col_widths = [0.14, 0.04, 0.04,
+                  0.05, 0.05, 0.05, 0.05,
+                  0.04, 0.04, 0.05,
+                  0.05, 0.05,
+                  0.05, 0.05,
+                  0.04, 0.05, 0.04]
 
     table_data = [[str(v) for v in r] for r in rows]
-
     tbl = ax.table(
         cellText=table_data,
         colLabels=col_labels,
         colWidths=col_widths,
-        loc='center',
-        cellLoc='center',
+        loc='center', cellLoc='center',
     )
     tbl.auto_set_font_size(False)
-    tbl.set_fontsize(8)
+    tbl.set_fontsize(7)
     tbl.scale(1, 1.6)
 
     for col in range(len(col_labels)):
@@ -803,12 +868,13 @@ def page_summary(pdf, us, ds, k_us, k_ds, **m):
         cell.set_facecolor(ACCENT)
         cell.set_text_props(color='white', fontweight='bold')
 
+    pct_cols = {col_labels.index(h) for h in ('AQM%', 'CE%', 'Sanc%')}
     for row_i in range(len(rows)):
         bg = BG_PANEL if row_i % 2 == 0 else BG_DARK
         for col in range(len(col_labels)):
             cell = tbl[row_i + 1, col]
-            cell.set_facecolor(bg)
-            cell.set_text_props(color=TEXT_COLOR)
+            cell.set_facecolor('#0d2a4a' if col in pct_cols else bg)
+            cell.set_text_props(color='#00c6ff' if col in pct_cols else TEXT_COLOR)
             cell.set_edgecolor(GRID_COLOR)
 
     # --- ThousandEyes table ---
@@ -822,8 +888,7 @@ def page_summary(pdf, us, ds, k_us, k_ds, **m):
             cellText=te_rows,
             colLabels=te_col_labels,
             colWidths=te_col_widths,
-            loc='center',
-            cellLoc='center',
+            loc='center', cellLoc='center',
         )
         te_tbl.auto_set_font_size(False)
         te_tbl.set_fontsize(8)
@@ -840,8 +905,8 @@ def page_summary(pdf, us, ds, k_us, k_ds, **m):
                 cell.set_text_props(color=TEXT_COLOR)
                 cell.set_edgecolor(GRID_COLOR)
 
-    save_page(pdf, fig, ax, 'SESSION SUMMARY — THROUGHPUT & LATENCY',
-              f'{m["modem_name"]} ({m["mac_fmt"]})  |  Peak Mbps from polls  |  Weighted Avg latency, P50/P99/P99.9 bin, AQM drops',
+    save_page(pdf, fig, ax, 'SESSION SUMMARY \u2014 THROUGHPUT & LATENCY',
+              f'{m["modem_name"]} ({m["mac_fmt"]})  |  Peak & Avg Mbps  |  WAvg latency from session bin deltas  |  AQM/CE/Sanc counts + %',
               **_sp)
 
 
