@@ -17,6 +17,7 @@ import os
 import sys
 import glob
 import re
+import textwrap
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -440,8 +441,8 @@ def page_cover(pdf, mac_fmt, modem_name, session_start, session_end,
         except Exception:
             pass
 
-    # ── "Test Report" tag — top bar right ─────────────────────────────────────
-    ax.text(0.97, 0.935, 'Test Report  •  Access Engineering',
+    # ── tag — top bar right ──────────────────────────────────────────────────
+    ax.text(0.97, 0.935, 'Access Engineering',
             transform=ax.transAxes, fontsize=10, color='#8899aa',
             ha='right', va='center', fontfamily='DejaVu Sans')
 
@@ -452,8 +453,7 @@ def page_cover(pdf, mac_fmt, modem_name, session_start, session_end,
             color='white', ha='left', va='center', fontfamily='DejaVu Sans')
     ax.axhline(y=0.755, xmin=0.05, xmax=0.95, color=ACCENT, linewidth=1)
 
-    # ── detail table — two columns ────────────────────────────────────────────
-    ds_label = 'Kafka (DS)' if cmts_type == 'vcmts' else ', '.join(str(s) for s in sorted(ds_sfids))
+    # ── detail table ────────────────────────────────────────────────────────────────
     col_a = [
         ('Modem',         modem_name),
         ('Modem MAC',     mac_fmt),
@@ -464,22 +464,34 @@ def page_cover(pdf, mac_fmt, modem_name, session_start, session_end,
     col_b = [
         ('Session Start', session_start),
         ('Session End',   session_end),
-        ('US SFIDs',      ', '.join(str(s) for s in sorted(us_sfids))),
-        ('DS SFIDs',      ds_label),
+        ('', ''),
+        ('', ''),
+        ('', ''),
     ]
     y = 0.710
-    for i, (lbl, val) in enumerate(col_a):
+    for (lbl, val), (bl, bv) in zip(col_a, col_b):
         ax.text(0.07, y, f'{lbl}:', transform=ax.transAxes,
                 fontsize=10.5, color=SUBTEXT, fontweight='bold', va='center')
         ax.text(0.24, y, val, transform=ax.transAxes,
                 fontsize=10.5, color='white', va='center', fontfamily='monospace', fontweight='bold')
-        if i < len(col_b):
-            bl, bv = col_b[i]
-            ax.text(0.55, y, f'{bl}:', transform=ax.transAxes,
+        if bl:
+            ax.text(0.52, y, f'{bl}:', transform=ax.transAxes,
                     fontsize=10.5, color=SUBTEXT, fontweight='bold', va='center')
-            ax.text(0.72, y, bv, transform=ax.transAxes,
+            ax.text(0.69, y, bv, transform=ax.transAxes,
                     fontsize=10.5, color='white', va='center', fontfamily='monospace', fontweight='bold')
         y -= 0.068
+
+    # ── full-width SFID rows ───────────────────────────────────────────────────
+    us_str = ', '.join(str(s) for s in sorted(us_sfids))
+    ds_str = ', '.join(str(s) for s in sorted(ds_sfids)) if ds_sfids else 'Kafka (DS)'
+    for lbl, val in [('US SFIDs', us_str), ('DS SFIDs', ds_str)]:
+        wrapped = '\n'.join(textwrap.wrap(val, width=80))
+        ax.text(0.07, y, f'{lbl}:', transform=ax.transAxes,
+                fontsize=10.5, color=SUBTEXT, fontweight='bold', va='top')
+        ax.text(0.24, y, wrapped, transform=ax.transAxes,
+                fontsize=9.5, color='white', va='top', fontfamily='monospace', fontweight='bold')
+        lines = wrapped.count('\n') + 1
+        y -= 0.068 * lines
 
     # ── thin separator before footer ─────────────────────────────────────────
     ax.axhline(y=0.08, xmin=0, xmax=1, color='#1e3050', linewidth=1)
@@ -2564,9 +2576,13 @@ def main():
     duration_str  = f'{hours}h {rem // 60}m'
     total_polls   = us['poll_index'].nunique() if 'poll_index' in us.columns else len(us)
 
-    us_sfids = sorted(us['sfid_label'].unique(), key=lambda x: str(x))
-    ds_sfids = sorted(ds['sfid_label'].unique(), key=lambda x: str(x)) \
-               if ds is not None and not ds.empty else []
+    us_sfids = sorted(
+        (k_us['sfid_label'].unique() if k_us is not None and not k_us.empty else us['sfid_label'].unique()),
+        key=lambda x: str(x))
+    ds_sfids = sorted(
+        (k_ds['sfid_label'].unique() if k_ds is not None and not k_ds.empty
+         else (ds['sfid_label'].unique() if ds is not None and not ds.empty else [])),
+        key=lambda x: str(x))
 
     m = dict(mac_fmt=mac_fmt, modem_name=modem_name,
              session_start=session_start, session_end=session_end,
