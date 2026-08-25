@@ -707,10 +707,10 @@ def page_summary(pdf, us, ds, k_us, k_ds, **m):
             ecols = present_16 if present_16 else present_15
             edges = [pd.to_numeric(edge_row[c].iloc[0], errors='coerce') for c in ecols]
             edges = [e for e in edges if pd.notna(e)]
-            # SNMP edges are in units of 100µs → multiply by 10 to get ms
-            # Kafka edges are already in ms (much larger values)
-            if edges and edges[0] < 10:  # SNMP: values like 0.5, 1.0, 2.0 (×100µs)
-                edges = [e * 10 for e in edges]
+            # SNMP edges are in µs (e.g. 5, 10, 25 µs) — divide by 1000 to get ms
+            # Kafka edges are already in ms (e.g. 0.05, 0.1, 0.25 ms)
+            if edges and edges[0] >= 1.0:
+                edges = [e / 1000.0 for e in edges]
             boundaries = [0.0] + edges + [edges[-1] * 2 if edges else float(len(present))]
             for i in range(len(present)):
                 lo = boundaries[i] if i < len(boundaries) else boundaries[-1]
