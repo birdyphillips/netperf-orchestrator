@@ -235,6 +235,59 @@ def ssh_cmts_collector(username, jumpserver, cmts_host, cmts_password, cm_mac, c
                         seen.add(key)
                         sfids.append({'sfid': sfid_val, 'scn': scn_val, 'dir': dir_val})
 
+        # Parse bin edges from 'scm <mac> service-flow aqm' output
+        # Column order: MAC_DOMAIN CHANNEL DIR SFID AQM_STATUS AQM_ALGO CLS_AQM_LAT_TRGT
+        #               IAQM_MAX_THRSH IAQM_RNG_EXP LATENCY_HISTOGRAM
+        # The LATENCY HISTOGRAM is everything after the 9th whitespace-delimited token
+        bin_edges_by_sfid = {}
+        if 'Service Flow AQM Configuration' in results:
+            aqm_output = results['Service Flow AQM Configuration']['output']
+            for aline in aqm_output.splitlines():
+                parts = aline.split()
+                # Valid data rows: parts[3] is numeric SFID, parts[2] is US/DS
+                if len(parts) < 4:
+                    continue
+                try:
+                    sfid_val = int(parts[3])
+                except (ValueError, IndexError):
+                    continue
+                # Bin edges start at index 9 — collect all float tokens from there
+                edge_tokens = parts[9:] if len(parts) > 9 else []
+                edges = []
+                for tok in edge_tokens:
+                    try:
+                        edges.append(float(tok))
+                    except ValueError:
+                        break  # stop at non-numeric token
+                if edges:
+                    bin_edges_by_sfid[sfid_val] = edges
+
+        # Merge bin edges into sfids list
+        for entry in sfids:
+            sfid_key = entry.get('sfid')
+            if sfid_key in bin_edges_by_sfid:
+                entry['bin_edges_ms'] = bin_edges_by_sfid[sfid_key]
+
+        # Also add any SFIDs found only in AQM output (not in QoS BPS)
+        existing_sfids = {e['sfid'] for e in sfids}
+        if 'Service Flow AQM Configuration' in results:
+            aqm_output = results['Service Flow AQM Configuration']['output']
+            for aline in aqm_output.splitlines():
+                parts = aline.split()
+                if len(parts) < 4:
+                    continue
+                try:
+                    sfid_val = int(parts[3])
+                except (ValueError, IndexError):
+                    continue
+                if sfid_val not in existing_sfids:
+                    dir_val = parts[2] if len(parts) > 2 else ''
+                    entry = {'sfid': sfid_val, 'scn': '', 'dir': dir_val}
+                    if sfid_val in bin_edges_by_sfid:
+                        entry['bin_edges_ms'] = bin_edges_by_sfid[sfid_val]
+                    sfids.append(entry)
+                    existing_sfids.add(sfid_val)
+
         # Build JSON summary
         summary = {
             'cmts_type':  cmts_type.upper(),
