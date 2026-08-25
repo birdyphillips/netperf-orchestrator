@@ -220,7 +220,7 @@ _RE_OID_SFID = re.compile(
 
 
 def _label_snmp_line(line):
-    """Replace raw OID prefix with human-readable field name, keep sfid suffix and value."""
+    """Annotate SNMP line with human-readable field name; keep OID, sfid suffix and value."""
     m = _RE_OID_TXT.match(line.strip())
     if not m:
         return line
@@ -229,18 +229,17 @@ def _label_snmp_line(line):
 
     # Try progressively shorter prefixes to find a label
     label = None
-    sfid  = None
     for cut in range(len(parts), 0, -1):
         key = '.'.join(parts[:cut])
         if key in _OID_LABEL_MAP:
             label = _OID_LABEL_MAP[key]
-            sfid  = '.'.join(parts[cut:])
             break
 
-    if label is None:
-        return line
+    full_oid = f'SNMPv2-SMI::enterprises.4491.2.1.21.1.{oid_suffix}'
     sfid_str = f'  sfid={parts[-1]}' if parts else ''
-    return f'  {label}{sfid_str} = {value}'
+    if label:
+        return f'  {label}{sfid_str}  [{full_oid}] = {value}'
+    return f'  {full_oid} = {value}'
 
 
 # Kafka metric name → KAFKA_CSV_FIELDS column

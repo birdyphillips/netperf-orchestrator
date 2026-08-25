@@ -371,7 +371,8 @@ def page_cover(pdf, mac_fmt, modem_name, session_start, session_end,
         ax.text(0.12, y, f'{label}:', transform=ax.transAxes,
                 fontsize=11, color=SUBTEXT, fontweight='bold', va='center')
         ax.text(0.38, y, value, transform=ax.transAxes,
-                fontsize=11, color='white', va='center', fontfamily='monospace')
+                fontsize=11, color='white', va='center', fontfamily='monospace',
+                fontweight='bold')
         y -= 0.062
 
     ax.text(0.5, 0.02,
@@ -611,8 +612,8 @@ def _detect_result_type(session_dir):
                 if 'results' in data and any(k in data['results']
                         for k in ('http_get_mt', 'http_post_mt', 'udp_jitter')):
                     return 'thousandeyes'
-                # ByteBlower: has 'byteblower' or 'frames' key
-                if any(k in data for k in ('byteblower', 'frames', 'ByteBlower')):
+                # ByteBlower: has frameBlastingFlows or httpFlows key
+                if any(k in data for k in ('frameBlastingFlows', 'httpFlows', 'byteblower', 'frames', 'ByteBlower')):
                     return 'byteblower'
                 # iperf3: has 'start' with 'test_start' or 'intervals'
                 if 'start' in data and 'intervals' in data:
@@ -630,7 +631,7 @@ def _detect_result_type(session_dir):
                 if 'results' in data and any(k in data['results']
                         for k in ('http_get_mt', 'http_post_mt', 'udp_jitter')):
                     return 'thousandeyes'
-                if any(k in data for k in ('byteblower', 'frames', 'ByteBlower')):
+                if any(k in data for k in ('frameBlastingFlows', 'httpFlows', 'byteblower', 'frames', 'ByteBlower')):
                     return 'byteblower'
                 if 'start' in data and 'intervals' in data:
                     return 'iperf'
@@ -669,6 +670,178 @@ def _load_te_results(session_dir):
         except Exception:
             pass
     return sorted(results, key=lambda r: r.get('iteration', 0))
+
+
+def _load_bb_results(session_dir):
+    """Load ByteBlower JSON files from session_dir. Returns list of dicts (one per file)."""
+    import json
+    results = []
+    patterns = [
+        os.path.join(session_dir, '*.json'),
+        os.path.join(session_dir, '*', '*.json'),
+    ]
+    for pattern in patterns:
+        for path in sorted(glob.glob(pattern)):
+            if os.path.basename(path).lower() == 'modem_summary.json':
+                continue
+            try:
+                with open(path) as fh:
+                    data = json.load(fh)
+                if any(k in data for k in ('frameBlastingFlows', 'httpFlows')):
+                    results.append(data)
+            except Exception:
+                pass
+    return results
+
+
+def page_byteblower(pdf, bb_dir, **m):
+    """Single PDF page: ByteBlower flow results table — DS/US TCP/UDP throughput and frame loss."""
+    bb_files = _load_bb_results(bb_dir)
+    if not bb_files:
+        return
+
+    col_labels = ['Flow Name', 'Dir', 'Type', 'L4S', 'TOS', 'Mbps', 'Avg Lat\n(ms)', 'Min Lat\n(ms)', 'Max Lat\n(ms)', 'Jitter\n(ms)', 'Loss%']
+    col_widths = [0.24, 0.04, 0.05, 0.04, 0.06, 0.07, 0.08, 0.08, 0.08, 0.08, 0.06]
+    rows = []
+
+    for data in bb_files:
+        scenario = data.get('scenarioName', '')
+        direction = 'DS' if 'DS' in scenario.upper() else 'US' if 'US' in scenario.upper() else '?'
+
+        # HTTP flows (TCP) — latency only from timeToFirstByte
+        for flow in data.get('httpFlows', []):
+            name   = flow.get('name', '')
+            l4s    = 'Yes' if flow.get('l4sEnabled') else 'No'
+            tos    = hex(flow.get('configuredTos', 0))
+            dur_ns = flow.get('duration', 0)
+            dur_s  = dur_ns / 1e9 if dur_ns else 60
+            client = flow.get('httpClient', {})
+            byte_count = client.get('rxBytes', 0) or client.get('txBytes', 0)
+            mbps   = round(byte_count * 8 / dur_s / 1e6, 1) if dur_s else 0
+            ttfb   = flow.get('timeToFirstByte', 0)
+            ttfb_ms = round(ttfb / 1e6, 2) if ttfb else '—'
+            rows.append([name, direction, 'TCP', l4s, tos, f'{mbps}', f'{ttfb_ms}', '—', '—', '—', '—'])
+
+        # Frame blasting flows (UDP) — full latency stats
+        for flow in data.get('frameBlastingFlows', []):
+            cfg     = flow.get('config', {})
+            name    = cfg.get('name', '')
+            tos     = cfg.get('tos', '0x00')
+            l4s     = 'Yes' if int(tos, 16) == 0xB4 else 'No'
+            tx_pkts = cfg.get('packets', 0)
+            for dest in flow.get('destinations', []):
+                rx       = dest.get('received', {})
+                lat      = dest.get('latency', {})
+                rx_pkts  = rx.get('packets', 0)
+                rx_bytes = rx.get('bytes', 0)
+                dur_ns   = cfg.get('duration', 0)
+                dur_s    = dur_ns / 1e9 if dur_ns else 60
+                mbps     = round(rx_bytes * 8 / dur_s / 1e6, 1) if dur_s else 0
+                loss     = round((tx_pkts - rx_pkts) / tx_pkts * 100, 3) if tx_pkts else 0
+                avg_ms   = round(lat['average'] / 1e6, 3) if lat.get('average') else '—'
+                min_ms   = round(lat['minimum'] / 1e6, 3) if lat.get('minimum') else '—'
+                max_ms   = round(lat['maximum'] / 1e6, 3) if lat.get('maximum') else '—'
+                jit_ms   = round(lat['jitter']  / 1e6, 3) if lat.get('jitter')  else '—'
+                rows.append([name, direction, 'UDP', l4s, tos,
+                             f'{mbps}', str(avg_ms), str(min_ms), str(max_ms), str(jit_ms), f'{loss}%'])
+
+    if not rows:
+        return
+
+    # Aggregate: sum Mbps per direction from already-computed rows
+    dir_idx  = col_labels.index('Dir')
+    mbps_idx = col_labels.index('Mbps')
+    dir_totals = {}
+    for row in rows:
+        d = row[dir_idx]
+        try:
+            dir_totals[d] = dir_totals.get(d, 0.0) + float(row[mbps_idx])
+        except (ValueError, TypeError):
+            pass
+    agg_rows   = [[d, f'{round(v, 1)} Mbps'] for d, v in sorted(dir_totals.items())]
+    agg_labels = ['Direction', 'Total Throughput']
+    agg_widths = [0.20, 0.25]
+
+    fig = plt.figure(figsize=(11, 8.5))
+    fig.patch.set_facecolor(BG_DARK)
+    # Flow table — upper portion
+    ax = fig.add_axes([0.02, 0.30, 0.96, 0.58])
+    ax.set_facecolor(BG_PANEL)
+    ax.axis('off')
+
+    tbl = ax.table(
+        cellText=rows,
+        colLabels=col_labels,
+        colWidths=col_widths,
+        loc='center', cellLoc='center',
+    )
+    tbl.auto_set_font_size(False)
+    tbl.set_fontsize(8)
+    tbl.scale(1, 1.6)
+
+    for col in range(len(col_labels)):
+        cell = tbl[0, col]
+        cell.set_facecolor('#34a853')
+        cell.set_text_props(color='white', fontweight='bold')
+
+    l4s_col = col_labels.index('L4S')
+    for row_i, row in enumerate(rows):
+        bg = BG_PANEL if row_i % 2 == 0 else BG_DARK
+        for col in range(len(col_labels)):
+            cell = tbl[row_i + 1, col]
+            if row[l4s_col] == 'Yes':
+                cell.set_facecolor('#0d2a4a')
+                cell.set_text_props(color='#00c6ff')
+            else:
+                cell.set_facecolor(bg)
+                cell.set_text_props(color=TEXT_COLOR)
+            cell.set_edgecolor(GRID_COLOR)
+
+    # Aggregate table — lower portion
+    agg_ax = fig.add_axes([0.02, 0.08, 0.96, 0.20])
+    agg_ax.set_facecolor(BG_PANEL)
+    agg_ax.axis('off')
+    agg_tbl = agg_ax.table(
+        cellText=agg_rows,
+        colLabels=agg_labels,
+        colWidths=agg_widths,
+        loc='center', cellLoc='center',
+    )
+    agg_tbl.auto_set_font_size(False)
+    agg_tbl.set_fontsize(8)
+    agg_tbl.scale(1, 1.8)
+    for col in range(len(agg_labels)):
+        cell = agg_tbl[0, col]
+        cell.set_facecolor(ACCENT)
+        cell.set_text_props(color='white', fontweight='bold')
+    for row_i in range(len(agg_rows)):
+        bg = BG_PANEL if row_i % 2 == 0 else BG_DARK
+        for col in range(len(agg_labels)):
+            cell = agg_tbl[row_i + 1, col]
+            cell.set_facecolor(bg)
+            cell.set_text_props(color=TEXT_COLOR)
+            cell.set_edgecolor(GRID_COLOR)
+
+    hax = fig.add_axes([0, 0.91, 1, 0.09])
+    hax.set_facecolor('#34a853')
+    hax.axis('off')
+    hax.text(0.5, 0.65, 'BYTEBLOWER TEST RESULTS',
+             transform=hax.transAxes, fontsize=16, fontweight='bold',
+             color='white', ha='center', va='center')
+    scenarios = ', '.join(d.get('scenarioName', '') for d in bb_files)
+    hax.text(0.5, 0.18, f'{scenarios}  |  {len(rows)} flows  |  L4S flows highlighted',
+             transform=hax.transAxes, fontsize=8, color=TEXT_COLOR,
+             ha='center', va='center', fontstyle='italic')
+
+    fax = fig.add_axes([0, 0, 1, 0.04])
+    fax.set_facecolor('#0a1628')
+    fax.axis('off')
+    fax.text(0.5, 0.5,
+             f'ByteBlower Report  |  {m["modem_name"]} ({m["mac_fmt"]})  |  {m["session_start"]} — {m["session_end"]}  |  aphillips — Charter Access Engineering',
+             transform=fax.transAxes, fontsize=7, color='#445566', ha='center', va='center')
+
+    pdf.savefig(fig, facecolor=fig.get_facecolor())
+    plt.close(fig)
 
 
 def page_summary(pdf, us, ds, k_us, k_ds, **m):
@@ -710,7 +883,7 @@ def page_summary(pdf, us, ds, k_us, k_ds, **m):
             edge_row = grp[ecols].dropna(how='all') if ecols else pd.DataFrame()
             if not edge_row.empty:
                 edges = [pd.to_numeric(edge_row[c].iloc[0], errors='coerce') for c in ecols]
-                edges = [e for e in edges if pd.notna(e)]
+                edges = [e for e in edges if pd.notna(e) and e > 0]  # drop 0.0 unset slots
                 # SNMP edges in µs (values ≥1) — divide by 1000; Kafka already in ms
                 if edges and edges[0] >= 1.0:
                     edges = [e / 1000.0 for e in edges]
@@ -763,14 +936,18 @@ def page_summary(pdf, us, ds, k_us, k_ds, **m):
                 wavg = p50 = p99 = p999 = bin_total = 0
             aqm        = _safe_delta(grp.get('cong_aqm_drop',   pd.Series(dtype=float)))
             ce         = _safe_delta(grp.get('cong_ce_marked',  pd.Series(dtype=float)))
+            ect1       = _safe_delta(grp.get('cong_ect1',        pd.Series(dtype=float)))
             sanctioned = _safe_delta(grp.get('cong_sanctioned', pd.Series(dtype=float)))
-            ref = bin_total or 1
+            pkts_s     = pd.to_numeric(grp.get('flow_pkts', pd.Series(dtype=float)), errors='coerce').dropna()
+            total_pkts = max(float(pkts_s.iloc[-1]) - float(pkts_s.iloc[0]), 0) if len(pkts_s) >= 2 else 0
+            ref        = total_pkts or bin_total or 1  # flow_pkts delta is authoritative
             rows.append((lbl, 'US', 'SNMP',
-                         round(peak_tp, 1), avg_tp,
+                         round(peak_tp, 1),
                          round(wavg, 3), round(lat_max_ms, 3),
                          p50, p99, p999,
                          int(aqm), f'{aqm/ref*100:.2f}%',
                          int(ce),  f'{ce/ref*100:.2f}%',
+                         int(ect1),
                          int(sanctioned), f'{sanctioned/ref*100:.2f}%',
                          0.0))
 
@@ -797,21 +974,24 @@ def page_summary(pdf, us, ds, k_us, k_ds, **m):
                 wavg, p50, p99, p999, bin_total = avg_lat_ms, 0, 0, 0, 0
             aqm_s = pd.to_numeric(grp.get('cong_aqm_drop',   pd.Series(dtype=float)), errors='coerce').dropna()
             ce_s  = pd.to_numeric(grp.get('cong_ce_marked',  pd.Series(dtype=float)), errors='coerce').dropna()
+            ect1_s= pd.to_numeric(grp.get('cong_ect1',        pd.Series(dtype=float)), errors='coerce').dropna()
             san_s = pd.to_numeric(grp.get('cong_sanctioned', pd.Series(dtype=float)), errors='coerce').dropna()
             aqm        = max(float(aqm_s.max()) - float(aqm_s.min()), 0) if not aqm_s.empty else 0
             ce         = max(float(ce_s.max())  - float(ce_s.min()),  0) if not ce_s.empty  else 0
+            ect1       = max(float(ect1_s.max())- float(ect1_s.min()),0) if not ect1_s.empty else 0
             sanctioned = max(float(san_s.max()) - float(san_s.min()), 0) if not san_s.empty else 0
             pkts_pass  = pd.to_numeric(grp.get('delta_pkts',         pd.Series(dtype=float)), errors='coerce').sum()
             pkts_drop  = pd.to_numeric(grp.get('delta_pkts_dropped', pd.Series(dtype=float)), errors='coerce').sum()
             total_pkts = pkts_pass + pkts_drop
             loss_pct   = pkts_drop / total_pkts * 100 if total_pkts > 0 else 0.0
-            ref        = bin_total or total_pkts or 1
+            ref        = total_pkts or bin_total or 1  # total passed pkts is authoritative
             rows.append((str(sfid), direction, source,
-                         round(peak_tp, 1), avg_tp,
+                         round(peak_tp, 1),
                          round(wavg, 3), round(lat_max_ms, 3),
                          p50, p99, p999,
                          int(aqm), f'{aqm/ref*100:.2f}%',
                          int(ce),  f'{ce/ref*100:.2f}%',
+                         int(ect1),
                          int(sanctioned), f'{sanctioned/ref*100:.2f}%',
                          round(loss_pct, 3)))
 
@@ -847,17 +1027,17 @@ def page_summary(pdf, us, ds, k_us, k_ds, **m):
     ax.axis('off')
 
     col_labels = ['SFID / Service Class', 'Dir', 'Src',
-                  'Peak\nMbps', 'Avg\nMbps', 'WAvg\n(ms)', 'Max\n(ms)',
+                  'Peak\nMbps', 'WAvg\n(ms)', 'Max\n(ms)',
                   'P50\n(ms)', 'P99\n(ms)', 'P99.9\n(ms)',
                   'AQM\nDrop', 'AQM%',
                   'CE\nMark', 'CE%',
-                  'Sanc.', 'Sanc%', 'Loss%']
-    col_widths = [0.14, 0.04, 0.04,
-                  0.05, 0.05, 0.05, 0.05,
+                  'ECT1', 'Sanc.', 'Sanc%', 'Loss%']
+    col_widths = [0.13, 0.04, 0.04,
+                  0.05, 0.05, 0.05,
                   0.04, 0.04, 0.05,
                   0.05, 0.05,
                   0.05, 0.05,
-                  0.04, 0.05, 0.04]
+                  0.04, 0.04, 0.04, 0.04]
 
     table_data = [[str(v) for v in r] for r in rows]
     tbl = ax.table(
@@ -913,7 +1093,7 @@ def page_summary(pdf, us, ds, k_us, k_ds, **m):
                 cell.set_edgecolor(GRID_COLOR)
 
     save_page(pdf, fig, ax, 'SESSION SUMMARY \u2014 THROUGHPUT & LATENCY',
-              f'{m["modem_name"]} ({m["mac_fmt"]})  |  Peak & Avg Mbps  |  WAvg latency from session bin deltas  |  AQM/CE/Sanc counts + %',
+              f'{m["modem_name"]} ({m["mac_fmt"]})  |  Peak Mbps  |  WAvg latency from session bin deltas  |  AQM/CE/Sanc counts + %',
               **_sp)
 
 
@@ -1060,7 +1240,7 @@ def _get_edge_labels(grp, n_bins, edges_map=None):
     if edge_row.empty:
         return [str(i) for i in range(1, n_bins + 1)]
     edges = [pd.to_numeric(edge_row[c].iloc[0], errors='coerce') for c in present]
-    edges = [e for e in edges if pd.notna(e) and e < float('inf')]
+    edges = [e for e in edges if pd.notna(e) and e > 0 and e < float('inf')]  # drop 0.0 unset slots
     if not edges:
         return [str(i) for i in range(1, n_bins + 1)]
     # SNMP edges are in µs — divide by 1000 to get ms; Kafka edges are already ms (<1)
@@ -1763,17 +1943,31 @@ def _dual_panel_fig(pdf, group_col,
 
 
 def _compute_throughput_mbps(df, group_col):
-    """Add throughput_mbps column from flow_octets deltas; returns modified copy."""
+    """Add throughput_mbps column; returns modified copy.
+    Kafka: delta_octets / kafka_timestamp_ms interval (authoritative 15s Kafka clock).
+    SNMP:  flow_octets cumulative diff / captured_utc interval.
+    """
     import numpy as np
     diff_col = 'sfid' if 'sfid' in df.columns else group_col
     df = df.copy().sort_values([diff_col, 'captured_utc'])
-    df['flow_octets'] = pd.to_numeric(df.get('flow_octets', pd.Series(dtype=float)), errors='coerce')
-    df['_interval_s'] = df.groupby(diff_col)['captured_utc'].transform(
-        lambda s: s.diff().dt.total_seconds())
-    df['_delta_oct'] = df.groupby(diff_col)['flow_octets'].diff().clip(lower=0)
-    df['throughput_mbps'] = df.apply(
-        lambda r: r['_delta_oct'] * 8 / r['_interval_s'] / 1e6
-                  if pd.notna(r['_interval_s']) and r['_interval_s'] > 0 else np.nan, axis=1)
+
+    if 'delta_octets' in df.columns and 'kafka_timestamp_ms' in df.columns:
+        # Kafka path — delta_octets is already a per-interval byte count
+        df['delta_octets'] = pd.to_numeric(df['delta_octets'], errors='coerce').clip(lower=0)
+        df['_ts_ms'] = pd.to_numeric(df['kafka_timestamp_ms'], errors='coerce')
+        df['_interval_s'] = df.groupby(diff_col)['_ts_ms'].transform(lambda s: s.diff() / 1000)
+        df['throughput_mbps'] = df.apply(
+            lambda r: r['delta_octets'] * 8 / r['_interval_s'] / 1e6
+                      if pd.notna(r['_interval_s']) and r['_interval_s'] > 0 else np.nan, axis=1)
+    else:
+        # SNMP path — flow_octets is cumulative; diff per poll
+        df['flow_octets'] = pd.to_numeric(df.get('flow_octets', pd.Series(dtype=float)), errors='coerce')
+        df['_interval_s'] = df.groupby(diff_col)['captured_utc'].transform(
+            lambda s: s.diff().dt.total_seconds())
+        df['_delta_oct'] = df.groupby(diff_col)['flow_octets'].diff().clip(lower=0)
+        df['throughput_mbps'] = df.apply(
+            lambda r: r['_delta_oct'] * 8 / r['_interval_s'] / 1e6
+                      if pd.notna(r['_interval_s']) and r['_interval_s'] > 0 else np.nan, axis=1)
     return df
 
 
@@ -2085,20 +2279,22 @@ def main():
         if sys.stdin.isatty():
             session_name = input('Session name (e.g. "Netflix L4S Gaming Test") [Enter for default]: ').strip()
         if not session_name:
-            # Derive name from session directory — e.g.
-            # .../HSI021_Thousandeyes_ThousandEyes_20260820_192209/ThousandEyes
-            # → "HSI021_Thousandeyes — ThousandEyes"
-            # .../HSI029_ByteBlower_DS_Classic_20260820/DS_Classic
-            # → "HSI029_ByteBlower — DS_Classic"
-            sdir = sess['session_dir']
-            scenario  = os.path.basename(sdir.rstrip('/'))
-            parent    = os.path.basename(os.path.dirname(sdir.rstrip('/')))
-            # Strip trailing timestamp (16-digit _YYYYMMDD_HHMMSS)
-            parent_clean = re.sub(r'_\d{8}_\d{6}$', '', parent)
-            if scenario and scenario != parent_clean:
-                session_name = f'{parent_clean} — {scenario}'
-            else:
-                session_name = parent_clean or f'{cmts_type.upper()} SNMP Telemetry Report'
+            # Derive name from the timestamped session directory.
+            # Walk up from session_dir to find the first component matching _YYYYMMDD_HHMMSS,
+            # then strip that suffix — e.g.
+            # .../HSI021_Thousandeyes_Test_2_ThousandEyes_20260825_200925/raw_data
+            # → "HSI021_Thousandeyes_Test_2_ThousandEyes"
+            sdir = sess['session_dir'].rstrip('/')
+            # Walk up at most 3 levels to find the timestamped dir
+            candidate = sdir
+            for _ in range(3):
+                base = os.path.basename(candidate)
+                if re.search(r'_\d{8}_\d{6}$', base):
+                    session_name = re.sub(r'_\d{8}_\d{6}$', '', base)
+                    break
+                candidate = os.path.dirname(candidate)
+            if not session_name:
+                session_name = os.path.basename(sdir) or f'{cmts_type.upper()} SNMP Telemetry Report'
     mac       = sess['mac']
     mac_fmt   = ':'.join(mac[i:i+2] for i in range(0, 12, 2)).upper()
     modem_name = MODEM_NAMES.get(mac, mac_fmt)
@@ -2194,8 +2390,9 @@ def main():
                    cmts_type=cmts_type, session_name=session_name)
         page_toc(pdf, mac_fmt, modem_name, session_start, session_end, toc, cmts_type=cmts_type)
 
-        # ThousandEyes dedicated page(s)
+        # External test result pages
         page_thousandeyes(pdf, sess['session_dir'], **m)
+        page_byteblower(pdf, sess['session_dir'], **m)
 
         # US pages (SNMP — same for both types)
         page_us_flow_stats(pdf, us, **m)
