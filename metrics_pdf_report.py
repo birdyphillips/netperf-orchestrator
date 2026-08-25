@@ -45,10 +45,21 @@ MODEM_NAMES  = {
 # Session discovery — returns a session dict
 # ---------------------------------------------------------------------------
 def _session_from_dir(d):
-    """Inspect a directory and return a session dict, or None if not a valid session."""
+    """Inspect a directory and return a session dict, or None if not a valid session.
+    Also searches one subdirectory level deep to handle sessions where CSVs are
+    nested under a subdirectory (e.g. ThousandEyes/raw_data/).
+    """
     us_files    = sorted(glob.glob(os.path.join(d, 'snmp_us_*.csv')))
     ds_files    = sorted(glob.glob(os.path.join(d, 'snmp_ds_*.csv')))
     kafka_files = sorted(glob.glob(os.path.join(d, 'kafka_*.csv')))
+    if not us_files:
+        us_files    = sorted(glob.glob(os.path.join(d, '*', 'snmp_us_*.csv')))
+        ds_files    = sorted(glob.glob(os.path.join(d, '*', 'snmp_ds_*.csv')))
+        kafka_files = sorted(glob.glob(os.path.join(d, '*', 'kafka_*.csv')))
+    if not us_files:
+        us_files    = sorted(glob.glob(os.path.join(d, '*', '*', 'snmp_us_*.csv')))
+        ds_files    = sorted(glob.glob(os.path.join(d, '*', '*', 'snmp_ds_*.csv')))
+        kafka_files = sorted(glob.glob(os.path.join(d, '*', '*', 'kafka_*.csv')))
     if not us_files:
         return None
 
@@ -135,7 +146,7 @@ def find_session(arg=None):
 # Chart helpers
 # ---------------------------------------------------------------------------
 def fmt_ax(ax):
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
     ax.xaxis.set_major_locator(mdates.AutoDateLocator())
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right', color=TEXT_COLOR)
     ax.grid(True, color=GRID_COLOR, linewidth=0.7, linestyle='--', alpha=0.8)
@@ -237,6 +248,39 @@ def _smooth_xy(x, y):
     return xs, ys
 
 
+def plot_bar_grouped(ax, df, cols, labels, group_col, ylabel):
+    """Grouped bar chart: x=poll time, one bar cluster per SFID, one bar per metric."""
+    import numpy as np
+    x_col = 'captured_utc' if 'captured_utc' in df.columns else 'poll_index'
+    groups = list(df.groupby(group_col))
+    n_metrics = len(cols)
+    n_sfids   = len(groups)
+    width     = 0.8 / max(n_metrics * n_sfids, 1)
+    all_x     = sorted(df[x_col].unique())
+    x_idx     = {t: i for i, t in enumerate(all_x)}
+    x_pos     = np.arange(len(all_x))
+    for si, (name, grp) in enumerate(groups):
+        base_color = CHART_COLORS[si % len(CHART_COLORS)]
+        for mi, (col, lbl) in enumerate(zip(cols, labels)):
+            offset = (si * n_metrics + mi - (n_sfids * n_metrics - 1) / 2) * width
+            heights = [float(pd.to_numeric(grp.loc[grp[x_col] == t, col].iloc[0], errors='coerce') or 0)
+                       if t in grp[x_col].values else 0 for t in all_x]
+            alpha = 1.0 - mi * 0.25
+            ax.bar(x_pos + offset, heights, width=width * 0.9,
+                   color=base_color, alpha=max(alpha, 0.45),
+                   label=f'{name} {lbl}', edgecolor=BG_DARK, linewidth=0.4)
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels([t.strftime('%H:%M:%S') if hasattr(t, 'strftime') else str(t)
+                        for t in all_x], rotation=45, ha='right', color=TEXT_COLOR, fontsize=7)
+    ax.set_ylabel(ylabel, color=SUBTEXT, fontsize=10, fontweight='bold')
+    ax.set_xlabel('Time (UTC)', color=SUBTEXT, fontsize=10)
+    ax.legend(fontsize=7, facecolor=BG_DARK, edgecolor=GRID_COLOR,
+              labelcolor=TEXT_COLOR, framealpha=0.9, ncol=2)
+    ax.set_ylim(bottom=0)
+    ax.grid(True, color=GRID_COLOR, linewidth=0.7, linestyle='--', alpha=0.8, axis='y')
+    ax.set_axisbelow(True)
+
+
 def plot_line(ax, df, y_col, group_col, ylabel, poll_col='poll_index'):
     """Smooth Pchip curve through every poll point, raw dots overlaid."""
     x_col = 'captured_utc' if 'captured_utc' in df.columns else poll_col
@@ -253,6 +297,12 @@ def plot_line(ax, df, y_col, group_col, ylabel, poll_col='poll_index'):
     ax.set_xlabel('Time (UTC)', color=SUBTEXT, fontsize=10)
     ax.legend(fontsize=8, facecolor=BG_DARK, edgecolor=GRID_COLOR,
               labelcolor=TEXT_COLOR, framealpha=0.9)
+    ax.set_ylim(bottom=0)
+    if 'latency' in ylabel.lower() or 'ms' in ylabel.lower():
+        from matplotlib.ticker import MultipleLocator
+        ymax = ax.get_ylim()[1]
+        step = 5 if ymax <= 100 else 10 if ymax <= 250 else 25 if ymax <= 500 else 50
+        ax.yaxis.set_major_locator(MultipleLocator(step))
     fmt_ax(ax)
 
 def plot_dual(ax, df, col_a, col_b, label_a, label_b, group_col, ylabel):
@@ -274,6 +324,7 @@ def plot_dual(ax, df, col_a, col_b, label_a, label_b, group_col, ylabel):
     ax.set_xlabel('Time (UTC)', color=SUBTEXT, fontsize=10)
     ax.legend(fontsize=7, facecolor=BG_DARK, edgecolor=GRID_COLOR,
               labelcolor=TEXT_COLOR, framealpha=0.9, ncol=2)
+    ax.set_ylim(bottom=0)
     fmt_ax(ax)
 
 # ---------------------------------------------------------------------------
@@ -341,44 +392,43 @@ def page_toc(pdf, mac_fmt, modem_name, session_start, session_end, contents, cmt
     ax.text(0.5, 0.935, 'TABLE OF CONTENTS',
             transform=ax.transAxes, fontsize=22, fontweight='bold',
             color='white', ha='center', va='center', fontfamily='DejaVu Sans')
-    ax.axhline(y=0.88, xmin=0.03, xmax=0.97, color=ACCENT, linewidth=1)
+    ax.axhline(y=0.885, xmin=0.03, xmax=0.97, color=ACCENT, linewidth=1)
 
-    # Two-column layout
+    # Two-column layout — left col entries 0..half-1, right col entries half..
     half     = (len(contents) + 1) // 2
-    col_defs = [(0.03, 0.50), (0.52, 0.99)]  # (x_start, divider_x) per column
-    gap      = min(0.075, 0.78 / max(half, 1))
+    col_defs = [(0.03, 0.495), (0.515, 0.97)]  # (x_left_edge, x_right_edge)
+    gap      = min(0.072, 0.80 / max(half, 1))
 
     for col_idx, entries in enumerate([contents[:half], contents[half:]]):
-        x0 = col_defs[col_idx][0]
-        pg_x    = x0 + 0.04
-        title_x = x0 + 0.09
-        y = 0.84
+        x0, x1  = col_defs[col_idx]
+        pg_x    = x0 + 0.038
+        title_x = x0 + 0.082
+        y = 0.845
         for i, (page, title, desc) in enumerate(entries):
             row_color = '#112240' if i % 2 == 0 else '#0d1b2a'
-            ax.axhspan(y - gap * 0.4, y + gap * 0.55,
-                       xmin=col_defs[col_idx][0], xmax=col_defs[col_idx][1],
-                       facecolor=row_color, alpha=1.0)
-            ax.text(pg_x, y + 0.005, f'pg {page}',
-                    transform=ax.transAxes, fontsize=8, fontweight='bold',
+            ax.axhspan(y - gap * 0.42, y + gap * 0.58,
+                       xmin=x0, xmax=x1, facecolor=row_color, alpha=1.0)
+            ax.text(pg_x, y + 0.004, f'pg {page}',
+                    transform=ax.transAxes, fontsize=7.5, fontweight='bold',
                     color=ACCENT, va='center', ha='center',
-                    bbox=dict(boxstyle='round,pad=0.25', facecolor='#0d2a4a',
-                              edgecolor=ACCENT, linewidth=0.8))
-            ax.text(title_x, y + 0.005, title,
-                    transform=ax.transAxes, fontsize=9, fontweight='bold',
+                    bbox=dict(boxstyle='round,pad=0.22', facecolor='#0d2a4a',
+                              edgecolor=ACCENT, linewidth=0.7))
+            ax.text(title_x, y + 0.004, title,
+                    transform=ax.transAxes, fontsize=8.5, fontweight='bold',
                     color=TEXT_COLOR, va='center', fontfamily='DejaVu Sans')
-            ax.text(title_x, y - gap * 0.38, desc,
-                    transform=ax.transAxes, fontsize=7,
-                    color=SUBTEXT, va='center', fontstyle='italic')
-            ax.axhline(y=y - gap * 0.4,
-                       xmin=col_defs[col_idx][0], xmax=col_defs[col_idx][1],
-                       color=GRID_COLOR, linewidth=0.5, linestyle=':')
+            ax.text(title_x, y - gap * 0.36, desc,
+                    transform=ax.transAxes, fontsize=6.8,
+                    color='#aabbcc', va='center', fontstyle='italic')
+            ax.axhline(y=y - gap * 0.42,
+                       xmin=x0, xmax=x1,
+                       color=GRID_COLOR, linewidth=0.4, linestyle=':')
             y -= gap
 
-    # Vertical divider between columns
-    ax.axvline(x=0.505, ymin=0.06, ymax=0.88, color=GRID_COLOR, linewidth=0.8, linestyle='--')
+    # Vertical divider
+    ax.axvline(x=0.505, ymin=0.06, ymax=0.885, color=GRID_COLOR, linewidth=0.7, linestyle='--')
 
     label = cmts_type.upper()
-    ax.text(0.5, 0.02,
+    ax.text(0.5, 0.025,
             f'{label} SNMP Report  |  {modem_name} ({mac_fmt})  |  {session_start} — {session_end}',
             transform=ax.transAxes, fontsize=8, color='#445566', ha='center', va='center')
 
@@ -389,160 +439,110 @@ def page_toc(pdf, mac_fmt, modem_name, session_start, session_end, contents, cmt
 # ThousandEyes dedicated page
 # ---------------------------------------------------------------------------
 def page_thousandeyes(pdf, te_dir, **m):
-    """Full-page ThousandEyes results — one page per iteration JSON found."""
+    """Single PDF page: consolidated table of all iterations — DS/US throughput, latency, jitter."""
     te_results = _load_te_results(te_dir)
     if not te_results:
         return
 
+    test_group = te_results[0].get('test_group', 'N/A')
+    unit_id    = te_results[0].get('unit_id', 'N/A')
+    target     = (te_results[0].get('results', {}).get('http_get_mt', {}).get('target', '') or
+                  te_results[0].get('results', {}).get('udp_jitter', {}).get('target', 'N/A'))
+
+    # Build one row per iteration
+    table_rows = []
     for te in te_results:
-        iteration  = te.get('iteration', 1)
-        unit_id    = te.get('unit_id', 'N/A')
-        test_group = te.get('test_group', 'N/A')
-        timestamp  = te.get('timestamp', '')[:19].replace('T', ' ')
-        results    = te.get('results', {})
-        summary    = te.get('summary', {})
+        iteration = te.get('iteration', '?')
+        ts        = te.get('timestamp', '')[:19].replace('T', ' ')
+        res       = te.get('results', {})
+        ds_r      = res.get('http_get_mt', {})
+        us_r      = res.get('http_post_mt', {})
+        jit_r     = res.get('udp_jitter', {})
 
-        ds   = results.get('http_get_mt', {})
-        us   = results.get('http_post_mt', {})
-        jit  = results.get('udp_jitter', {})
+        ds_mbps  = f"{ds_r['bytes_sec'] * 8 / 1e6:.1f}"  if ds_r.get('bytes_sec')  else '—'
+        us_mbps  = f"{us_r['bytes_sec'] * 8 / 1e6:.1f}"  if us_r.get('bytes_sec')  else '—'
+        lat_ms   = f"{jit_r['latency']   / 1000:.3f}"    if jit_r.get('latency')   else '—'
+        dj_ms    = f"{jit_r['down_jitter'] / 1000:.3f}"  if jit_r.get('down_jitter') is not None else '—'
+        uj_ms    = f"{jit_r['up_jitter']   / 1000:.3f}"  if jit_r.get('up_jitter')   is not None else '—'
+        table_rows.append([str(iteration), ts, ds_mbps, us_mbps, lat_ms, dj_ms, uj_ms])
 
-        fig = plt.figure(figsize=(11, 8.5))
-        fig.patch.set_facecolor(BG_DARK)
-        ax = fig.add_axes([0, 0, 1, 1])
-        ax.set_facecolor(BG_DARK)
-        ax.axis('off')
+    # Compute averages across iterations
+    def _avg(col_idx):
+        vals = []
+        for r in table_rows:
+            try:
+                vals.append(float(r[col_idx]))
+            except (ValueError, TypeError):
+                pass
+        return f'{sum(vals)/len(vals):.3f}' if vals else '—'
 
-        # Header bar
-        hax = fig.add_axes([0, 0.91, 1, 0.09])
-        hax.set_facecolor('#34a853')
-        hax.axis('off')
-        hax.text(0.5, 0.62, 'THOUSANDEYES INSTANT TEST RESULTS',
-                 transform=hax.transAxes, fontsize=16, fontweight='bold',
-                 color='white', ha='center', va='center')
-        hax.text(0.5, 0.18, f'{test_group}  |  Unit {unit_id}  |  Iteration {iteration}  |  {timestamp}',
-                 transform=hax.transAxes, fontsize=8, color=TEXT_COLOR,
-                 ha='center', va='center', fontstyle='italic')
+    avg_row = ['AVG', '', _avg(2), _avg(3), _avg(4), _avg(5), _avg(6)]
+    col_labels = ['Iter', 'Timestamp', 'DS Mbps\n(http_get_mt)', 'US Mbps\n(http_post_mt)',
+                  'Latency\n(ms)', 'DS Jitter\n(ms)', 'US Jitter\n(ms)']
+    col_widths = [0.06, 0.20, 0.16, 0.16, 0.14, 0.14, 0.14]
 
-        y = 0.84
-        def _section(title, color=ACCENT):
-            nonlocal y
-            ax.axhline(y=y + 0.005, xmin=0.04, xmax=0.96, color=color, linewidth=1.2)
-            ax.text(0.05, y - 0.012, title, transform=ax.transAxes,
-                    fontsize=11, fontweight='bold', color=color, va='top')
-            y -= 0.045
+    fig = plt.figure(figsize=(11, 8.5))
+    fig.patch.set_facecolor(BG_DARK)
+    ax = fig.add_axes([0.03, 0.10, 0.94, 0.78])
+    ax.set_facecolor(BG_PANEL)
+    ax.axis('off')
 
-        def _row(label, raw, converted, unit_raw='', unit_conv=''):
-            nonlocal y
-            ax.text(0.07,  y, label,     transform=ax.transAxes, fontsize=9,  color=SUBTEXT,    va='top')
-            ax.text(0.42,  y, f'{raw} {unit_raw}',   transform=ax.transAxes, fontsize=9,  color=TEXT_COLOR, va='top', fontfamily='monospace')
-            ax.text(0.68,  y, f'{converted} {unit_conv}', transform=ax.transAxes, fontsize=10, color='white',    va='top', fontweight='bold', fontfamily='monospace')
-            y -= 0.038
+    all_rows = table_rows + [avg_row]
+    tbl = ax.table(
+        cellText=all_rows,
+        colLabels=col_labels,
+        colWidths=col_widths,
+        loc='center', cellLoc='center',
+    )
+    tbl.auto_set_font_size(False)
+    tbl.set_fontsize(9)
+    tbl.scale(1, 1.8)
 
-        def _meta(label, value):
-            nonlocal y
-            ax.text(0.07, y, label, transform=ax.transAxes, fontsize=8.5, color=SUBTEXT,    va='top')
-            ax.text(0.28, y, value, transform=ax.transAxes, fontsize=8.5, color=TEXT_COLOR, va='top')
-            y -= 0.030
+    # Header row
+    for col in range(len(col_labels)):
+        cell = tbl[0, col]
+        cell.set_facecolor('#34a853')
+        cell.set_text_props(color='white', fontweight='bold')
 
-        # Column headers
-        ax.text(0.42, y, 'Raw Value',  transform=ax.transAxes, fontsize=8, color='#778899', va='top', fontstyle='italic')
-        ax.text(0.68, y, 'Result',     transform=ax.transAxes, fontsize=8, color='#778899', va='top', fontstyle='italic')
-        y -= 0.032
+    # Data rows
+    for row_i in range(len(table_rows)):
+        bg = BG_PANEL if row_i % 2 == 0 else BG_DARK
+        for col in range(len(col_labels)):
+            cell = tbl[row_i + 1, col]
+            cell.set_facecolor(bg)
+            cell.set_text_props(color=TEXT_COLOR)
+            cell.set_edgecolor(GRID_COLOR)
 
-        # --- Downstream ---
-        if ds:
-            bps = ds.get('bytes_sec', 0)
-            mbps = bps * 8 / 1_000_000
-            gbps = bps * 8 / 1_000_000_000
-            _section('DOWNSTREAM THROUGHPUT  (http_get_mt)', '#1a73e8')
-            _meta('Target', ds.get('target', 'N/A'))
-            _meta('MAC', ds.get('mac', 'N/A'))
-            _meta('UTC Time', ds.get('utc_datetime', 'N/A'))
-            y -= 0.008
-            _row('Throughput', f'{bps:,} bytes/sec', f'{mbps:.2f} Mbps  /  {gbps:.4f} Gbps')
-            y -= 0.010
+    # Average row — highlighted
+    avg_row_idx = len(table_rows) + 1
+    for col in range(len(col_labels)):
+        cell = tbl[avg_row_idx, col]
+        cell.set_facecolor('#0d2a4a')
+        cell.set_text_props(color=ACCENT, fontweight='bold')
+        cell.set_edgecolor(ACCENT)
 
-        # --- Upstream ---
-        if us:
-            bps = us.get('bytes_sec', 0)
-            mbps = bps * 8 / 1_000_000
-            gbps = bps * 8 / 1_000_000_000
-            _section('UPSTREAM THROUGHPUT  (http_post_mt)', '#fa7b17')
-            _meta('Target', us.get('target', 'N/A'))
-            _meta('MAC', us.get('mac', 'N/A'))
-            _meta('UTC Time', us.get('utc_datetime', 'N/A'))
-            y -= 0.008
-            _row('Throughput', f'{bps:,} bytes/sec', f'{mbps:.2f} Mbps  /  {gbps:.4f} Gbps')
-            y -= 0.010
+    # Header bar
+    hax = fig.add_axes([0, 0.91, 1, 0.09])
+    hax.set_facecolor('#34a853')
+    hax.axis('off')
+    hax.text(0.5, 0.65, 'THOUSANDEYES INSTANT TEST RESULTS',
+             transform=hax.transAxes, fontsize=16, fontweight='bold',
+             color='white', ha='center', va='center')
+    hax.text(0.5, 0.18,
+             f'{test_group}  |  Unit {unit_id}  |  Target: {target}  |  {len(te_results)} iteration(s)',
+             transform=hax.transAxes, fontsize=8, color=TEXT_COLOR,
+             ha='center', va='center', fontstyle='italic')
 
-        # --- Jitter / Latency ---
-        if jit:
-            lat_us  = jit.get('latency', 0)
-            dj_us   = jit.get('down_jitter', 0)
-            uj_us   = jit.get('up_jitter', 0)
-            _section('UDP JITTER / LATENCY  (udp_jitter)', '#34a853')
-            _meta('Target', jit.get('target', 'N/A'))
-            _meta('MAC', jit.get('mac', 'N/A'))
-            _meta('UTC Time', jit.get('utc_datetime', 'N/A'))
-            y -= 0.008
-            _row('Latency',     f'{lat_us} µs', f'{lat_us / 1000:.3f} ms')
-            _row('Down Jitter', f'{dj_us} µs',  f'{dj_us  / 1000:.3f} ms')
-            _row('Up Jitter',   f'{uj_us} µs',  f'{uj_us  / 1000:.3f} ms')
-            y -= 0.010
+    # Footer
+    fax = fig.add_axes([0, 0, 1, 0.04])
+    fax.set_facecolor('#0a1628')
+    fax.axis('off')
+    fax.text(0.5, 0.5,
+             f'ThousandEyes Report  |  {m["modem_name"]} ({m["mac_fmt"]})  |  {m["session_start"]} — {m["session_end"]}  |  aphillips — Charter Access Engineering',
+             transform=fax.transAxes, fontsize=7, color='#445566', ha='center', va='center')
 
-        # --- Summary table ---
-        _section('SUMMARY', ACCENT)
-        col_labels = ['Metric', 'Raw Value', 'Mbps', 'Gbps', 'ms']
-        col_widths = [0.28, 0.20, 0.14, 0.14, 0.14]
-        table_rows = []
-        if ds:
-            b = ds.get('bytes_sec', 0)
-            table_rows.append(['DS Throughput (TCP)', f'{b:,} B/s',
-                                f'{b*8/1e6:.2f}', f'{b*8/1e9:.4f}', '—'])
-        if us:
-            b = us.get('bytes_sec', 0)
-            table_rows.append(['US Throughput (TCP)', f'{b:,} B/s',
-                                f'{b*8/1e6:.2f}', f'{b*8/1e9:.4f}', '—'])
-        if jit:
-            table_rows.append(['Latency',     f'{jit.get("latency",0)} µs',     '—', '—', f'{jit.get("latency",0)/1000:.3f}'])
-            table_rows.append(['Down Jitter', f'{jit.get("down_jitter",0)} µs', '—', '—', f'{jit.get("down_jitter",0)/1000:.3f}'])
-            table_rows.append(['Up Jitter',   f'{jit.get("up_jitter",0)} µs',   '—', '—', f'{jit.get("up_jitter",0)/1000:.3f}'])
-
-        if table_rows:
-            tbl_ax = fig.add_axes([0.04, 0.04, 0.92, max(0.02, y - 0.06)])
-            tbl_ax.set_facecolor(BG_PANEL)
-            tbl_ax.axis('off')
-            tbl = tbl_ax.table(
-                cellText=table_rows,
-                colLabels=col_labels,
-                colWidths=col_widths,
-                loc='center', cellLoc='center',
-            )
-            tbl.auto_set_font_size(False)
-            tbl.set_fontsize(9)
-            tbl.scale(1, 1.8)
-            for col in range(len(col_labels)):
-                cell = tbl[0, col]
-                cell.set_facecolor('#34a853')
-                cell.set_text_props(color='white', fontweight='bold')
-            for row_i in range(len(table_rows)):
-                bg = BG_PANEL if row_i % 2 == 0 else BG_DARK
-                for col in range(len(col_labels)):
-                    cell = tbl[row_i + 1, col]
-                    cell.set_facecolor(bg)
-                    cell.set_text_props(color=TEXT_COLOR)
-                    cell.set_edgecolor(GRID_COLOR)
-
-        # Footer
-        fax = fig.add_axes([0, 0, 1, 0.04])
-        fax.set_facecolor('#0a1628')
-        fax.axis('off')
-        fax.text(0.5, 0.5,
-                 f'ThousandEyes Report  |  {m["modem_name"]} ({m["mac_fmt"]})  |  {m["session_start"]} — {m["session_end"]}  |  aphillips — Charter Access Engineering',
-                 transform=fax.transAxes, fontsize=7, color='#445566', ha='center', va='center')
-
-        pdf.savefig(fig, facecolor=fig.get_facecolor())
-        plt.close(fig)
+    pdf.savefig(fig, facecolor=fig.get_facecolor())
+    plt.close(fig)
 
 
 
@@ -594,14 +594,73 @@ def _peak_mbps_snmp(grp, poll_interval_s=15):
     return float(mbps_per_poll.max())
 
 
-def _load_te_results(session_dir):
-    """Load ThousandEyes JSON results from session dir. Returns list of result dicts."""
+def _detect_result_type(session_dir):
+    """Return ('thousandeyes'|'byteblower'|'iperf'|None) based on JSON files in session_dir."""
     import json
-    te_files = sorted(glob.glob(os.path.join(session_dir, 'ThousandEyes_*.json')))
-    # Also check one level up (parent dir)
-    if not te_files:
-        parent = os.path.dirname(session_dir)
-        te_files = sorted(glob.glob(os.path.join(parent, 'ThousandEyes_*.json')))
+    # Check direct dir and one level up
+    search_dirs = [session_dir, os.path.dirname(session_dir)]
+    for d in search_dirs:
+        for f in sorted(glob.glob(os.path.join(d, '*.json'))):
+            base = os.path.basename(f).lower()
+            if base == 'modem_summary.json':
+                continue
+            try:
+                with open(f) as fh:
+                    data = json.load(fh)
+                # ThousandEyes: has 'results' with http_get_mt / http_post_mt / udp_jitter
+                if 'results' in data and any(k in data['results']
+                        for k in ('http_get_mt', 'http_post_mt', 'udp_jitter')):
+                    return 'thousandeyes'
+                # ByteBlower: has 'byteblower' or 'frames' key
+                if any(k in data for k in ('byteblower', 'frames', 'ByteBlower')):
+                    return 'byteblower'
+                # iperf3: has 'start' with 'test_start' or 'intervals'
+                if 'start' in data and 'intervals' in data:
+                    return 'iperf'
+            except Exception:
+                pass
+        # Also check subdirs one level deep for iteration folders
+        for sub in glob.glob(os.path.join(d, '*', '*.json')):
+            base = os.path.basename(sub).lower()
+            if base == 'modem_summary.json':
+                continue
+            try:
+                with open(sub) as fh:
+                    data = json.load(fh)
+                if 'results' in data and any(k in data['results']
+                        for k in ('http_get_mt', 'http_post_mt', 'udp_jitter')):
+                    return 'thousandeyes'
+                if any(k in data for k in ('byteblower', 'frames', 'ByteBlower')):
+                    return 'byteblower'
+                if 'start' in data and 'intervals' in data:
+                    return 'iperf'
+            except Exception:
+                pass
+    return None
+
+
+_RESULT_TYPE_TOC = {
+    'thousandeyes': ('ThousandEyes Results',  'DS/US throughput, latency and jitter per iteration'),
+    'byteblower':   ('ByteBlower Results',    'DS/US throughput, latency and frame-loss per flow'),
+    'iperf':        ('iPerf3 Results',        'DS/US throughput and retransmit summary'),
+    None:           ('External Test Results', 'No result JSON found in session directory'),
+}
+
+
+def _load_te_results(session_dir):
+    """Load ThousandEyes JSON results from session dir. Returns list of result dicts sorted by iteration."""
+    import json
+    # Search: session_dir, iteration_*/ subdirs, one level up, parent iteration_*/ subdirs
+    search_patterns = [
+        os.path.join(session_dir, 'ThousandEyes_*.json'),
+        os.path.join(session_dir, 'iteration_*', 'ThousandEyes_*.json'),
+        os.path.join(session_dir, '*', 'ThousandEyes_*.json'),
+        os.path.join(os.path.dirname(session_dir), 'ThousandEyes_*.json'),
+    ]
+    te_files = []
+    for pattern in search_patterns:
+        te_files.extend(glob.glob(pattern))
+    te_files = sorted(set(te_files))
     results = []
     for f in te_files:
         try:
@@ -609,7 +668,7 @@ def _load_te_results(session_dir):
                 results.append(json.load(fh))
         except Exception:
             pass
-    return results
+    return sorted(results, key=lambda r: r.get('iteration', 0))
 
 
 def page_summary(pdf, us, ds, k_us, k_ds, **m):
@@ -645,9 +704,10 @@ def page_summary(pdf, us, ds, k_us, k_ds, **m):
                 p50 = p99 = p999 = wavg = 0
             aqm  = pd.to_numeric(grp.get('cong_aqm_drop',  pd.Series(dtype=float)), errors='coerce').sum()
             ce   = pd.to_numeric(grp.get('cong_ce_marked', pd.Series(dtype=float)), errors='coerce').sum()
+            sanctioned = pd.to_numeric(grp.get('cong_sanctioned', pd.Series(dtype=float)), errors='coerce').sum()
             rows.append((lbl, 'US', 'SNMP', round(tp, 1), round(wavg, 3),
                          round(lat_max_ms, 3), p50, p99, p999,
-                         int(aqm or 0), int(ce or 0), 0.0))
+                         int(aqm or 0), int(ce or 0), int(sanctioned or 0), 0.0))
 
     # Kafka US + DS — peak per-poll throughput
     for kdf, direction, source in [(k_us, 'US', 'Kafka'), (k_ds, 'DS', 'Kafka')]:
@@ -680,9 +740,11 @@ def page_summary(pdf, us, ds, k_us, k_ds, **m):
             pkts_drop = pd.to_numeric(grp.get('delta_pkts_dropped', pd.Series(dtype=float)), errors='coerce').sum()
             total_pkts = pkts_pass + pkts_drop
             loss_pct = (pkts_drop / total_pkts * 100) if total_pkts > 0 else 0.0
+            sanctioned_raw = pd.to_numeric(grp.get('cong_sanctioned', pd.Series(dtype=float)), errors='coerce').dropna()
+            sanctioned = max(sanctioned_raw.max() - sanctioned_raw.min(), 0) if not sanctioned_raw.empty else 0
             rows.append((str(sfid), direction, source, round(tp, 1), round(avg_lat_ms, 3),
                          round(lat_max_ms, 3), p50, p99, p999,
-                         int(aqm or 0), int(ce or 0), round(loss_pct, 3)))
+                         int(aqm or 0), int(ce or 0), int(sanctioned or 0), round(loss_pct, 3)))
 
     if not rows:
         return
@@ -720,8 +782,8 @@ def page_summary(pdf, us, ds, k_us, k_ds, **m):
     ax.axis('off')
 
     col_labels = ['SFID / Service Class', 'Dir', 'Src', 'Peak\nMbps', 'WAvg\n(ms)', 'Max\n(ms)',
-                  'P50\nbin', 'P99\nbin', 'P99.9\nbin', 'AQM\nDrop', 'CE\nMark', 'Loss%']
-    col_widths = [0.20, 0.05, 0.06, 0.07, 0.07, 0.07, 0.06, 0.06, 0.07, 0.07, 0.07, 0.06]
+                  'P50\nbin', 'P99\nbin', 'P99.9\nbin', 'AQM\nDrop', 'CE\nMark', 'Sanctioned', 'Loss%']
+    col_widths = [0.18, 0.05, 0.05, 0.06, 0.06, 0.06, 0.05, 0.05, 0.06, 0.06, 0.06, 0.07, 0.05]
 
     table_data = [[str(v) for v in r] for r in rows]
 
@@ -848,15 +910,15 @@ def page_us_flow_stats(pdf, us, **m):
     if all(c in us.columns for c in ('flow_policed_drop', 'flow_policed_delay')):
         us_pd = _delta_col(_delta_col(us, 'flow_policed_drop'), 'flow_policed_delay')
         fig, ax = make_fig()
-        plot_dual(ax, us_pd, 'flow_policed_drop', 'flow_policed_delay',
-                  'drop', 'delay', 'sfid_label', 'Packets (delta)')
+        plot_bar_grouped(ax, us_pd, ['flow_policed_drop', 'flow_policed_delay'],
+                         ['drop', 'delay'], 'sfid_label', 'Packets (delta)')
         save_page(pdf, fig, ax, 'US POLICED DROP & DELAY (SNMP)',
                   f'{m["modem_name"]} ({m["mac_fmt"]})  |  US Service Flows — per-poll delta', **_sp)
 
     if 'flow_aqm_drop' in us.columns and not us['flow_aqm_drop'].isna().all():
         us_aqm = _delta_col(us, 'flow_aqm_drop')
         fig, ax = make_fig()
-        plot_line(ax, us_aqm, 'flow_aqm_drop', 'sfid_label', 'Packets (delta)')
+        plot_bar_grouped(ax, us_aqm, ['flow_aqm_drop'], ['AQM drop'], 'sfid_label', 'Packets (delta)')
         save_page(pdf, fig, ax, 'US AQM DROPPED PACKETS (SNMP)',
                   f'{m["modem_name"]} ({m["mac_fmt"]})  |  US Service Flows — per-poll delta', **_sp)
 
@@ -924,6 +986,9 @@ def _get_edge_labels(grp, n_bins):
     edges = [e for e in edges if pd.notna(e) and e < float('inf')]
     if not edges:
         return [str(i) for i in range(1, n_bins + 1)]
+    # SNMP lat_edge_bin values are stored in units of 100µs — multiply by 10 to get ms
+    if len(present) == len(edge_cols_15):
+        edges = [e * 10 for e in edges]
     def _fmt(v):
         return str(int(v)) if v == int(v) else f'{v:.4g}'
     labels = [f'<{_fmt(edges[0])}'] if edges else ['<?']
@@ -959,29 +1024,22 @@ def _plot_bin_timeseries(pdf, df, direction, group_col, bin_cols, bar_color, sou
             totals = [max((pd.to_numeric(grp[c].iloc[-1], errors='coerce') or 0) -
                           (pd.to_numeric(grp[c].iloc[0], errors='coerce') or 0), 0)
                       for c in bin_cols]
+        if sum(totals) == 0:
+            continue  # SFID has no latency bin data — skip page
         edge_labels = _get_edge_labels(grp, n_bins)
         colors = CHART_COLORS[:n_bins] if n_bins <= len(CHART_COLORS) \
                  else [CHART_COLORS[i % len(CHART_COLORS)] for i in range(n_bins)]
         fig, ax = make_fig()
         ax.bar(x, totals, color=colors, edgecolor=BG_DARK, linewidth=0.5, width=0.7)
         ax.set_xticks(x)
-        ax.set_xticklabels([str(b) for b in x], color=TEXT_COLOR, fontsize=8)
+        ax.set_xticklabels(edge_labels, color=TEXT_COLOR, fontsize=7, rotation=35, ha='right')
         ax.set_ylabel('Packets (total delta)', color=SUBTEXT, fontsize=10, fontweight='bold')
-        ax.set_xlabel('Bin', color=SUBTEXT, fontsize=10)
+        ax.set_xlabel('Latency Range', color=SUBTEXT, fontsize=10)
         ax.grid(True, color=GRID_COLOR, linewidth=0.7, linestyle='--', alpha=0.8, axis='y')
         ax.set_axisbelow(True)
         ax.tick_params(colors=TEXT_COLOR)
         for spine in ax.spines.values():
             spine.set_edgecolor(GRID_COLOR)
-        # Side legend showing bin number → edge range (only when real edges available)
-        if edge_labels[0] != '1':
-            from matplotlib.patches import Patch
-            legend_handles = [Patch(facecolor=colors[i], edgecolor=BG_DARK,
-                                    label=f'Bin {x[i]}: {edge_labels[i]}') for i in range(n_bins)]
-            ax.legend(handles=legend_handles, loc='upper left', bbox_to_anchor=(1.01, 1),
-                      borderaxespad=0, fontsize=7, framealpha=0.85,
-                      facecolor=BG_DARK, edgecolor=GRID_COLOR, labelcolor=TEXT_COLOR)
-            fig.subplots_adjust(right=0.72)
         save_page(pdf, fig, ax,
                   f'{direction} LATENCY BINS ({source}) — {sfid_lbl}',
                   f'{m["modem_name"]} ({m["mac_fmt"]})  |  last poll − first poll delta per bin',
@@ -1015,38 +1073,21 @@ def page_us_congestion(pdf, us, **m):
         us_d[c] = pd.to_numeric(us_d[c], errors='coerce')
         us_d[c] = us_d.groupby('sfid')[c].diff().clip(lower=0)
 
-    if 'cong_aqm_drop' in present and 'cong_ce_marked' in present:
+    cong_bar_cols   = [c for c in ['cong_aqm_drop', 'cong_ce_marked', 'cong_sanctioned'] if c in present]
+    cong_bar_labels = [c.replace('cong_', '').replace('_', ' ') for c in cong_bar_cols]
+    if cong_bar_cols:
         fig, ax = make_fig()
-        plot_dual(ax, us_d, 'cong_aqm_drop', 'cong_ce_marked',
-                  'AQM drop', 'CE marked', 'sfid_label', 'Packets (delta)')
+        plot_bar_grouped(ax, us_d, cong_bar_cols, cong_bar_labels, 'sfid_label', 'Packets (delta)')
         save_page(pdf, fig, ax, 'US CONGESTION — AQM DROPS & CE MARKED (SNMP)',
                   f'{m["modem_name"]} ({m["mac_fmt"]})  |  per-poll delta per SFID', **_sp)
 
     if 'cong_ect0' in present and 'cong_ect1' in present:
         fig, ax = make_fig()
-        plot_dual(ax, us_d, 'cong_ect0', 'cong_ect1',
-                  'ECT(0)', 'ECT(1)', 'sfid_label', 'Packets (delta)')
+        plot_bar_grouped(ax, us_d, ['cong_ect0', 'cong_ect1'], ['ECT(0)', 'ECT(1)'],
+                         'sfid_label', 'Packets (delta)')
         save_page(pdf, fig, ax, 'US ECT(0) & ECT(1) PACKETS (SNMP)',
                   f'{m["modem_name"]} ({m["mac_fmt"]})  |  per-poll delta per SFID', **_sp)
 
-
-def page_us_param_set(pdf, us, **m):
-    """US param set — max rate, priority, buffer targets."""
-    rate_col = 'ps_max_rate_64' if ('ps_max_rate_64' in us.columns and
-                                     not us['ps_max_rate_64'].isna().all()) else 'ps_max_rate'
-    if rate_col not in us.columns or us[rate_col].isna().all():
-        return
-
-    us = us.copy()
-    us[rate_col] = pd.to_numeric(us[rate_col], errors='coerce') / 1_000_000  # bps → Mbps
-
-    _sp = {k: m[k] for k in ('mac_fmt','modem_name','session_start','session_end')}
-    _sp['cmts_type'] = m.get('cmts_type', 'icmts')
-
-    fig, ax = make_fig()
-    plot_line(ax, us, rate_col, 'sfid_label', 'Mbps')
-    save_page(pdf, fig, ax, 'US PARAM SET — MAX RATE (SNMP)',
-              f'{m["modem_name"]} ({m["mac_fmt"]})  |  Active param set (type 2)', **_sp)
 
 
 
@@ -1066,17 +1107,19 @@ def page_ds_flow_stats(pdf, ds, **m):
                   f'{m["modem_name"]} ({m["mac_fmt"]})  |  {_total_gb_label(ds_d, "flow_octets")}', **_sp)
 
     if all(c in ds.columns for c in ('flow_policed_drop', 'flow_policed_delay')):
+        ds_pd = _delta_col(_delta_col(ds, 'flow_policed_drop'), 'flow_policed_delay')
         fig, ax = make_fig()
-        plot_dual(ax, ds, 'flow_policed_drop', 'flow_policed_delay',
-                  'drop', 'delay', 'sfid_label', 'Packets')
+        plot_bar_grouped(ax, ds_pd, ['flow_policed_drop', 'flow_policed_delay'],
+                         ['drop', 'delay'], 'sfid_label', 'Packets (delta)')
         save_page(pdf, fig, ax, 'DS POLICED DROP & DELAY (SNMP)',
-                  f'{m["modem_name"]} ({m["mac_fmt"]})  |  DS Service Flows', **_sp)
+                  f'{m["modem_name"]} ({m["mac_fmt"]})  |  DS Service Flows — per-poll delta', **_sp)
 
     if 'flow_aqm_drop' in ds.columns and not ds['flow_aqm_drop'].isna().all():
+        ds_aqm = _delta_col(ds, 'flow_aqm_drop')
         fig, ax = make_fig()
-        plot_line(ax, ds, 'flow_aqm_drop', 'sfid_label', 'Packets')
+        plot_bar_grouped(ax, ds_aqm, ['flow_aqm_drop'], ['AQM drop'], 'sfid_label', 'Packets (delta)')
         save_page(pdf, fig, ax, 'DS AQM DROPPED PACKETS (SNMP)',
-                  f'{m["modem_name"]} ({m["mac_fmt"]})  |  DS Service Flows', **_sp)
+                  f'{m["modem_name"]} ({m["mac_fmt"]})  |  DS Service Flows — per-poll delta', **_sp)
 
 
 def page_ds_congestion(pdf, ds, **m):
@@ -1094,17 +1137,18 @@ def page_ds_congestion(pdf, ds, **m):
         ds_d[c] = pd.to_numeric(ds_d[c], errors='coerce')
         ds_d[c] = ds_d.groupby('sfid')[c].diff().clip(lower=0)
 
-    if 'cong_aqm_drop' in present and 'cong_ce_marked' in present:
+    cong_bar_cols   = [c for c in ['cong_aqm_drop', 'cong_ce_marked'] if c in present]
+    cong_bar_labels = [c.replace('cong_', '').replace('_', ' ') for c in cong_bar_cols]
+    if cong_bar_cols:
         fig, ax = make_fig()
-        plot_dual(ax, ds_d, 'cong_aqm_drop', 'cong_ce_marked',
-                  'AQM drop', 'CE marked', 'sfid_label', 'Packets (delta)')
+        plot_bar_grouped(ax, ds_d, cong_bar_cols, cong_bar_labels, 'sfid_label', 'Packets (delta)')
         save_page(pdf, fig, ax, 'DS CONGESTION — AQM DROPS & CE MARKED (SNMP)',
                   f'{m["modem_name"]} ({m["mac_fmt"]})  |  per-poll delta per SFID', **_sp)
 
     if 'cong_ect0' in present and 'cong_ect1' in present:
         fig, ax = make_fig()
-        plot_dual(ax, ds_d, 'cong_ect0', 'cong_ect1',
-                  'ECT(0)', 'ECT(1)', 'sfid_label', 'Packets (delta)')
+        plot_bar_grouped(ax, ds_d, ['cong_ect0', 'cong_ect1'], ['ECT(0)', 'ECT(1)'],
+                         'sfid_label', 'Packets (delta)')
         save_page(pdf, fig, ax, 'DS ECT(0) & ECT(1) PACKETS (SNMP)',
                   f'{m["modem_name"]} ({m["mac_fmt"]})  |  per-poll delta per SFID', **_sp)
 
@@ -1294,6 +1338,11 @@ def page_latency_scatter(pdf, df, direction, group_col, source='SNMP', **m):
     ax.set_ylabel('Latency (ms)', color=SUBTEXT, fontsize=10, fontweight='bold')
     ax.set_xlabel('Time (UTC)', color=SUBTEXT, fontsize=10)
     ax.legend(fontsize=8, facecolor=BG_DARK, edgecolor=GRID_COLOR, labelcolor=TEXT_COLOR, framealpha=0.9)
+    ax.set_ylim(bottom=0)
+    from matplotlib.ticker import MultipleLocator
+    ymax = ax.get_ylim()[1]
+    step = 5 if ymax <= 100 else 10 if ymax <= 250 else 25 if ymax <= 500 else 50
+    ax.yaxis.set_major_locator(MultipleLocator(step))
     fmt_ax(ax)
     save_page(pdf, fig, ax,
               f'{direction} LATENCY SCATTER ({source})',
@@ -1357,6 +1406,11 @@ def page_latency_violin(pdf, df, direction, group_col, bin_cols, source='SNMP', 
     ax.set_xticklabels(labels, color=TEXT_COLOR, fontsize=8, rotation=15, ha='right')
     ax.set_ylabel('Latency (ms)', color=SUBTEXT, fontsize=10, fontweight='bold')
     ax.set_xlabel('Service Flow', color=SUBTEXT, fontsize=10)
+    from matplotlib.ticker import MultipleLocator
+    ymax = ax.get_ylim()[1]
+    step = 5 if ymax <= 100 else 10 if ymax <= 250 else 25 if ymax <= 500 else 50
+    ax.yaxis.set_major_locator(MultipleLocator(step))
+    ax.set_ylim(bottom=0)
     fmt_ax(ax)
     save_page(pdf, fig, ax,
               f'{direction} LATENCY DISTRIBUTION — VIOLIN ({source})',
@@ -1365,8 +1419,7 @@ def page_latency_violin(pdf, df, direction, group_col, bin_cols, source='SNMP', 
 
 
 def page_latency_percentile(pdf, df, direction, group_col, source='SNMP', **m):
-    """CDF chart (SNMP): x=latency (ms), y=percentile (0–100%)  — one curve per SFID.
-    For non-SNMP sources falls back to the original time-series P50/P99 chart."""
+    """CDF chart: x=percentile (logit), y=latency (ms) — one curve per SFID."""
     import numpy as np
     bin_cols  = [f'lat_bin{i}'      for i in range(1, 17)]
     edge_cols = [f'lat_edge_bin{i}' for i in range(1, 16)]
@@ -1374,274 +1427,236 @@ def page_latency_percentile(pdf, df, direction, group_col, source='SNMP', **m):
     present_edges = [c for c in edge_cols if c in df.columns]
     if not present_bins:
         return
-    _sp = {k: m[k] for k in ('mac_fmt','modem_name','session_start','session_end')}
+    _sp = {k: m[k] for k in ('mac_fmt', 'modem_name', 'session_start', 'session_end')}
     _sp['cmts_type'] = m.get('cmts_type', 'icmts')
 
-    # ------------------------------------------------------------------ SNMP CDF
+    PCT_MARKS  = [('P50', 0.50), ('P90', 0.90), ('P99', 0.99), ('P99.99', 0.9999)]
+    PCT_TICKS  = [0.50, 0.90, 0.99, 0.9999]
+    PCT_LABELS = ['P50', 'P90', 'P99', 'P99.99']
+
+    def _build_midpoints_snmp(grp):
+        edges_row = grp[present_edges].dropna(how='all') if present_edges else pd.DataFrame()
+        if not edges_row.empty:
+            edges = [float(edges_row[c].iloc[0]) for c in present_edges
+                     if pd.to_numeric(edges_row[c].iloc[0], errors='coerce') > 0]
+        else:
+            edges = list(range(1, len(present_bins) + 1))
+        boundaries = [0] + edges + [edges[-1] * 2 if edges else len(present_bins) + 1]
+        n_mid = min(len(present_bins), len(boundaries) - 1)
+        mids = [(boundaries[j] + boundaries[j + 1]) / 2 / 1000.0 for j in range(n_mid)]
+        while len(mids) < len(present_bins):
+            mids.append(mids[-1] * 2 if mids else float(len(mids) + 1))
+        return mids
+
+    def _build_midpoints_kafka(grp, present_edges_k):
+        edges_row = grp[present_edges_k].dropna(how='all') if present_edges_k else pd.DataFrame()
+        if not edges_row.empty:
+            edges = [float(edges_row[c].iloc[0]) for c in present_edges_k
+                     if pd.to_numeric(edges_row[c].iloc[0], errors='coerce') > 0]
+        else:
+            edges = list(range(1, len(present_bins) + 1))
+        boundaries = [0] + [e for e in edges if np.isfinite(e)]
+        if len(boundaries) < 2:
+            boundaries = [0] + list(range(1, len(present_bins) + 2))
+        boundaries.append(boundaries[-1] * 2)
+        n_mid = min(len(present_bins), len(boundaries) - 1)
+        mids = [(boundaries[j] + boundaries[j + 1]) / 2 for j in range(n_mid)]
+        while len(mids) < len(present_bins):
+            mids.append(mids[-1] * 2 if mids else float(len(mids) + 1))
+        return mids
+
+    def _draw_cdf(ax, cdf_arr, lat_arr, color, label):
+        """Plot with x=percentile (logit), y=latency (ms)."""
+        pct_clipped = np.clip(cdf_arr, 1e-6, 1 - 1e-6)
+        sx, sy = _smooth_xy(pd.Series(pct_clipped), pd.Series(lat_arr))
+        sy = np.clip(sy, 0, None)
+        ax.plot(sx, sy, linewidth=2.5, color=color, label=label)
+        ax.fill_betweenx(sy, sx, PCT_TICKS[0], alpha=0.07, color=color)
+        ax.plot(pct_clipped[1:], lat_arr[1:], marker='o', markersize=4, linewidth=0,
+                color=color, markerfacecolor='white', markeredgecolor=color, markeredgewidth=1.5)
+
+    def _annotate_pcts(ax, cdf_arr, lat_arr, color):
+        for pct_label, pct_val in PCT_MARKS:
+            idx = np.searchsorted(cdf_arr, pct_val)
+            if idx == 0 or idx >= len(lat_arr):
+                continue
+            lo_pct, hi_pct = cdf_arr[idx - 1], cdf_arr[idx]
+            lo_lat, hi_lat = lat_arr[idx - 1], lat_arr[idx]
+            lat_at_pct = hi_lat if hi_pct == lo_pct else \
+                lo_lat + (pct_val - lo_pct) / (hi_pct - lo_pct) * (hi_lat - lo_lat)
+            pct_clipped = np.clip(pct_val, 1e-6, 1 - 1e-6)
+            ax.plot(pct_clipped, lat_at_pct, marker='D', markersize=5, color=color,
+                    markerfacecolor=color, markeredgecolor='white', markeredgewidth=0.8, zorder=5)
+            ax.annotate(f'{pct_label}\n{lat_at_pct:.2f}ms',
+                        xy=(pct_clipped, lat_at_pct),
+                        xytext=(0, 6), textcoords='offset points',
+                        fontsize=6.5, color=color, ha='center', va='bottom')
+
+    def _finalise_ax(ax):
+        ax.set_xscale('logit')
+        ax.set_xlim(PCT_TICKS[0], 0.99999)
+        ax.set_xticks(PCT_TICKS)
+        ax.set_xticklabels(PCT_LABELS, color=TEXT_COLOR, fontsize=8)
+        ax.xaxis.set_minor_locator(plt.NullLocator())
+        ax.set_xlabel('Percentile', color=SUBTEXT, fontsize=10, fontweight='bold')
+        ax.set_ylabel('Latency (ms)', color=SUBTEXT, fontsize=10, fontweight='bold')
+        ax.yaxis.set_major_formatter(plt.ScalarFormatter())
+        from matplotlib.ticker import MultipleLocator
+        ymax = ax.get_ylim()[1]
+        step = 5 if ymax <= 100 else 10 if ymax <= 250 else 25 if ymax <= 500 else 50
+        ax.yaxis.set_major_locator(MultipleLocator(step))
+        plt.setp(ax.yaxis.get_majorticklabels(), color=TEXT_COLOR)
+        ax.legend(fontsize=8, facecolor=BG_DARK, edgecolor=GRID_COLOR,
+                  labelcolor=TEXT_COLOR, framealpha=0.9)
+        ax.grid(True, color=GRID_COLOR, linewidth=0.7, linestyle='--', alpha=0.8)
+        ax.set_axisbelow(True)
+
+    # ------------------------------------------------------------------ SNMP
     if source == 'SNMP':
         diff_key = 'sfid' if 'sfid' in df.columns else group_col
         df = df.copy().sort_values([diff_key, 'captured_utc'])
         if df.empty:
             return
-
-        # Diff bin counters by stable sfid key → per-poll deltas, then sum across all polls
         for c in present_bins:
             df[c] = pd.to_numeric(df[c], errors='coerce')
             df[c] = df.groupby(diff_key)[c].diff().clip(lower=0)
 
         fig, ax = make_fig()
-        # Remove time-axis formatter — x is latency, not datetime
-        ax.xaxis.set_major_formatter(plt.ScalarFormatter())
-        ax.xaxis.set_major_locator(plt.AutoLocator())
-        plt.setp(ax.xaxis.get_majorticklabels(), rotation=0, ha='center', color=TEXT_COLOR)
-
         for i, (sfid, grp) in enumerate(df.groupby(group_col)):
-            # Build bin midpoints (ms) from edge columns
-            edges_row = grp[present_edges].dropna(how='all') if present_edges else pd.DataFrame()
-            if not edges_row.empty:
-                edges = [float(edges_row[c].iloc[0]) for c in present_edges
-                         if pd.to_numeric(edges_row[c].iloc[0], errors='coerce') > 0]
-            else:
-                edges = list(range(1, len(present_bins) + 1))
-            boundaries = [0] + edges + [edges[-1] * 2 if edges else len(present_bins) + 1]
-            # boundaries has len(edges)+2 entries; midpoints only up to min(len(present_bins), len(boundaries)-1)
-            n_mid = min(len(present_bins), len(boundaries) - 1)
-            midpoints_ms = [(boundaries[j] + boundaries[j + 1]) / 2 / 1000.0
-                            for j in range(n_mid)]
-            # Pad with extrapolated values if fewer midpoints than bins
-            while len(midpoints_ms) < len(present_bins):
-                midpoints_ms.append(midpoints_ms[-1] * 2 if midpoints_ms else float(len(midpoints_ms) + 1))
-
-            # Sum all per-poll deltas across the session for each bin
+            mids = _build_midpoints_snmp(grp)
             totals = grp[present_bins].sum()
             counts = [float(totals.get(c, 0) or 0) for c in present_bins]
             grand_total = sum(counts)
-            c = CHART_COLORS[i % len(CHART_COLORS)]
+            color = CHART_COLORS[i % len(CHART_COLORS)]
             if grand_total == 0:
-                ax.plot([], [], linewidth=2.5, color=c, label=f'{sfid} (no data)')
+                ax.plot([], [], linewidth=2.5, color=color, label=f'{sfid} (no data)')
                 continue
+            lat_pts = np.array([0.0] + mids)
+            cdf_pts = np.array([0.0] + [sum(counts[:k + 1]) / grand_total for k in range(len(counts))])
+            _draw_cdf(ax, cdf_pts, lat_pts, color, str(sfid))
+            _annotate_pcts(ax, cdf_pts, lat_pts, color)
 
-            lat_pts = [0.0] + midpoints_ms
-            cdf_pts = [0.0]
-            cumul = 0.0
-            for cnt in counts:
-                cumul += cnt
-                cdf_pts.append(cumul / grand_total)
-
-            lat_arr = np.array(lat_pts)
-            cdf_arr = np.array(cdf_pts)
-
-            # Smooth CDF curve
-            sx, sy = _smooth_xy(pd.Series(lat_arr), pd.Series(cdf_arr))
-            sy = np.clip(sy, 1e-6, 1 - 1e-6)
-            ax.plot(sx, sy, linewidth=2.5, color=c, label=str(sfid))
-            ax.fill_between(sx, sy, alpha=0.08, color=c)
-            # Raw dots at each bin midpoint
-            ax.plot(lat_arr[1:], np.clip(cdf_arr[1:], 1e-6, 1 - 1e-6), marker='o', markersize=4, linewidth=0,
-                    color=c, markerfacecolor='white', markeredgecolor=c, markeredgewidth=1.5)
-
-            # Annotate key percentile markers
-            for pct_label, pct_val in [('P50', 0.50), ('P90', 0.90), ('P99', 0.99), ('P99.99', 0.9999)]:
-                idx = np.searchsorted(cdf_arr, pct_val)
-                if idx == 0 or idx >= len(lat_arr):
-                    continue
-                lo_lat, hi_lat = lat_arr[idx - 1], lat_arr[idx]
-                lo_pct, hi_pct = cdf_arr[idx - 1], cdf_arr[idx]
-                lat_at_pct = hi_lat if hi_pct == lo_pct else \
-                    lo_lat + (pct_val - lo_pct) / (hi_pct - lo_pct) * (hi_lat - lo_lat)
-                ax.plot(lat_at_pct, pct_val, marker='D', markersize=5, color=c,
-                        markerfacecolor=c, markeredgecolor='white', markeredgewidth=0.8,
-                        zorder=5)
-                ax.annotate(f'{pct_label}\n{lat_at_pct:.2f}ms',
-                            xy=(lat_at_pct, pct_val),
-                            xytext=(6, 0), textcoords='offset points',
-                            fontsize=6.5, color=c, va='center')
-
-        ax.set_ylim(0.50, 0.9999)
-        pct_ticks = [50, 90, 99, 99.99]
-        ax.set_yscale('logit')
-        ax.set_yticks([p / 100 for p in pct_ticks])
-        ax.set_yticklabels(['P50', 'P90', 'P99', 'P99.99'], color=TEXT_COLOR, fontsize=8)
-        ax.yaxis.set_minor_locator(plt.NullLocator())
-        ax.set_xlabel('Latency (ms)', color=SUBTEXT, fontsize=10, fontweight='bold')
-        ax.set_ylabel('Percentile', color=SUBTEXT, fontsize=10, fontweight='bold')
-        ax.legend(fontsize=8, facecolor=BG_DARK, edgecolor=GRID_COLOR,
-                  labelcolor=TEXT_COLOR, framealpha=0.9)
-        ax.grid(True, color=GRID_COLOR, linewidth=0.7, linestyle='--', alpha=0.8)
-        ax.set_axisbelow(True)
+        _finalise_ax(ax)
         save_page(pdf, fig, ax,
                   f'{direction} LATENCY CDF — P50 to P99.99 ({source})',
-                  f'{m["modem_name"]} ({m["mac_fmt"]})  |  x=latency (ms)  y=percentile  |  aggregated across all polls',
+                  f'{m["modem_name"]} ({m["mac_fmt"]})  |  x=percentile  y=latency (ms)  |  aggregated across all polls',
                   **_sp)
         return
 
-    # -------------------------------------------------------- non-SNMP: same CDF chart
+    # ------------------------------------------------------------------ Kafka
     diff_key = 'sfid' if 'sfid' in df.columns else group_col
     df = df.copy().sort_values([diff_key, 'captured_utc'])
     if df.empty:
         return
-
-    # Kafka bin counters are already per-poll deltas — diff by sfid anyway to be safe
     for c in present_bins:
         df[c] = pd.to_numeric(df[c], errors='coerce')
         df[c] = df.groupby(diff_key)[c].diff().clip(lower=0)
 
-    # Kafka uses lat_edge_bin1..16 (16 edges, one per bin upper bound)
-    edge_cols_16 = [f'lat_edge_bin{i}' for i in range(1, 17)]
+    edge_cols_16       = [f'lat_edge_bin{i}' for i in range(1, 17)]
     present_edges_kafka = [c for c in edge_cols_16 if c in df.columns]
 
     fig, ax = make_fig()
-    ax.xaxis.set_major_formatter(plt.ScalarFormatter())
-    ax.xaxis.set_major_locator(plt.AutoLocator())
-    plt.setp(ax.xaxis.get_majorticklabels(), rotation=0, ha='center', color=TEXT_COLOR)
-
     for i, (sfid, grp) in enumerate(df.groupby(group_col)):
-        edges_row = grp[present_edges_kafka].dropna(how='all') if present_edges_kafka else pd.DataFrame()
-        if not edges_row.empty:
-            edges = [float(edges_row[c].iloc[0]) for c in present_edges_kafka
-                     if pd.to_numeric(edges_row[c].iloc[0], errors='coerce') > 0]
-        else:
-            edges = list(range(1, len(present_bins) + 1))
-        # Kafka edges are already ms (upper bound per bin); cap inf edge before building midpoints
-        boundaries = [0] + [e for e in edges if np.isfinite(e)]
-        if len(boundaries) < 2:
-            boundaries = [0] + list(range(1, len(present_bins) + 2))
-        last_finite = boundaries[-1]
-        boundaries.append(last_finite * 2)
-        n_mid = min(len(present_bins), len(boundaries) - 1)
-        midpoints_ms = [(boundaries[j] + boundaries[j + 1]) / 2 for j in range(n_mid)]
-        while len(midpoints_ms) < len(present_bins):
-            midpoints_ms.append(midpoints_ms[-1] * 2 if midpoints_ms else float(len(midpoints_ms) + 1))
-
+        mids = _build_midpoints_kafka(grp, present_edges_kafka)
         totals = grp[present_bins].sum()
         counts = [float(totals.get(c, 0) or 0) for c in present_bins]
         grand_total = sum(counts)
-        c = CHART_COLORS[i % len(CHART_COLORS)]
+        color = CHART_COLORS[i % len(CHART_COLORS)]
         if grand_total == 0:
-            ax.plot([], [], linewidth=2.5, color=c, label=f'{sfid} (no data)')
+            ax.plot([], [], linewidth=2.5, color=color, label=f'{sfid} (no data)')
             continue
+        lat_pts = np.array([0.0] + mids)
+        cdf_pts = np.array([0.0] + [sum(counts[:k + 1]) / grand_total for k in range(len(counts))])
+        _draw_cdf(ax, cdf_pts, lat_pts, color, str(sfid))
+        _annotate_pcts(ax, cdf_pts, lat_pts, color)
 
-        lat_pts = [0.0] + midpoints_ms
-        cdf_pts = [0.0]
-        cumul = 0.0
-        for cnt in counts:
-            cumul += cnt
-            cdf_pts.append(cumul / grand_total)
-
-        lat_arr = np.array(lat_pts)
-        cdf_arr = np.array(cdf_pts)
-
-        sx, sy = _smooth_xy(pd.Series(lat_arr), pd.Series(cdf_arr))
-        sy = np.clip(sy, 1e-6, 1 - 1e-6)
-        ax.plot(sx, sy, linewidth=2.5, color=c, label=str(sfid))
-        ax.fill_between(sx, sy, alpha=0.08, color=c)
-        ax.plot(lat_arr[1:], np.clip(cdf_arr[1:], 1e-6, 1 - 1e-6), marker='o', markersize=4, linewidth=0,
-                color=c, markerfacecolor='white', markeredgecolor=c, markeredgewidth=1.5)
-
-        for pct_label, pct_val in [('P50', 0.50), ('P90', 0.90), ('P99', 0.99), ('P99.99', 0.9999)]:
-            idx = np.searchsorted(cdf_arr, pct_val)
-            if idx == 0 or idx >= len(lat_arr):
-                continue
-            lo_lat, hi_lat = lat_arr[idx - 1], lat_arr[idx]
-            lo_pct, hi_pct = cdf_arr[idx - 1], cdf_arr[idx]
-            lat_at_pct = lo_lat if hi_pct == lo_pct else \
-                lo_lat + (pct_val - lo_pct) / (hi_pct - lo_pct) * (hi_lat - lo_lat)
-            ax.plot(lat_at_pct, pct_val, marker='D', markersize=5, color=c,
-                    markerfacecolor=c, markeredgecolor='white', markeredgewidth=0.8, zorder=5)
-            ax.annotate(f'{pct_label}\n{lat_at_pct:.2f}ms',
-                        xy=(lat_at_pct, pct_val),
-                        xytext=(6, 0), textcoords='offset points',
-                        fontsize=6.5, color=c, va='center')
-
-    ax.set_ylim(0.50, 0.9999)
-    pct_ticks = [50, 90, 99, 99.99]
-    ax.set_yscale('logit')
-    ax.set_yticks([p / 100 for p in pct_ticks])
-    ax.set_yticklabels(['P50', 'P90', 'P99', 'P99.99'], color=TEXT_COLOR, fontsize=8)
-    ax.yaxis.set_minor_locator(plt.NullLocator())
-    ax.set_xlabel('Latency (ms)', color=SUBTEXT, fontsize=10, fontweight='bold')
-    ax.set_ylabel('Percentile', color=SUBTEXT, fontsize=10, fontweight='bold')
-    ax.legend(fontsize=8, facecolor=BG_DARK, edgecolor=GRID_COLOR,
-              labelcolor=TEXT_COLOR, framealpha=0.9)
-    ax.grid(True, color=GRID_COLOR, linewidth=0.7, linestyle='--', alpha=0.8)
-    ax.set_axisbelow(True)
+    _finalise_ax(ax)
     save_page(pdf, fig, ax,
               f'{direction} LATENCY CDF — P50 to P99.99 ({source})',
-              f'{m["modem_name"]} ({m["mac_fmt"]})  |  x=latency (ms)  y=percentile  |  aggregated across all polls',
+              f'{m["modem_name"]} ({m["mac_fmt"]})  |  x=percentile  y=latency (ms)  |  aggregated across all polls',
               **_sp)
 
-
 # ---------------------------------------------------------------------------
-# Shared dual-panel figure builder
+# Shared twin-axis correlation figure builder
 # ---------------------------------------------------------------------------
 def _dual_panel_fig(pdf, group_col,
                     top_df, top_col, top_ylabel, top_fmt, top_accent,
                     bot_df, bot_col, bot_ylabel, bot_fmt, bot_accent,
                     header_title, subtitle, _sp):
-    """Render a mirrored dual-panel glow chart and save to pdf.
-    top panel grows upward; bottom panel is y-inverted (spikes grow downward).
+    """Single chart with twin y-axes: left=top metric (solid), right=bottom metric (dashed).
+    Both series share the same time x-axis. Per-SFID color is consistent across both axes.
     """
     import matplotlib.ticker as mticker
-    BG_CARD = '#112844'
-    GLOW_A  = [0.08, 0.18, 1.0]
-    GLOW_W  = [8,    3,    1.8]
 
-    def _glow(ax, x, y, color, label=None):
-        sx, sy = _smooth_xy(pd.Series(list(x)), pd.Series(list(y)))
-        for alpha, lw in zip(GLOW_A, GLOW_W):
-            ax.plot(sx, sy, color=color, linewidth=lw, alpha=alpha,
-                    solid_capstyle='round', solid_joinstyle='round')
-        ax.plot(list(x), list(y), 'o', color=color, markersize=5,
-                markerfacecolor='white', markeredgecolor=color,
-                markeredgewidth=1.4, zorder=5, label=label)
-        ax.fill_between(sx, sy, 0, alpha=0.20, color=color, zorder=1)
-
-    fig, (ax_top, ax_bot) = plt.subplots(
-        2, 1, figsize=(11, 8.5), dpi=150, sharex=True,
-        gridspec_kw={'hspace': 0.0, 'height_ratios': [1, 1]})
+    fig, ax_left = plt.subplots(figsize=(11, 5.8), subplot_kw={'facecolor': BG_PANEL})
     fig.patch.set_facecolor(BG_DARK)
-    ax_top.set_facecolor(BG_PANEL)
-    ax_bot.set_facecolor(BG_PANEL)
+    fig.subplots_adjust(top=0.88, bottom=0.18, left=0.10, right=0.90)
+    style_ax(ax_left)
+    ax_right = ax_left.twinx()
+    style_ax(ax_right)
 
-    for i, (name, grp) in enumerate(top_df.groupby(group_col)):
-        _glow(ax_top, grp['captured_utc'], grp[top_col], CHART_COLORS[i % len(CHART_COLORS)], label=str(name))
-    ax_top.set_ylabel(top_ylabel, color=SUBTEXT, fontsize=10, fontweight='bold')
-    ax_top.yaxis.set_major_formatter(mticker.StrMethodFormatter(top_fmt))
-    ax_top.tick_params(axis='y', colors=SUBTEXT, labelsize=8)
-    ax_top.tick_params(axis='x', bottom=False, labelbottom=False)
-    ax_top.spines['top'].set_visible(False)
-    ax_top.spines['right'].set_visible(False)
-    ax_top.spines['bottom'].set_edgecolor(top_accent)
-    ax_top.spines['bottom'].set_linewidth(1.5)
-    ax_top.spines['left'].set_edgecolor(top_accent)
-    ax_top.spines['left'].set_linewidth(1.2)
-    ax_top.grid(True, color=GRID_COLOR, linewidth=0.5, linestyle='--', alpha=0.6)
-    ax_top.set_axisbelow(True)
-    handles, labels = ax_top.get_legend_handles_labels()
-    ax_top.legend(handles, labels, title='SFID', loc='upper right',
-                  frameon=True, facecolor=BG_CARD, edgecolor=top_accent,
-                  labelcolor=TEXT_COLOR, fontsize=8, title_fontsize=9)
+    # Collect all SFIDs across both dataframes to assign consistent colors
+    all_sfids = list(dict.fromkeys(
+        list(top_df[group_col].unique()) + list(bot_df[group_col].unique())
+    ))
+    color_map = {sfid: CHART_COLORS[i % len(CHART_COLORS)] for i, sfid in enumerate(all_sfids)}
 
-    for i, (name, grp) in enumerate(bot_df.groupby(group_col)):
-        _glow(ax_bot, grp['captured_utc'], grp[bot_col], CHART_COLORS[i % len(CHART_COLORS)], label=str(name))
-    ax_bot.invert_yaxis()
-    ax_bot.set_ylabel(bot_ylabel, color=SUBTEXT, fontsize=10, fontweight='bold')
-    ax_bot.yaxis.set_major_formatter(mticker.StrMethodFormatter(bot_fmt))
-    ax_bot.tick_params(axis='y', colors=SUBTEXT, labelsize=8)
-    ax_bot.spines['bottom'].set_visible(False)
-    ax_bot.spines['right'].set_visible(False)
-    ax_bot.spines['top'].set_edgecolor(bot_accent)
-    ax_bot.spines['top'].set_linewidth(1.5)
-    ax_bot.spines['left'].set_edgecolor(bot_accent)
-    ax_bot.spines['left'].set_linewidth(1.2)
-    ax_bot.grid(True, color=GRID_COLOR, linewidth=0.5, linestyle='--', alpha=0.6)
-    ax_bot.set_axisbelow(True)
-    ax_bot.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
-    ax_bot.xaxis.set_major_locator(mdates.AutoDateLocator())
-    plt.setp(ax_bot.xaxis.get_majorticklabels(), rotation=30, ha='right', color=SUBTEXT, fontsize=8)
-    ax_bot.set_xlabel('Time (UTC)', color=SUBTEXT, fontsize=10)
+    for name, grp in top_df.groupby(group_col):
+        c = color_map[name]
+        rx = grp['captured_utc']
+        ry = pd.to_numeric(grp[top_col], errors='coerce')
+        sx, sy = _smooth_xy(rx, ry)
+        ax_left.plot(sx, sy, linewidth=2.2, color=c, label=str(name))
+        ax_left.fill_between(sx, sy, alpha=0.10, color=c)
+        ax_left.plot(rx, ry, 'o', markersize=4, linewidth=0, color=c,
+                     markerfacecolor='white', markeredgecolor=c, markeredgewidth=1.5)
 
-    fig.subplots_adjust(top=0.88, bottom=0.10, left=0.09, right=0.97, hspace=0.0)
+    for name, grp in bot_df.groupby(group_col):
+        c = color_map[name]
+        rx = grp['captured_utc']
+        ry = pd.to_numeric(grp[bot_col], errors='coerce')
+        sx, sy = _smooth_xy(rx, ry)
+        ax_right.plot(sx, sy, linewidth=2.0, color=c, linestyle='--', alpha=0.85)
+        ax_right.plot(rx, ry, 's', markersize=4, linewidth=0, color=c,
+                      markerfacecolor='white', markeredgecolor=c, markeredgewidth=1.5)
+
+    ax_left.set_ylabel(top_ylabel, color=top_accent, fontsize=10, fontweight='bold')
+    ax_left.tick_params(axis='y', colors=top_accent, labelsize=8)
+    ax_left.spines['left'].set_edgecolor(top_accent)
+    ax_left.spines['left'].set_linewidth(1.2)
+    ax_left.yaxis.set_major_formatter(mticker.StrMethodFormatter(top_fmt))
+
+    ax_right.set_ylabel(bot_ylabel, color=bot_accent, fontsize=10, fontweight='bold')
+    ax_right.tick_params(axis='y', colors=bot_accent, labelsize=8)
+    ax_right.spines['right'].set_edgecolor(bot_accent)
+    ax_right.spines['right'].set_linewidth(1.2)
+    ax_right.yaxis.set_major_formatter(mticker.StrMethodFormatter(bot_fmt))
+    ax_right.grid(False)
+    if 'latency' in bot_ylabel.lower() or 'ms' in bot_ylabel.lower():
+        from matplotlib.ticker import MultipleLocator
+        ax_right.autoscale(axis='y')
+        ymax = max(ax_right.get_ylim()[1], 50)  # minimum visible range 0–50 ms
+        step = 5 if ymax <= 100 else 10 if ymax <= 250 else 25 if ymax <= 500 else 50
+        ax_right.set_ylim(0, ymax)
+        ax_right.yaxis.set_major_locator(MultipleLocator(step))
+    else:
+        ax_right.set_ylim(bottom=0)
+
+    ax_left.set_xlabel('Time (UTC)', color=SUBTEXT, fontsize=10)
+    fmt_ax(ax_left)
+    ax_left.set_ylim(bottom=0)
+
+    # Legend: solid patch per SFID + style note
+    from matplotlib.lines import Line2D
+    handles = [Line2D([0], [0], color=color_map[s], linewidth=2, label=str(s))
+               for s in all_sfids]
+    handles += [
+        Line2D([0], [0], color='#888888', linewidth=2,   linestyle='-',  label=f'— {top_ylabel}'),
+        Line2D([0], [0], color='#888888', linewidth=1.5, linestyle='--', label=f'-- {bot_ylabel}'),
+    ]
+    ax_left.legend(handles=handles, fontsize=7.5, facecolor=BG_DARK, edgecolor=GRID_COLOR,
+                   labelcolor=TEXT_COLOR, framealpha=0.9, ncol=2, loc='upper left')
+
     add_header(fig, header_title, subtitle)
     add_footer(fig, **_sp)
     pdf.savefig(fig, facecolor=fig.get_facecolor())
@@ -1768,6 +1783,7 @@ def page_aqm_latency_correlation(pdf, df, direction, source='SNMP', **m):
     df = _compute_latency_ms(df, group_col)
     df[aqm_col] = pd.to_numeric(df[aqm_col], errors='coerce')
     df['_aqm_delta'] = df.groupby(diff_col)[aqm_col].diff().clip(lower=0)
+    aqm_ylabel = 'AQM Drops (pkts/Δ)'
     aqm_df = df.dropna(subset=['_aqm_delta'])
     lat_df = df.dropna(subset=['_lat_ms'])
     if aqm_df.empty or lat_df.empty:
@@ -1775,8 +1791,8 @@ def page_aqm_latency_correlation(pdf, df, direction, source='SNMP', **m):
     dir_label = direction.upper()
     _dual_panel_fig(
         pdf, group_col,
-        aqm_df, '_aqm_delta', 'AQM Drops (pkts/Δ)', '{x:,.0f}', '#ea4335',
-        lat_df, '_lat_ms',    'Latency (ms)',        '{x:,.2f}', '#00c6ff',
+        aqm_df, '_aqm_delta', aqm_ylabel,      '{x:,.0f}', '#ea4335',
+        lat_df, '_lat_ms',    'Latency (ms)',   '{x:,.2f}', '#00c6ff',
         f'{dir_label} AQM DROPS vs LATENCY ({source})',
         f'{m["modem_name"]} ({m["mac_fmt"]})  |  AQM drop delta above  |  Latency inverted below',
         _sp,
@@ -1784,36 +1800,49 @@ def page_aqm_latency_correlation(pdf, df, direction, source='SNMP', **m):
 
 
 def page_kafka_congestion(pdf, kdf, direction, **m):
-    """AQM drop and marked packets over time per flow."""
-    drop_col   = 'cong_aqm_drop'
-    marked_col = 'cong_ce_marked'
-    if drop_col not in kdf.columns and marked_col not in kdf.columns:
+    """AQM drop, marked, and sanctioned packets over time per flow — per-poll deltas."""
+    cong_cols  = ['cong_aqm_drop', 'cong_ce_marked', 'cong_sanctioned']
+    present    = [c for c in cong_cols if c in kdf.columns and not kdf[c].isna().all()]
+    if not present:
         return
     label   = direction.upper()
     grp_col = 'sfid_label' if 'sfid_label' in kdf.columns else 'sfid'
     _sp     = {k: m[k] for k in ('mac_fmt','modem_name','session_start','session_end')}
     _sp['cmts_type'] = m.get('cmts_type', 'vcmts')
 
-    if drop_col in kdf.columns and not kdf[drop_col].isna().all():
-        fig, ax = make_fig()
-        plot_line(ax, kdf, drop_col, grp_col, 'Packets')
-        save_page(pdf, fig, ax, f'{label} AQM DROPPED PACKETS',
-                  f'{m["modem_name"]} ({m["mac_fmt"]})  |  Kafka aqm_drop_pkts', **_sp)
+    # Diff raw cumulative counters by sfid to get per-poll deltas
+    kdf = kdf.copy().sort_values(['sfid', 'captured_utc'])
+    for c in present:
+        kdf[c] = pd.to_numeric(kdf[c], errors='coerce')
+        kdf[c] = kdf.groupby('sfid')[c].diff().clip(lower=0)
 
-    if marked_col in kdf.columns and not kdf[marked_col].isna().all():
+    cong_bar_cols   = [c for c in ['cong_aqm_drop', 'cong_ce_marked', 'cong_sanctioned'] if c in present]
+    cong_bar_labels = [c.replace('cong_', '').replace('_', ' ') for c in cong_bar_cols]
+    if cong_bar_cols:
         fig, ax = make_fig()
-        plot_line(ax, kdf, marked_col, grp_col, 'Packets')
-        save_page(pdf, fig, ax, f'{label} AQM MARKED PACKETS',
-                  f'{m["modem_name"]} ({m["mac_fmt"]})  |  Kafka aqm_marked_pkts', **_sp)
+        plot_bar_grouped(ax, kdf, cong_bar_cols, cong_bar_labels, grp_col, 'Packets (delta)')
+        save_page(pdf, fig, ax, f'{label} CONGESTION — AQM DROPS & CE MARKED (Kafka)',
+                  f'{m["modem_name"]} ({m["mac_fmt"]})  |  per-poll delta per SFID', **_sp)
 
 
 # SFIDs that are OID artefacts / aggregate counters — never real service flows
 _SFID_BLOCKLIST = {'0', '123', '0123'}
 
+# SCN name fragments that identify non-data service flows to exclude from charts
+_SCN_BLOCKLIST_RE = re.compile(r'wft|vid', re.IGNORECASE)
+
 
 def _is_real_sfid(sfid_str):
     """Return True if sfid_str is a plausible service-flow ID (not a blocklisted artefact)."""
     return sfid_str.strip() not in _SFID_BLOCKLIST
+
+
+def _drop_blocked_scn(df):
+    """Remove rows whose sfid_label SCN matches WFT or VID service classes."""
+    if 'sfid_label' not in df.columns:
+        return df
+    mask = df['sfid_label'].str.contains(_SCN_BLOCKLIST_RE, na=False)
+    return df[~mask].copy()
 
 
 # ---------------------------------------------------------------------------
@@ -1850,7 +1879,7 @@ def _load_csv(path, direction=None):
         df.loc[has_scn, 'sfid_label'] = df.loc[has_scn, 'sfid'] + ' (' + scn[has_scn] + ')'
     else:
         df['sfid_label'] = df['sfid'] + ' (unknown)'
-    return df.sort_values('captured_utc').reset_index(drop=True)
+    return _drop_blocked_scn(df).sort_values('captured_utc').reset_index(drop=True)
 
 
 # Kafka metric column → SNMP-equivalent name used by chart functions
@@ -1900,8 +1929,8 @@ def _load_kafka_csv(path):
     df = df.rename(columns=_KAFKA_COL_MAP)
     df = df.sort_values('captured_utc').reset_index(drop=True)
 
-    us = df[df['dir'] == 'upstream'].copy()
-    ds = df[df['dir'] == 'downstream'].copy()
+    us = _drop_blocked_scn(df[df['dir'] == 'upstream'].copy())
+    ds = _drop_blocked_scn(df[df['dir'] == 'downstream'].copy())
     return us, ds
 
 
@@ -2009,54 +2038,47 @@ def main():
              session_dir=sess['session_dir'],
              sfid_map=sfid_map if cmts_type == 'vcmts' else {})
     # --- build TOC ---
+    result_type = _detect_result_type(sess['session_dir'])
+    pg3_title, pg3_desc = _RESULT_TYPE_TOC[result_type]
+
     if cmts_type == 'vcmts':
         toc = [
-            ('3',  'ThousandEyes Results',             'DS/US throughput, latency and jitter per iteration'),
+            ('3',  pg3_title,                          pg3_desc),
             ('4',  'US Flow Throughput (SNMP)',         'Per-poll delta octets → Mbps per US service flow'),
             ('5',  'US Latency Avg (SNMP)',             'Weighted avg latency from bin deltas per poll'),
             ('6',  'US Throughput & Latency Corr.',     'Mirrored chart: throughput above, latency inverted below'),
-            ('7',  'US AQM Drops vs Latency',           'AQM drop delta above, latency inverted below'),
-            ('8',  'US Latency Scatter (SNMP)',         'Per-poll latency scatter per US SFID'),
-            ('9',  'US Latency CDF (SNMP)',             'CDF: x=latency (ms), y=percentile P50–P99.99 per SFID'),
-            ('10', 'US Latency Bins (SNMP)',            'Last − first poll bin delta per US SFID'),
-            ('11', 'US Latency Violin (SNMP)',          'Latency distribution violin per US SFID'),
-            ('12', 'US Congestion AQM & CE (SNMP)',     'AQM drops and CE marked packets per US flow'),
-            ('13', 'US Param Set Max Rate (SNMP)',      'Active param set max rate (Mbps) per US flow'),
-            ('14', 'DS Throughput (Kafka)',             'Kafka delta_octets → Mbps per DS flow'),
-            ('15', 'DS Latency Avg (Kafka)',            'Kafka average latency per DS flow over time'),
-            ('16', 'DS Throughput & Latency Corr.',     'Mirrored chart: throughput above, latency inverted below'),
-            ('17', 'DS AQM Drops vs Latency',           'AQM drop delta above, latency inverted below'),
-            ('18', 'DS Latency Scatter (Kafka)',        'Per-poll latency scatter per DS SFID'),
-            ('19', 'DS Latency CDF (Kafka)',            'CDF: x=latency (ms), y=percentile P50–P99.99 per SFID'),
-            ('20', 'DS Latency Bins (Kafka)',           'Kafka last − first bin delta per DS SFID'),
-            ('21', 'DS Latency Violin (Kafka)',         'Latency distribution violin per DS SFID'),
-            ('22', 'DS Congestion (Kafka)',             'Kafka AQM drop and marked packets per DS flow'),
-            ('23', 'Session Summary',                  'Peak throughput, latency, P50/P99, AQM drops per SFID'),
+            ('7',  'US Latency Scatter (SNMP)',         'Per-poll latency scatter per US SFID'),
+            ('8',  'US Latency CDF (SNMP)',             'CDF: x=latency (ms), y=percentile P50–P99.99 per SFID'),
+            ('9',  'US Latency Bins (SNMP)',            'Last − first poll bin delta per US SFID'),
+            ('10', 'US Congestion AQM & CE (SNMP)',     'AQM drops and CE marked packets per US flow'),
+            ('11', 'DS Throughput (Kafka)',             'Kafka delta_octets → Mbps per DS flow'),
+            ('12', 'DS Latency Avg (Kafka)',            'Kafka average latency per DS flow over time'),
+            ('13', 'DS Throughput & Latency Corr.',     'Mirrored chart: throughput above, latency inverted below'),
+            ('14', 'DS Latency CDF (Kafka)',            'CDF: x=latency (ms), y=percentile P50–P99.99 per SFID'),
+            ('15', 'DS Latency Bins (Kafka)',           'Kafka last − first bin delta per DS SFID'),
+            ('16', 'DS Congestion (Kafka)',             'Kafka AQM drop and marked packets per DS flow'),
+            ('17', 'Session Summary',                  'Peak throughput, latency, P50/P99, AQM drops per SFID'),
         ]
     else:
         toc = [
-            ('3',  'ThousandEyes Results',             'DS/US throughput, latency and jitter per iteration'),
+            ('3',  pg3_title,                          pg3_desc),
             ('4',  'US Flow Throughput (SNMP)',         'Per-poll delta octets → Mbps per US service flow'),
             ('5',  'US Latency Avg (SNMP)',             'Weighted avg latency from bin deltas per poll'),
             ('6',  'US Throughput & Latency Corr.',     'Mirrored chart: throughput above, latency inverted below'),
             ('7',  'US Policed Drops vs Throughput',    'Throughput above, policed drop delta inverted below'),
-            ('8',  'US AQM Drops vs Latency',           'AQM drop delta above, latency inverted below'),
-            ('9',  'US Latency Scatter (SNMP)',         'Per-poll latency scatter per US SFID'),
-            ('10', 'US Latency CDF (SNMP)',             'CDF: x=latency (ms), y=percentile P50–P99.99 per SFID'),
-            ('11', 'US Latency Bins (SNMP)',            'Last − first poll bin delta per US SFID'),
-            ('12', 'US Latency Violin (SNMP)',          'Latency distribution violin per US SFID'),
-            ('13', 'US Congestion AQM & CE (SNMP)',     'AQM drops and CE marked packets per US flow'),
-            ('14', 'US ECT(0) & ECT(1) (SNMP)',        'ECN capable transport packet counts per US flow'),
-            ('15', 'US Param Set Max Rate (SNMP)',      'Active param set max rate (Mbps) per US flow'),
-            ('16', 'DS Flow Throughput (SNMP)',         'Per-poll delta octets → Mbps per DS service flow'),
-            ('17', 'DS Policed Drop & Delay (SNMP)',    'Policed drop and delay packet counts per DS flow'),
-            ('18', 'DS AQM Dropped Packets (SNMP)',     'AQM drop counters per DS service flow'),
-            ('19', 'DS Congestion AQM & CE (SNMP)',     'AQM drops and CE marked packets per DS flow'),
-            ('20', 'DS Throughput & Latency Corr.',     'Mirrored chart: throughput above, latency inverted below'),
-            ('21', 'DS Policed Drops vs Throughput',    'Throughput above, policed drop delta inverted below'),
-            ('22', 'DS AQM Drops vs Latency',           'AQM drop delta above, latency inverted below'),
-            ('23', 'DS Latency Bins (SNMP)',            'Last − first poll bin delta per DS SFID'),
-            ('24', 'Session Summary',                  'Peak throughput, latency, P50/P99, AQM drops per SFID'),
+            ('8',  'US Latency Scatter (SNMP)',         'Per-poll latency scatter per US SFID'),
+            ('9',  'US Latency CDF (SNMP)',             'CDF: x=latency (ms), y=percentile P50–P99.99 per SFID'),
+            ('10', 'US Latency Bins (SNMP)',            'Last − first poll bin delta per US SFID'),
+            ('11', 'US Congestion AQM & CE (SNMP)',     'AQM drops and CE marked packets per US flow'),
+            ('12', 'US ECT(0) & ECT(1) (SNMP)',        'ECN capable transport packet counts per US flow'),
+            ('13', 'DS Flow Throughput (SNMP)',         'Per-poll delta octets → Mbps per DS service flow'),
+            ('14', 'DS Policed Drop & Delay (SNMP)',    'Policed drop and delay packet counts per DS flow'),
+            ('15', 'DS AQM Dropped Packets (SNMP)',     'AQM drop counters per DS service flow'),
+            ('16', 'DS Congestion AQM & CE (SNMP)',     'AQM drops and CE marked packets per DS flow'),
+            ('17', 'DS Throughput & Latency Corr.',     'Mirrored chart: throughput above, latency inverted below'),
+            ('18', 'DS Policed Drops vs Throughput',    'Throughput above, policed drop delta inverted below'),
+            ('19', 'DS Latency Bins (SNMP)',            'Last − first poll bin delta per DS SFID'),
+            ('20', 'Session Summary',                  'Peak throughput, latency, P50/P99, AQM drops per SFID'),
         ]
 
     safe_name = re.sub(r'[^\w\-]', '_', session_name).strip('_')
@@ -2078,28 +2100,19 @@ def main():
         page_us_latency_avg(pdf, us, **m)
         page_throughput_latency_correlation(pdf, us, 'US', source='SNMP', **m)
         page_policed_drops_throughput_correlation(pdf, us, 'US', **m)
-        page_aqm_latency_correlation(pdf, us, 'US', source='SNMP', **m)
         page_latency_scatter(pdf, us, 'US', 'sfid_label', source='SNMP', **m)
         page_latency_percentile(pdf, us, 'US', 'sfid_label', source='SNMP', **m)
         page_us_latency_histogram(pdf, us, **m)
-        page_latency_violin(pdf, us, 'US', 'sfid_label',
-                            [c for c in [f'lat_bin{i}' for i in range(1,17)] if c in us.columns],
-                            source='SNMP', **m)
         page_us_congestion(pdf, us, **m)
-        page_us_param_set(pdf, us, **m)
 
         if cmts_type == 'vcmts':
             # DS Kafka charts only
             page_kafka_throughput(pdf, k_ds, 'downstream', **m)
             page_kafka_latency_avg(pdf, k_ds, 'downstream', **m)
             page_throughput_latency_correlation(pdf, k_ds, 'DS', source='Kafka', **m)
-            page_aqm_latency_correlation(pdf, k_ds, 'DS', source='Kafka', **m)
-            page_latency_scatter(pdf, k_ds, 'DS', 'sfid_label', source='Kafka', **m)
             page_latency_percentile(pdf, k_ds, 'DS', 'sfid_label', source='Kafka', **m)
             page_kafka_latency_histogram(pdf, k_ds, 'downstream', **m)
-            page_latency_violin(pdf, k_ds, 'DS', 'sfid_label',
-                                [c for c in [f'lat_bin{i}' for i in range(1,17)] if c in k_ds.columns],
-                                source='Kafka', **m)
+            page_kafka_congestion(pdf, k_us, 'upstream', **m)
             page_kafka_congestion(pdf, k_ds, 'downstream', **m)
         else:
             # DS from SNMP
@@ -2107,7 +2120,6 @@ def main():
             page_ds_congestion(pdf, ds, **m)
             page_throughput_latency_correlation(pdf, ds, 'DS', source='SNMP', **m)
             page_policed_drops_throughput_correlation(pdf, ds, 'DS', **m)
-            page_aqm_latency_correlation(pdf, ds, 'DS', source='SNMP', **m)
             page_ds_latency(pdf, ds, **m)
             page_latency_violin(pdf, ds, 'DS', 'sfid_label',
                                 [c for c in [f'lat_bin{i}' for i in range(1,17)] if c in ds.columns],
