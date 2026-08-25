@@ -21,6 +21,11 @@ config.yaml
 *.key
 .ssh/
 
+# Logo (company-specific, not tracked)
+*.png
+*.jpg
+*.jpeg
+
 # Personal/Internal Documents
 LINKEDIN_TEMPLATE.md
 PROJECT_OVERVIEW.md
