@@ -696,28 +696,35 @@ def page_summary(pdf, us, ds, k_us, k_ds, **m):
         if total == 0:
             return 0.0, 0.0, 0.0, 0.0, 0
 
-        # Build bin midpoints in ms from edge columns
-        edge_cols_15 = [f'lat_edge_bin{i}' for i in range(1, 16)]
-        edge_cols_16 = [f'lat_edge_bin{i}' for i in range(1, 17)]
-        present_15 = [c for c in edge_cols_15 if c in grp.columns]
-        present_16 = [c for c in edge_cols_16 if c in grp.columns]
-        edge_row = grp[present_16 if present_16 else present_15].dropna(how='all') if (present_16 or present_15) else pd.DataFrame()
+        # Build bin midpoints in ms — prefer modem_summary.json AQM edges
+        edges_map = m.get('edges_map', {})
+        sfid_key  = str(int(float(grp['sfid'].iloc[0]))) if 'sfid' in grp.columns else None
+        if sfid_key and sfid_key in edges_map:
+            edges = edges_map[sfid_key]  # already in ms
+        else:
+            edge_cols_15 = [f'lat_edge_bin{i}' for i in range(1, 16)]
+            edge_cols_16 = [f'lat_edge_bin{i}' for i in range(1, 17)]
+            present_15 = [c for c in edge_cols_15 if c in grp.columns]
+            present_16 = [c for c in edge_cols_16 if c in grp.columns]
+            ecols    = present_16 if present_16 else present_15
+            edge_row = grp[ecols].dropna(how='all') if ecols else pd.DataFrame()
+            if not edge_row.empty:
+                edges = [pd.to_numeric(edge_row[c].iloc[0], errors='coerce') for c in ecols]
+                edges = [e for e in edges if pd.notna(e)]
+                # SNMP edges in µs (values ≥1) — divide by 1000; Kafka already in ms
+                if edges and edges[0] >= 1.0:
+                    edges = [e / 1000.0 for e in edges]
+            else:
+                edges = []
+
         midpoints_ms = []
-        if not edge_row.empty:
-            ecols = present_16 if present_16 else present_15
-            edges = [pd.to_numeric(edge_row[c].iloc[0], errors='coerce') for c in ecols]
-            edges = [e for e in edges if pd.notna(e)]
-            # SNMP edges are in µs (e.g. 5, 10, 25 µs) — divide by 1000 to get ms
-            # Kafka edges are already in ms (e.g. 0.05, 0.1, 0.25 ms)
-            if edges and edges[0] >= 1.0:
-                edges = [e / 1000.0 for e in edges]
-            boundaries = [0.0] + edges + [edges[-1] * 2 if edges else float(len(present))]
+        if edges:
+            boundaries = [0.0] + edges + [edges[-1] * 2]
             for i in range(len(present)):
                 lo = boundaries[i] if i < len(boundaries) else boundaries[-1]
                 hi = boundaries[i+1] if i+1 < len(boundaries) else boundaries[-1] * 2
                 midpoints_ms.append((lo + hi) / 2.0 if pd.notna(lo) and pd.notna(hi) else 0.0)
         else:
-            # No edge data — fall back to bin index as ms approximation
             midpoints_ms = [float(i + 1) for i in range(len(present))]
 
         def _pct_ms(pct):
@@ -1030,13 +1037,18 @@ def page_us_latency_avg(pdf, us, **m):
 
 
 
-def _get_edge_labels(grp, n_bins):
-    """Return n_bins x-axis label strings using lat_edge_bin upper edges.
-    Kafka: lat_edge_bin1..16 = upper bound of each bin → labels '<e1', 'e1–e2', ...
-    SNMP:  lat_edge_bin1..15 = boundaries between bins → same logic, last bin '>e15'.
-    Falls back to bin numbers if no edge columns present.
+def _get_edge_labels(grp, n_bins, edges_map=None):
+    """Return n_bins x-axis label strings in ms.
+    Priority: 1) edges_map from modem_summary.json  2) lat_edge_bin CSV columns.
     """
-    # Try 16 edges (Kafka per-bin upper bounds) then 15 (SNMP boundaries)
+    # 1) modem_summary.json AQM edges (already in ms)
+    if edges_map:
+        sfid_key = str(int(float(grp['sfid'].iloc[0]))) if 'sfid' in grp.columns else None
+        if sfid_key and sfid_key in edges_map:
+            edges = edges_map[sfid_key]
+            return _edges_to_labels(edges, n_bins)
+
+    # 2) CSV lat_edge_bin columns
     edge_cols_16 = [f'lat_edge_bin{i}' for i in range(1, 17)]
     edge_cols_15 = [f'lat_edge_bin{i}' for i in range(1, 16)]
     present_16 = [c for c in edge_cols_16 if c in grp.columns]
@@ -1051,12 +1063,17 @@ def _get_edge_labels(grp, n_bins):
     edges = [e for e in edges if pd.notna(e) and e < float('inf')]
     if not edges:
         return [str(i) for i in range(1, n_bins + 1)]
-    # SNMP lat_edge_bin values are stored in units of 100µs — multiply by 10 to get ms
-    if len(present) == len(edge_cols_15):
-        edges = [e * 10 for e in edges]
+    # SNMP edges are in µs — divide by 1000 to get ms; Kafka edges are already ms (<1)
+    if edges[0] >= 1.0:
+        edges = [e / 1000.0 for e in edges]
+    return _edges_to_labels(edges, n_bins)
+
+
+def _edges_to_labels(edges, n_bins):
+    """Convert a list of bin-boundary edge values (ms) to n_bins label strings."""
     def _fmt(v):
         return str(int(v)) if v == int(v) else f'{v:.4g}'
-    labels = [f'<{_fmt(edges[0])}'] if edges else ['<?']
+    labels = [f'<{_fmt(edges[0])}']
     for i in range(len(edges) - 1):
         labels.append(f'{_fmt(edges[i])}–{_fmt(edges[i+1])}')
     labels.append(f'>{_fmt(edges[-1])}')
@@ -1091,7 +1108,7 @@ def _plot_bin_timeseries(pdf, df, direction, group_col, bin_cols, bar_color, sou
                       for c in bin_cols]
         if sum(totals) == 0:
             continue  # SFID has no latency bin data — skip page
-        edge_labels = _get_edge_labels(grp, n_bins)
+        edge_labels = _get_edge_labels(grp, n_bins, edges_map=m.get('edges_map'))
         colors = CHART_COLORS[:n_bins] if n_bins <= len(CHART_COLORS) \
                  else [CHART_COLORS[i % len(CHART_COLORS)] for i in range(n_bins)]
         fig, ax = make_fig()
@@ -1351,7 +1368,7 @@ def page_latency_heatmap(pdf, df, direction, group_col, bin_cols, source='SNMP',
         mat = grp[bin_cols].apply(pd.to_numeric, errors='coerce').fillna(0).values.T  # bins × time
         if mat.sum() == 0:
             continue
-        edge_labels = _get_edge_labels(grp, len(bin_cols))
+        edge_labels = _get_edge_labels(grp, len(bin_cols), edges_map=m.get('edges_map'))
         fig, ax = make_fig()
         im = ax.imshow(mat, aspect='auto', origin='lower',
                        cmap='YlOrRd', interpolation='nearest')
@@ -1430,7 +1447,7 @@ def page_latency_violin(pdf, df, direction, group_col, bin_cols, source='SNMP', 
 
     samples_by_sfid = {}
     for sfid, grp in df.groupby(group_col):
-        edge_labels = _get_edge_labels(grp, len(bin_cols))
+        edge_labels = _get_edge_labels(grp, len(bin_cols), edges_map=m.get('edges_map'))
         usec_to_ms = 1000.0  # both SNMP and Kafka lat_avg_usec are in µs
         midpoints = []
         for lbl in edge_labels:
@@ -1500,24 +1517,41 @@ def page_latency_percentile(pdf, df, direction, group_col, source='SNMP', **m):
     PCT_LABELS = ['P50', 'P90', 'P99', 'P99.99']
 
     def _build_midpoints_snmp(grp):
-        edges_row = grp[present_edges].dropna(how='all') if present_edges else pd.DataFrame()
-        if not edges_row.empty:
-            edges = [float(edges_row[c].iloc[0]) for c in present_edges
-                     if pd.to_numeric(edges_row[c].iloc[0], errors='coerce') > 0]
+        sfid_key = str(int(float(grp['sfid'].iloc[0]))) if 'sfid' in grp.columns else None
+        em = m.get('edges_map', {})
+        if sfid_key and sfid_key in em:
+            edges = em[sfid_key]  # already in ms
+        elif present_edges:
+            edges_row = grp[present_edges].dropna(how='all')
+            if not edges_row.empty:
+                edges = [float(edges_row[c].iloc[0]) for c in present_edges
+                         if pd.to_numeric(edges_row[c].iloc[0], errors='coerce') > 0]
+                # CSV SNMP edges are in µs — divide by 1000 to get ms
+                edges = [e / 1000.0 for e in edges]
+            else:
+                edges = list(range(1, len(present_bins) + 1))
         else:
             edges = list(range(1, len(present_bins) + 1))
         boundaries = [0] + edges + [edges[-1] * 2 if edges else len(present_bins) + 1]
         n_mid = min(len(present_bins), len(boundaries) - 1)
-        mids = [(boundaries[j] + boundaries[j + 1]) / 2 / 1000.0 for j in range(n_mid)]
+        mids = [(boundaries[j] + boundaries[j + 1]) / 2 for j in range(n_mid)]
         while len(mids) < len(present_bins):
             mids.append(mids[-1] * 2 if mids else float(len(mids) + 1))
         return mids
 
     def _build_midpoints_kafka(grp, present_edges_k):
-        edges_row = grp[present_edges_k].dropna(how='all') if present_edges_k else pd.DataFrame()
-        if not edges_row.empty:
-            edges = [float(edges_row[c].iloc[0]) for c in present_edges_k
-                     if pd.to_numeric(edges_row[c].iloc[0], errors='coerce') > 0]
+        sfid_key = str(int(float(grp['sfid'].iloc[0]))) if 'sfid' in grp.columns else None
+        em = m.get('edges_map', {})
+        if sfid_key and sfid_key in em:
+            edges = em[sfid_key]  # already in ms
+        elif present_edges_k:
+            edges_row = grp[present_edges_k].dropna(how='all')
+            if not edges_row.empty:
+                edges = [float(edges_row[c].iloc[0]) for c in present_edges_k
+                         if pd.to_numeric(edges_row[c].iloc[0], errors='coerce') > 0]
+                # Kafka edges already in ms — no conversion needed
+            else:
+                edges = list(range(1, len(present_bins) + 1))
         else:
             edges = list(range(1, len(present_bins) + 1))
         boundaries = [0] + [e for e in edges if np.isfinite(e)]
@@ -2000,15 +2034,18 @@ def _load_kafka_csv(path):
 
 
 def _load_cmts_lookup(session_dir, mac=None):
-    """Parse modem_summary.json and return {sfid_str: 'sfid (scn)'} map."""
+    """Parse modem_summary.json and return ({sfid_str: label}, {sfid_str: [bin_edges_ms]})."""
     import json
     path = os.path.join(session_dir, 'modem_summary.json')
     if not os.path.exists(path):
-        return {}
+        return {}, {}
     with open(path, encoding='utf-8') as f:
         data = json.load(f)
-    return {str(entry['sfid']): f"{entry['sfid']} ({entry['scn']})"
-            for entry in data.get('sfids', []) if entry.get('scn')}
+    sfid_map  = {str(entry['sfid']): f"{entry['sfid']} ({entry['scn']})"
+                 for entry in data.get('sfids', []) if entry.get('scn')}
+    edges_map = {str(entry['sfid']): entry['bin_edges_ms']
+                 for entry in data.get('sfids', []) if entry.get('bin_edges_ms')}
+    return sfid_map, edges_map
 
 
 def _apply_kafka_sfid_labels(kdf, sfid_map):
@@ -2074,12 +2111,12 @@ def main():
     ds_snmp = _load_csv(sess['us_path'], direction=1) if sess['us_path'] else None
     if cmts_type == 'vcmts':
         k_us, k_ds = _load_kafka_csv(sess['kafka_path'])
-        sfid_map = _load_cmts_lookup(sess['session_dir'])
+        sfid_map, edges_map = _load_cmts_lookup(sess['session_dir'])
         k_us = _apply_kafka_sfid_labels(k_us, sfid_map)
         k_ds = _apply_kafka_sfid_labels(k_ds, sfid_map)
         ds = k_ds
     else:
-        # ds_path may be the same file as us_path — direction filter separates them
+        sfid_map, edges_map = _load_cmts_lookup(sess['session_dir'])
         ds   = ds_snmp
         k_us = k_ds = None
 
@@ -2101,7 +2138,8 @@ def main():
              session_start=session_start, session_end=session_end,
              cmts_type=cmts_type,
              session_dir=sess['session_dir'],
-             sfid_map=sfid_map if cmts_type == 'vcmts' else {})
+             sfid_map=sfid_map,
+             edges_map=edges_map)
     # --- build TOC ---
     result_type = _detect_result_type(sess['session_dir'])
     pg3_title, pg3_desc = _RESULT_TYPE_TOC[result_type]
