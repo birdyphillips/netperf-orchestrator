@@ -1713,6 +1713,51 @@ def page_kafka_latency_avg(pdf, kdf, direction, **m):
               cmts_type=m.get('cmts_type', 'vcmts'))
 
 
+def _calc_rfc3550_jitter(series):
+    """RFC 3550 running jitter from a time-ordered lat_avg series (already in ms).
+    J(i) = J(i-1) + (|D(i-1,i)| - J(i-1)) / 16
+    Returns a Series of jitter values aligned to the input index.
+    """
+    import numpy as np
+    vals = series.values
+    jitter = np.zeros(len(vals))
+    for i in range(1, len(vals)):
+        d = abs(vals[i] - vals[i - 1])
+        jitter[i] = jitter[i - 1] + (d - jitter[i - 1]) / 16.0
+    result = pd.Series(jitter, index=series.index)
+    result.iloc[0] = np.nan  # first point undefined
+    return result
+
+
+def page_kafka_jitter(pdf, kdf, direction, **m):
+    """RFC 3550 jitter (ms) derived from poll-to-poll lat_avg_usec per SFID."""
+    if 'lat_avg_usec' not in kdf.columns:
+        return
+    kdf = kdf.copy().sort_values(['sfid_label', 'captured_utc'])
+    kdf['lat_avg_usec'] = pd.to_numeric(kdf['lat_avg_usec'], errors='coerce').fillna(0) / 1000
+    grp_col = 'sfid_label' if 'sfid_label' in kdf.columns else 'sfid'
+
+    jitter_frames = []
+    for name, grp in kdf.groupby(grp_col):
+        g = grp.sort_values('captured_utc').copy()
+        g['_jitter_ms'] = _calc_rfc3550_jitter(g['lat_avg_usec'])
+        jitter_frames.append(g)
+    if not jitter_frames:
+        return
+    jdf = pd.concat(jitter_frames)
+    jdf = jdf.dropna(subset=['_jitter_ms'])
+    if jdf.empty or jdf['_jitter_ms'].eq(0).all():
+        return
+
+    label = direction.upper()
+    fig, ax = make_fig()
+    plot_line(ax, jdf, '_jitter_ms', grp_col, 'Jitter (ms)')
+    save_page(pdf, fig, ax, f'{label} JITTER (ms)  —  RFC 3550',
+              f'{m["modem_name"]} ({m["mac_fmt"]})  |  derived from Kafka lat_avg_usec poll-to-poll',
+              **{k: m[k] for k in ('mac_fmt', 'modem_name', 'session_start', 'session_end')},
+              cmts_type=m.get('cmts_type', 'vcmts'))
+
+
 def page_kafka_latency_histogram(pdf, kdf, direction, **m):
     """Latency bin time-series per sfid_label (Kafka)."""
     bin_cols = [f'lat_bin{i}' for i in range(1, 17)]
@@ -2663,6 +2708,10 @@ def main():
             # DS Kafka charts only
             page_kafka_throughput(pdf, k_ds, 'downstream', **m)
             page_kafka_latency_avg(pdf, k_ds, 'downstream', **m)
+            page_kafka_jitter(pdf, k_ds, 'downstream', **m)
+            page_kafka_throughput(pdf, k_us, 'upstream', **m)
+            page_kafka_latency_avg(pdf, k_us, 'upstream', **m)
+            page_kafka_jitter(pdf, k_us, 'upstream', **m)
             page_throughput_latency_correlation(pdf, k_ds, 'DS', source='Kafka', **m)
             page_latency_percentile(pdf, k_ds, 'DS', 'sfid_label', source='Kafka', **m)
             page_kafka_latency_histogram(pdf, k_ds, 'downstream', **m)
