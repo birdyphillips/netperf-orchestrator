@@ -300,7 +300,77 @@ def _write_csv_comment(f, mac_colon, cmts_type):
 # SNMP result pivot  (raw ssh_snmp_collector output → per-SFID row dicts)
 # ---------------------------------------------------------------------------
 
-def _build_snmp_commands(modem_ip, icmts_ip, modem_community, icmts_community, timeout, retries):
+def _discover_ds_ifindex(icmts_ip, icmts_community, timeout, retries, ds_sfids):
+    """Walk .21.1.11.1 (DS SF index) to find ifIndex for each DS SFID.
+    Returns dict {sfid: ifindex}.
+    """
+    import subprocess, re
+    cmd = f'snmpwalk -v 2c -c {icmts_community} -t {timeout} -r {retries} {icmts_ip} 1.3.6.1.4.1.4491.2.1.21.1.11.1'
+    try:
+        out = subprocess.run(cmd, shell=True, capture_output=True, timeout=30).stdout.decode(errors='replace')
+    except Exception:
+        return {}
+    sfid_set = set(ds_sfids)
+    result = {}
+    for line in out.splitlines():
+        # OID ends with .<ifIndex>.<sfid>
+        m = re.search(r'\.([0-9]+)\.([0-9]+)\s*=.*INTEGER:\s*(\d+)', line)
+        if m:
+            sfid = int(m.group(2))
+            if sfid in sfid_set:
+                result[sfid] = int(m.group(3))  # ifIndex from value
+        else:
+            # value may be the ifIndex in the OID itself
+            m2 = re.search(r'\.([0-9]+)\.([0-9]+)\s*=', line)
+            if m2 and int(m2.group(2)) in sfid_set:
+                # ifIndex is the second-to-last component before sfid
+                result[int(m2.group(2))] = int(m2.group(1))
+    return result
+
+
+def _build_ds_snmpget_cmds(icmts_ip, icmts_community, timeout, retries, ds_sfids, ifindex_map):
+    """Build snmpget commands targeting exact OIDs for each DS SFID.
+    Falls back to scoped snmpwalk if ifIndex unknown for a SFID.
+    """
+    base = f'snmpget -v 2c -c {icmts_community} -t {timeout} -r {retries} {icmts_ip}'
+    # Flow stats: .21.1.4.1.<col>.<ifIndex>.<sfid>  cols 1-3
+    # Lat edges:  .21.1.29.1.1.<col>.<ifIndex>.<sfid>  cols 1-18
+    # Lat stats:  .21.1.29.1.2.<col>.<ifIndex>.<sfid>  cols 1-18 (bin counts)
+    # Congestion: .21.1.30.1.<col>.<ifIndex>.<sfid>  cols 1-4
+    flow_oids, lat_edge_oids, lat_stat_oids, cong_oids = [], [], [], []
+    for sfid in ds_sfids:
+        ifidx = ifindex_map.get(sfid)
+        if ifidx is None:
+            continue
+        for col in range(1, 4):
+            flow_oids.append(f'1.3.6.1.4.1.4491.2.1.21.1.4.1.{col}.{ifidx}.{sfid}')
+        for col in range(1, 19):
+            lat_edge_oids.append(f'1.3.6.1.4.1.4491.2.1.21.1.29.1.1.{col}.{ifidx}.{sfid}')
+            lat_stat_oids.append(f'1.3.6.1.4.1.4491.2.1.21.1.29.1.2.{col}.{ifidx}.{sfid}')
+        for col in range(1, 5):
+            cong_oids.append(f'1.3.6.1.4.1.4491.2.1.21.1.30.1.{col}.{ifidx}.{sfid}')
+
+    def _chunk_get(oids, chunk=20):
+        """Split into snmpget calls of up to chunk OIDs each."""
+        cmds = []
+        for i in range(0, len(oids), chunk):
+            cmds.append(f"{base} {' '.join(oids[i:i+chunk])}")
+        return ' && '.join(cmds) if cmds else ''
+
+    cmds, lbls = [], []
+    if flow_oids:
+        cmds.append(_chunk_get(flow_oids))
+        lbls.append('DS Flow Stats')
+    if lat_edge_oids:
+        cmds.append(_chunk_get(lat_edge_oids + lat_stat_oids))
+        lbls.append('DS Lat Stats')
+    if cong_oids:
+        cmds.append(_chunk_get(cong_oids))
+        lbls.append('DS Congestion')
+    return cmds, lbls
+
+
+def _build_snmp_commands(modem_ip, icmts_ip, modem_community, icmts_community, timeout, retries, ds_sfids=None, ifindex_map=None):
     """Return (us_cmds, us_lbls, ds_cmds, ds_lbls) for the given targets."""
     t, r = timeout, retries
     base = f'snmpwalk -v 2c -c {modem_community} -t {t} -r {r} {modem_ip}'
@@ -331,13 +401,18 @@ def _build_snmp_commands(modem_ip, icmts_ip, modem_community, icmts_community, t
 
     ds_cmds, ds_lbls = [], []
     if icmts_ip:
-        ds_cmds = [
-            f"snmpwalk -v 2c -c {icmts_community} -t {t} -r {r} {icmts_ip} 1.3.6.1.4.1.4491.2.1.21.1.11.1",
-            f"snmpwalk -v 2c -c {icmts_community} -t {t} -r {r} {icmts_ip} 1.3.6.1.4.1.4491.2.1.21.1.4",
-            f"snmpwalk -v 2c -c {icmts_community} -t {t} -r {r} {icmts_ip} 1.3.6.1.4.1.4491.2.1.21.1.29",
-            f"snmpwalk -v 2c -c {icmts_community} -t {t} -r {r} {icmts_ip} 1.3.6.1.4.1.4491.2.1.21.1.30",
-        ]
-        ds_lbls = ['DS SF Index', 'DS Flow Stats', 'DS Lat Stats', 'DS Congestion']
+        cb = f'snmpwalk -v 2c -c {icmts_community} -t {t} -r {r} {icmts_ip}'
+        if ds_sfids and ifindex_map:
+            ds_cmds, ds_lbls = _build_ds_snmpget_cmds(
+                icmts_ip, icmts_community, t, r, ds_sfids, ifindex_map)
+        else:
+            ds_cmds = [
+                f"{cb} 1.3.6.1.4.1.4491.2.1.21.1.11.1",
+                f"{cb} 1.3.6.1.4.1.4491.2.1.21.1.4",
+                f"{cb} 1.3.6.1.4.1.4491.2.1.21.1.29",
+                f"{cb} 1.3.6.1.4.1.4491.2.1.21.1.30",
+            ]
+            ds_lbls = ['DS SF Index', 'DS Flow Stats', 'DS Lat Stats', 'DS Congestion']
 
     return us_cmds, us_lbls, ds_cmds, ds_lbls
 
@@ -530,13 +605,38 @@ def snmp_collector_thread(cfg, stop_event, csv_paths, poll_index_ref):
         file_handles[key] = fh
         writers[key]      = w
 
+    # Load DS SFIDs from modem_summary.json if available (iCMTS only)
+    ds_sfids = cfg.get('ds_sfids') or []
+    if not ds_sfids and cmts_type == 'icmts':
+        import json as _json, glob as _glob
+        for _p in _glob.glob('Results/**/modem_summary.json', recursive=True) + \
+                  _glob.glob('Results/.cmts_lookup_tmp/modem_summary.json'):
+            try:
+                with open(_p) as _f:
+                    _s = _json.load(_f)
+                ds_sfids = [e['sfid'] for e in _s.get('sfids', []) if e.get('dir') == 'DS']
+                if ds_sfids:
+                    break
+            except Exception:
+                pass
+
     print(f'[SNMP] Continuous polling started — interval {cfg["snmp_poll_interval"]}s  modem {modem_ip}')
+    ifindex_map = {}
+    if ds_sfids and cmts_type == 'icmts' and icmts_ip:
+        ifindex_map = _discover_ds_ifindex(
+            icmts_ip, cfg['icmts_community'],
+            cfg['snmp_timeout'], cfg['snmp_retries'], ds_sfids)
+        print(f'[SNMP] DS SFIDs (scoped): {ds_sfids}  ifIndex map: {ifindex_map}')
+    elif ds_sfids:
+        print(f'[SNMP] DS SFIDs (scoped): {ds_sfids}')
 
     us_cmds, us_lbls, ds_cmds, ds_lbls = _build_snmp_commands(
         modem_ip,
         icmts_ip if cmts_type == 'icmts' else '',
         cfg['modem_community'], cfg['icmts_community'],
         cfg['snmp_timeout'], cfg['snmp_retries'],
+        ds_sfids=ds_sfids if cmts_type == 'icmts' else None,
+        ifindex_map=ifindex_map if cmts_type == 'icmts' else None,
     )
 
     interval = cfg['snmp_poll_interval']
