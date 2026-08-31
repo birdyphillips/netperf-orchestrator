@@ -50,11 +50,14 @@ def parse_ipv6_from_vcmts(output):
 
 
 def parse_ipv6_from_icmts(output):
-    """Parse IPv6 from iCMTS 'show cable modem cm-mac <mac>' output.
-    Example line:
-    12/8/16-1/4/2  9  33x6  Operational 3.1  1440M/1125M  1  0cb9.379c.64b4  2605:1c00:fff0:118:5d0b:2ba0:1140:a3cd
+    """Parse IPv6 from iCMTS 'scm <mac> detail' output.
+    Looks for: Uptime=... IPv6=2605:1c00:...
     """
     import re
+    m = re.search(r'IPv6=([0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{0,4}){5,7})', output)
+    if m:
+        return m.group(1)
+    # fallback: any IPv6 on any line
     for line in output.splitlines():
         m = re.search(r'([0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4}){5,7})', line)
         if m:
@@ -72,14 +75,14 @@ def ssh_cmts_collector(username, jumpserver, cmts_host, cmts_password, cm_mac, c
     # Determine commands based on CMTS type
     if cmts_type.lower() == 'icmts':
         commands = [
-            f"show cable modem cm-mac {cm_mac}",
-            f"show cable modem cm-mac {cm_mac} verbose",
-            f"show cable modem cm-mac {cm_mac} service-flow"
+            f"scm {cm_mac} detail",
+            f"scm qos-sc cm-mac {cm_mac}",
+            f"scm {cm_mac} service-flow aqm",
         ]
         labels = [
-            "Cable Modem Summary",
-            "Cable Modem Details",
-            "Service Flow Information"
+            "Cable Modem Detail",
+            "QoS Service Classes",
+            "Service Flow AQM Configuration",
         ]
     else:  # vcmts
         commands = [
@@ -218,10 +221,28 @@ def ssh_cmts_collector(username, jumpserver, cmts_host, cmts_password, cm_mac, c
                     print(f"\nCable Modem IPv6: {cm_ipv6}")
             
         ssh.close()
-        
-        # Parse sfid/scn from QoS Bandwidth output
+
+        # Parse sfid/scn from appropriate output
         sfids = []
-        if cmts_type.lower() == 'vcmts' and 'QoS Bandwidth Information' in labels:
+        import re as _re
+
+        if cmts_type.lower() == 'icmts' and 'QoS Service Classes' in results:
+            # scm qos-sc cm-mac output:
+            # SCN              Sfid     Dir Prio MaxSusRate  ...
+            # usHSI018           101268 US     1   42000000  ...
+            qos_output = results['QoS Service Classes']['output']
+            seen = set()
+            for qline in qos_output.splitlines():
+                parts = qline.split()
+                if len(parts) >= 3 and _re.match(r'^\d+$', parts[1]) and parts[2] in ('US', 'DS'):
+                    scn_val  = parts[0]
+                    sfid_val = int(parts[1])
+                    dir_val  = parts[2]
+                    if sfid_val not in seen:
+                        seen.add(sfid_val)
+                        sfids.append({'sfid': sfid_val, 'scn': scn_val, 'dir': dir_val})
+
+        elif cmts_type.lower() == 'vcmts' and 'QoS Bandwidth Information' in results:
             qos_output = results['QoS Bandwidth Information']['output']
             seen = set()
             for qline in qos_output.splitlines():
