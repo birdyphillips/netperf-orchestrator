@@ -171,30 +171,32 @@ def ssh_cmts_collector(username, jumpserver, cmts_host, cmts_password, cm_mac, c
             
             # Execute command
             shell.send(cmd + '\n')
-            time.sleep(2)  # Wait for command to complete
-            
-            # Collect output and handle --More-- pagination
+            time.sleep(3)  # Wait for command to start producing output
+
+            # Collect output until CMTS prompt reappears (command finished)
             output = ''
-            max_iterations = 50  # Prevent infinite loops
+            max_iterations = 100
             iteration = 0
-            
+
             while iteration < max_iterations:
                 if shell.recv_ready():
-                    chunk = shell.recv(4096).decode()
+                    chunk = shell.recv(8192).decode('utf-8', errors='replace')
                     output += chunk
-                    
-                    # Check if --More-- prompt is present
+
                     if '--More--' in chunk:
-                        shell.send(' ')  # Send space to continue
+                        shell.send(' ')
                         time.sleep(0.5)
-                    else:
-                        time.sleep(0.1)
-                else:
-                    # No more data available
-                    time.sleep(0.2)
-                    if not shell.recv_ready():
+                    # CMTS prompt ends with '#' — command is done
+                    elif chunk.rstrip().endswith('#'):
                         break
-                
+                    else:
+                        time.sleep(0.2)
+                else:
+                    time.sleep(0.3)
+                    # After waiting, if prompt is present we're done
+                    if output.rstrip().endswith('#'):
+                        break
+
                 iteration += 1
             
             # Exit CMTS session
