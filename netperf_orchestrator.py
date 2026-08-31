@@ -105,7 +105,11 @@ class NetperfCLI:
         """Use cmts_modem_info.collect_cmts_data to SSH to CMTS and resolve modem IPv6."""
         try:
             from config_loader import config
-            cmts_host = config.get('cmts_hosts', default=[{}])[0].get('name', '')
+            hosts = config.get('cmts_hosts', default=[]) or []
+            matched = next((h for h in hosts if h.get('type', 'vcmts') == self.cmts_type), None)
+            if not matched:
+                matched = hosts[0] if hosts else {}
+            cmts_host = matched.get('name', '')
             if not cmts_host:
                 cmts_host = 'apc01k1dccc' if self.cmts_type == 'vcmts' else 'cts01k1dccc'
             self.logger.info(f"Looking up IPv6 for {mac} via {cmts_host} ({self.cmts_type})...")
