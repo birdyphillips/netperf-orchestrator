@@ -207,14 +207,18 @@ _OID_LABEL_MAP = {
     '11.1.3': 'ds_sf_primary',
 }
 
+# Match both snmpwalk (SNMPv2-SMI::enterprises.4491...) and
+# snmpget numeric (iso.3.6.1.4.1.4491...) output formats
+_OID_PREFIX_RE = r'(?:SNMPv2-SMI::enterprises|iso\.3\.6\.1\.4\.1)\.4491\.2\.1\.21\.1\.'
+
 _RE_OID_TXT = re.compile(
-    r'SNMPv2-SMI::enterprises\.4491\.2\.1\.21\.1\.'
+    _OID_PREFIX_RE +
     r'(\d+(?:\.\d+)*)\s*=\s*(\S+):\s*(.*)'
 )
 
 # Used by _pivot_snmp_output to extract OID suffix and value for CSV pivot
 _RE_OID_SFID = re.compile(
-    r'SNMPv2-SMI::enterprises\.4491\.2\.1\.21\.1\.'
+    _OID_PREFIX_RE +
     r'(\d+(?:\.\d+)*)\s*=\s*\S+:\s*(.*)'
 )
 
